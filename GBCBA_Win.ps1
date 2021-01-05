@@ -75,7 +75,7 @@ export-csv -path $localpath\"$env:computername"-servicebinaries.csv -Append -Enc
 
 # NICSettings
 Get-WmiObject -Class Win32_NetworkAdapterConfiguration | 
-Select-object @{Label="Computer Name"; Expression= { $_.__SERVER }}, 
+Select-object @{Label="Computername"; Expression= { $_.__SERVER }}, 
 @{Name='AuditDate';Expression={ Get-Date -Uformat %s }}, 
 description, 
 macaddress, 
