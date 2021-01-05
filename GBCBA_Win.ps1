@@ -84,8 +84,8 @@ macaddress,
 @{Label="DefaultIPGateway"; Expression={ $_.defaultipgateway}}, 
 dhcpenabled, 
 @{Label="DHCPserver"; Expression={ $_.dhcpserver}}, 
-@{Label="DNS Server"; Expression= { $_.DNSServerSearchOrder }} | 
-export-csv -path $localpath\"$env:computername"-nic.csv -Encoding UTF8 -NoTypeInformation $ErrorActionPreferences
+@{Label="DNSServer"; Expression= { $_.DNSServerSearchOrder }} | 
+export-csv -path $localpath\"$env:computername"-nic.csv -Encoding UTF8 -NoTypeInformation 
 	
 # DNSCache
 invoke-command -scriptblock {
