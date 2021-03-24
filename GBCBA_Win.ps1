@@ -30,10 +30,11 @@ Select-Object -Property LocalAddress, LocalPort, RemoteAddress, RemotePort, Stat
     @{Name='ServiceStartType';Expression={(Get-CimInstance -class win32_service | where-Object ProcessId -eq $_.OwningProcess).StartMode}},
     @{Name='Path';Expression={(Get-Process -Id $_.OwningProcess).Path}}, 
     @{Name='SHA1';Expression={(Get-FileHash (Get-Process -Id $_.OwningProcess).Path -Algorithm SHA1 | select-object -ExpandProperty Hash)}},
+    @{Name='MD5';Expression={(Get-FileHash (Get-Process -Id $_.OwningProcess).Path -Algorithm MD5 | select-object -ExpandProperty Hash)}},
     @{Name='CommandLine';Expression={$WP[[UInt32]$_.OwningProcess].CommandLine}}, 
     @{Name='Connected';Expression={(Get-Date -Uformat %s $_.CreationTime)}} |
     select Computername, AuditDate, UserName, PID, Process, ServiceName, Path, 
-     ServiceStartType, SHA1, CommandLine, Connected, State, LocalAddress, LocalPort, RemoteAddress, RemotePort |
+     ServiceStartType, SHA1, MD5, CommandLine, Connected, State, LocalAddress, LocalPort, RemoteAddress, RemotePort |
       where-object Process -notlike 'Idle' | 
     export-csv -path $localpath\"$env:computername"-activecomms.csv -Append -Encoding UTF8 -NoTypeInformation $ErrorActionPreference
 	
@@ -66,18 +67,19 @@ Select-Object -Property LocalAddress, LocalPort, RemoteAddress, RemotePort, Stat
       FileVersion = $FileVersionInfo.FileVersion
       ProductVersion = $FileVersionInfo.ProductVersion
       SHA1 =(Get-FileHash $binaryPath -Algorithm SHA1 | select-object -ExpandProperty Hash)
+      MD5 =(Get-FileHash $binaryPath -Algorithm MD5 | select-object -ExpandProperty Hash)
     }
   } |
   Select-Object @{Name='Computername';Expression={$env:COMPUTERNAME}}, 
     @{Name='AuditDate';Expression={Get-Date -Uformat %s }}, 
-    Name, BinaryPath, ProductName, FileDescription, CompanyName, FileVersion, ProductVersion, Sha1 | 
+    Name, BinaryPath, ProductName, FileDescription, CompanyName, FileVersion, ProductVersion, Sha1, MD5 | 
 export-csv -path $localpath\"$env:computername"-servicebinaries.csv -Append -Encoding UTF8 -NoTypeInformation $ErrorActionPreference
 
 # NICSettings
 Get-WmiObject -Class Win32_NetworkAdapterConfiguration | 
 Select-object @{Label="Computername"; Expression= { $_.__SERVER }}, 
 @{Name='AuditDate';Expression={ Get-Date -Uformat %s }}, 
-description, 
+description,
 macaddress, 
 @{Label="IPaddress"; Expression={ $_.ipaddress | Select -First 1}}, 
 @{Label="IPsubnet"; Expression={ $_.ipsubnet}}, 
