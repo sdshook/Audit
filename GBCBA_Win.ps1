@@ -1,5 +1,5 @@
 # Cyber Breach Assessment (CBA) - Copyright @2020 All Rights Reserved
-# Updated by Shane Shook version="20201208" 
+# Updated by Shane Shook version="20211123" 
 # Runas:  PowerShell.exe -ExecutionPolicy bypass -WindowStyle hidden -File (path to script) 
 
 # This script produces useful information to identify Hosts of Interest for examination after suspected breach.
@@ -36,7 +36,7 @@ Select-Object -Property LocalAddress, LocalPort, RemoteAddress, RemotePort, Stat
     select Computername, AuditDate, UserName, PID, Process, ServiceName, Path, 
      ServiceStartType, SHA1, MD5, CommandLine, Connected, State, LocalAddress, LocalPort, RemoteAddress, RemotePort |
       where-object Process -notlike 'Idle' | 
-    export-csv -path $localpath\"$env:computername"-activecomms.csv -Append -Encoding UTF8 -NoTypeInformation $ErrorActionPreference
+    export-csv -path $localpath\"$env:computername"-activecomms.csv -Append -Encoding UTF8 -NoTypeInformation -ErrorAction $ErrorActionPreference
 	
 # ServiceBinaries
   Get-Service | ForEach-Object {
@@ -73,7 +73,7 @@ Select-Object -Property LocalAddress, LocalPort, RemoteAddress, RemotePort, Stat
   Select-Object @{Name='Computername';Expression={$env:COMPUTERNAME}}, 
     @{Name='AuditDate';Expression={Get-Date -Uformat %s }}, 
     Name, BinaryPath, ProductName, FileDescription, CompanyName, FileVersion, ProductVersion, Sha1, MD5 | 
-export-csv -path $localpath\"$env:computername"-servicebinaries.csv -Append -Encoding UTF8 -NoTypeInformation $ErrorActionPreference
+export-csv -path $localpath\"$env:computername"-servicebinaries.csv -Append -Encoding UTF8 -NoTypeInformation -ErrorAction $ErrorActionPreference
 
 # NICSettings
 Get-WmiObject -Class Win32_NetworkAdapterConfiguration | 
@@ -87,7 +87,7 @@ macaddress,
 dhcpenabled, 
 @{Label="DHCPserver"; Expression={ $_.dhcpserver}}, 
 @{Label="DNSServer"; Expression= { $_.DNSServerSearchOrder }} | 
-export-csv -path $localpath\"$env:computername"-nic.csv -Encoding UTF8 -NoTypeInformation 
+export-csv -path $localpath\"$env:computername"-nic.csv -Encoding UTF8 -NoTypeInformation -ErrorAction $ErrorActionPreference
 	
 # DNSCache
 invoke-command -scriptblock {
@@ -97,7 +97,7 @@ select-object -Unique @{Name='Computername';Expression={ $env:COMPUTERNAME }},
 @{Name='dns';Expression={$_.ToString().Split(' ')[-1]}} | 
 where-object {$_.dns -like "*.*"}
 }| 
-export-csv -path $localpath\"$env:computername"-dnscache.csv -Encoding UTF8 -NoTypeInformation
+export-csv -path $localpath\"$env:computername"-dnscache.csv -Encoding UTF8 -NoTypeInformation -ErrorAction $ErrorActionPreference
 
 # OSInfo
 Get-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" | 
@@ -108,7 +108,7 @@ CSDVersion,
 CurrentVersion, 
 CurrentBuild, 
 BuildLabEx |
-export-csv -path $localpath\"$env:computername"-osinfo.csv -Encoding UTF8 -NoTypeInformation
+export-csv -path $localpath\"$env:computername"-osinfo.csv -Encoding UTF8 -NoTypeInformation -ErrorAction $ErrorActionPreference
 
 # Missing Windows Patches
 $Patches = @(
@@ -120,9 +120,9 @@ $update | select  @{Name='Computername';Expression={ $env:COMPUTERNAME }},
 @{Name='AuditDate';Expression={ Get-Date -Uformat %s   }},
 @{Name='Patch';Expression={ $Update.Title }}
 }
- $ErrorActionPreference )  
+ -ErrorAction $ErrorActionPreference )  
 $Patches | ConvertTo-CSV -NoTypeInformation |
-Out-File $localpath\"$env:computername"-missingpatches.csv -Encoding UTF8
+Out-File $localpath\"$env:computername"-missingpatches.csv -Encoding UTF8 
 
 # LOCALUsersGroups
 $adsi = [ADSI]"WinNT://$env:COMPUTERNAME"
@@ -138,7 +138,7 @@ $adsi.Children | where { $_.SchemaClassName -eq 'user' } | Foreach-Object {
                          if ($_.psbase.properties.item("userflags").value -band $ADS_UF_ACCOUNTDISABLE) {
                            $False } else { $True } }},
                       @{n='Groups';e={$groups -join ';'}}
-} | export-csv -path $localpath\"$env:computername"-localusergroups.csv -Encoding UTF8 -NoTypeInformation $ErrorActionPreference
+} | export-csv -path $localpath\"$env:computername"-localusergroups.csv -Encoding UTF8 -NoTypeInformation -ErrorAction $ErrorActionPreference
 
 # ProfileSIDs
 Get-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\*" |
@@ -146,7 +146,7 @@ select-object @{Name='Computername';Expression={ $env:COMPUTERNAME }},
 @{Name='AuditDate';Expression={ Get-Date -Uformat %s }}, 
 @{Name='UserSID';Expression={$_.PSChildName}},
 ProfileImagePath | 
-export-csv -path $localpath\"$env:computername"-profilesids.csv -Encoding UTF8 -NoTypeInformation $ErrorActionPreference 
+export-csv -path $localpath\"$env:computername"-profilesids.csv -Encoding UTF8 -NoTypeInformation -ErrorAction $ErrorActionPreference
 
 # SCHEDULEDTasks
 $sched = New-Object -Com "Schedule.Service"
@@ -181,7 +181,25 @@ Author,
 Description, 
 RunAs, 
 @{ Label = "Created"; Expression = { $_.Created | Get-Date -Uformat %s }} |
-export-csv -path $localpath\"$env:computername"-tasks.csv -Encoding UTF8 -NoTypeInformation
+export-csv -path $localpath\"$env:computername"-tasks.csv -Encoding UTF8 -NoTypeInformation -ErrorAction $ErrorActionPreference
+
+# AllFiles - note to select only files of type use -Include *.aspx, *.html, etc.
+$localdrives = ([System.IO.DriveInfo]::getdrives() | Where-Object {$_.DriveType -eq 'Fixed'} | Select-Object -ExpandProperty Name)
+foreach ($a in $localdrives) {Get-ChildItem -Path $a'\*' -force -include *.aspx, *.jsp, *.jar -Recurse -ErrorAction $ErrorActionPreference |
+select-object @{Name='Computername';Expression={ $env:COMPUTERNAME }},
+@{Name='AuditDate';Expression={ Get-Date -Uformat %s   }},
+Name,
+Length,
+DirectoryName,
+@{ Label = "CreationTime"; Expression = { $_.CreationTime | Get-Date -Uformat %s }},
+@{ Label = "LastWriteTime"; Expression = { $_.LastWriteTime | Get-Date -Uformat %s }},
+@{ Label = "ProductVersion"; Expression = { ("{0}.{1}.{2}.{3}" -f $_.VersionInfo.FileMajorPart, $_.VersionInfo.FileMinorPart, $_.VersionInfo.FileBuildPart, $_.VersionInfo.FilePrivatePart) }},
+@{ Label = "FileVersion"; Expression = { $_.VersionInfo.FileVersion }},
+@{ Label = "Description"; Expression = { $_.VersionInfo.FileDescription }},
+@{ Label = "SHA1"; Expression = { (Get-FileHash  -Algorithm SHA1 $_.FullName).Hash }},
+@{ Label = "MD5"; Expression = { (Get-FileHash  -Algorithm MD5 $_.FullName).Hash }} |
+ConvertTo-Csv -NoTypeInformation |
+Out-File -Append $localpath\"$env:computername"-allfiles.csv -Encoding UTF8 }
 
 ## CLEANUP
 # ZIP Results
