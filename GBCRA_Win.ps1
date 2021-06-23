@@ -1,6 +1,6 @@
 # Cyber Risk Assessment (CRA) FULL - Copyright @2017 All Rights Reserved
 # Updated by Shane Shook 
-$version="20200429"
+$version="20210623"
 # Runas:  PowerShell.exe -ExecutionPolicy bypass -WindowStyle hidden -File (path to script) 
 
 Clear-Host
@@ -677,7 +677,7 @@ select @{Name='Computername';Expression={ $env:COMPUTERNAME }},
 @{Name='ProcessName';Expression={ $_.processname }} | 
     where-object {$_.LogonType -like '3' -or $_.LogonType -like '4' -or $_.LogonType -like '8' -or $_.LogonType -like '10'} | 
     where-object {$_.IpAddress -notlike '-'} |
-	where-object {$_.processname -notlike '-'} 
+	where-object {$_.processname -notlike '-'} |
 export-csv -path $localpath\"$env:computername"-remotelogons.csv -Encoding UTF8 -NoTypeInformation
 
 ## SERVICES
