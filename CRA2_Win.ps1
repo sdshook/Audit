@@ -1,6 +1,6 @@
 # Cyber Risk Assessment (CRA) FULL - Copyright @2017 All Rights Reserved
 # Updated by Shane Shook 
-$version="20210605"
+$version="20210623"
 # Runas:  PowerShell.exe -ExecutionPolicy bypass -WindowStyle hidden -File (path to script) 
 
 Clear-Host
