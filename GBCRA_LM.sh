@@ -2,8 +2,8 @@
 
 #!/bin/ksh
 # Cyber Risk Assessment (CRA) MAC/Linux Version - Copyright @2018 All Rights Reserved
-# Updated by Brandon M. Pimentel
-# Version 20200408
+# Updated by Brandon M. Pimentel & Shane Shook
+# Version 20210708
 # usage: sudo sh (Path to Script)
 
 #variables for the script usage
@@ -257,6 +257,41 @@ else
 	done >> $FILEPREFIX'netstat.csv'
 fi
 #end of netstat
+
+#ss
+if [ $ISMAC -eq 1 ]; then
+	if [ $DEBUG -eq 1 ]; then echo "Creating SS Headers"; fi
+	echo "Host,Epoch,Protocol,LocalAddress,RemoteAddress,State,PID" > $FILEPREFIX'ss.csv'
+	##tcp
+	if [ $DEBUG -eq 1 ]; then echo "Getting the TCP"; fi
+	ss -aneptH | while IFS= read -r line; do
+                printf "$PREFIX","$line\n" | awk '{print "tcp",$4,$5,$1,$6}' | sed "s/ /,/g"; 
+        done >> $FILEPREFIX'ss.csv'
+
+	##udp
+	if [ $DEBUG -eq 1 ]; then echo "Getting the UDP"; fi
+
+	ss -anepuH | while IFS= read -r line; do
+	  	printf "$PREFIX","$line\n" | awk '{print "udp",$4,$5,$1,$6}' | sed "s/ /,/g";
+	done >> $FILEPREFIX'ss.csv'
+
+	if [ $DEBUG -eq 1 ]; then echo "End of UDP"; fi
+	if [ $DEBUG -eq 1 ]; then echo "End of SS Section"; fi
+
+else
+	if [ $DEBUG -eq 1 ]; then echo "Creating SS Headers"; fi
+	echo "Host,Epoch,Protocol,LocalAddress,RemoteAddress,State,PID" > $FILEPREFIX'ss.csv'
+	##tcp
+	if [ $DEBUG -eq 1 ]; then echo "Getting the TCP"; fi
+	count=0
+	ss -aneptH | while IFS= read -r line; do 
+		if [ $count -gt 1 ]; then
+			printf "$PREFIX","$line","\n" | awk '{print "tcp",$4,$5,$1,$6}' | sed "s/ /,/g"; 
+		fi 
+		count=$((1 + $count))
+	done >> $FILEPREFIX'ss.csv'
+fi
+#end of ss
 
 #Processes
 echo "Host,Epoch,User,PPID,PID,Comm,Args" > $FILEPREFIX"processes.csv"
