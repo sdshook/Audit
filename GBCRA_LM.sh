@@ -36,7 +36,7 @@ if [ $ISMAC -eq 1 ]; then
 	servicename=$(launchctl list | awk 'NR>1 {print $3}')
 	for s in $servicename
 	do
-    	enable_transactions="none"
+    	    enable_transactions="none"
 	    limit_load="none"
 	    time_out=-100
 	    program="none"
