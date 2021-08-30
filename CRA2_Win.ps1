@@ -385,7 +385,7 @@ export-csv -path $localpath\"$env:computername"-usbsn.csv -Encoding UTF8 -NoType
 # 16) SELECT Binary Files
 $ErrorActionPreference = 'SilentlyContinue'
 $localdrives = ([System.IO.DriveInfo]::getdrives() | Where-Object {$_.DriveType -eq 'Fixed'} | Select-Object -ExpandProperty Name)
-foreach ($a in $localdrives) {Get-ChildItem -Path $a'\*' -force -include *.dll, *.exe, *.sys -Recurse -ErrorAction "SilentlyContinue" |
+foreach ($a in $localdrives) {Get-ChildItem -Path $a'\*' -force -include *.dll, *.exe, *.sys, *.asp, *.aspx, *.jsp, *.jar -Recurse -ErrorAction "SilentlyContinue" |
 where-object {$_.DirectoryName -notlike '*common*'} |
 where-object {$_.DirectoryName -notlike '*\IME\*'} |
 where-object {$_.DirectoryName -notlike '*onedrive*'} |
@@ -412,7 +412,9 @@ DirectoryName,
 @{ Label = "LastWriteTime"; Expression = { $_.LastWriteTime | Get-Date -Uformat %s }},
 @{ Label = "ProductVersion"; Expression = { ("{0}.{1}.{2}.{3}" -f $_.VersionInfo.FileMajorPart, $_.VersionInfo.FileMinorPart, $_.VersionInfo.FileBuildPart, $_.VersionInfo.FilePrivatePart) }},
 @{ Label = "FileVersion"; Expression = { $_.VersionInfo.FileVersion }},
-@{ Label = "Description"; Expression = { $_.VersionInfo.FileDescription }} |
+@{ Label = "Description"; Expression = { $_.VersionInfo.FileDescription }}, 
+@{ Label = "SHA1"; Expression = { (Get-FileHash  -Algorithm SHA1 $_.FullName).Hash }},
+@{ Label = "MD5"; Expression = { (Get-FileHash  -Algorithm MD5 $_.FullName).Hash }} |
 ConvertTo-Csv -NoTypeInformation |
 Out-File -Append $localpath\"$env:computername"-allfiles.csv -Encoding UTF8 }
 
