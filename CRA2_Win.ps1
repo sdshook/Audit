@@ -1,6 +1,6 @@
 # Cyber Risk Assessment (CRA) FULL - Copyright @2017 All Rights Reserved
 # Updated by Shane Shook 
-$version="20210623"
+$version="20210830"
 # Runas:  PowerShell.exe -ExecutionPolicy bypass -WindowStyle hidden -File (path to script) 
 
 Clear-Host
@@ -388,6 +388,8 @@ $localdrives = ([System.IO.DriveInfo]::getdrives() | Where-Object {$_.DriveType 
 foreach ($a in $localdrives) {Get-ChildItem -Path $a'\*' -force -include *.dll, *.exe, *.sys -Recurse -ErrorAction "SilentlyContinue" |
 where-object {$_.DirectoryName -notlike '*common*'} |
 where-object {$_.DirectoryName -notlike '*\IME\*'} |
+where-object {$_.DirectoryName -notlike '*onedrive*'} |
+where-object {$_.DirectoryName -notlike '*csc*'} |
 where-object {$_.DirectoryName -notlike '*.old\*'} |
 where-object {$_.DirectoryName -notlike '*recycle*'} |
 where-object {$_.DirectoryName -notlike '*migration*'} |
