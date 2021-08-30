@@ -1,5 +1,5 @@
 # Cyber Breach Assessment (CBA) - Copyright @2020 All Rights Reserved
-# Updated by Shane Shook version="20211123" 
+# Updated by Shane Shook version="20210830" 
 # Runas:  PowerShell.exe -ExecutionPolicy bypass -WindowStyle hidden -File (path to script) 
 
 # This script produces useful information to identify Hosts of Interest for examination after suspected breach.
@@ -186,6 +186,23 @@ export-csv -path $localpath\"$env:computername"-tasks.csv -Encoding UTF8 -NoType
 # AllFiles - note to select only files of type use -Include *.aspx, *.html, etc.
 $localdrives = ([System.IO.DriveInfo]::getdrives() | Where-Object {$_.DriveType -eq 'Fixed'} | Select-Object -ExpandProperty Name)
 foreach ($a in $localdrives) {Get-ChildItem -Path $a'\*' -force -include *.aspx, *.jsp, *.jar -Recurse -ErrorAction $ErrorActionPreference |
+where-object {$_.DirectoryName -notlike '*common*'} |
+where-object {$_.DirectoryName -notlike '*\IME\*'} |
+where-object {$_.DirectoryName -notlike '*onedrive*'} |
+where-object {$_.DirectoryName -notlike '*csc*'} |
+where-object {$_.DirectoryName -notlike '*.old\*'} |
+where-object {$_.DirectoryName -notlike '*recycle*'} |
+where-object {$_.DirectoryName -notlike '*migration*'} |
+where-object {$_.DirectoryName -notlike '*install*'} |
+where-object {$_.DirectoryName -notlike '*setup*'} |
+where-object {$_.DirectoryName -notlike '*migwiz*'} |
+where-object {$_.DirectoryName -notlike '*driverstore*'} |
+where-object {$_.DirectoryName -notlike '*sxs*'} |
+where-object {$_.DirectoryName -notlike '*cache*'} |
+where-object {$_.DirectoryName -notlike '*kb*'} |
+where-object {$_.DirectoryName -notlike '*update*'} |
+where-object {$_.DirectoryName -notlike '*assembly*'} |
+where-object {$_.DirectoryName -notlike '*.NET*'} |
 select-object @{Name='Computername';Expression={ $env:COMPUTERNAME }},
 @{Name='AuditDate';Expression={ Get-Date -Uformat %s   }},
 Name,
