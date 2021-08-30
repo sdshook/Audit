@@ -3,7 +3,7 @@
 #!/bin/ksh
 # Cyber Risk Assessment (CRA) MAC/Linux Version - Copyright @2018 All Rights Reserved
 # Updated by Brandon M. Pimentel & Shane Shook
-# Version 20210708
+# Version 20210830
 # usage: sudo sh (Path to Script)
 
 #variables for the script usage
@@ -31,7 +31,7 @@ fi
 #mac launch control
 echo "ISMAC: "$ISMAC
 if [ $ISMAC -eq 1 ]; then
-	echo "Host,Epoch,Service,EnableTransactions,LimitLoadType,Program,Timeout,OnDemand,MachServices,ProgramArguments" >> $FILEPREFIX"launchctl.csv"
+	echo "Computername,AuditDate,Service,EnableTransactions,LimitLoadType,Program,Timeout,OnDemand,MachServices,ProgramArguments" >> $FILEPREFIX"launchctl.csv"
 
 	servicename=$(launchctl list | awk 'NR>1 {print $3}')
 	for s in $servicename
@@ -84,7 +84,7 @@ if [ $ISMAC -eq 1 ]; then
 	done
 fi 
 
-	echo "Host,Epoch,Command\n" > $FILEPREFIX"commandshistory.csv"
+	echo "Computername,AuditDate,Command\n" > $FILEPREFIX"commandshistory.csv"
 
 	find /Users | grep .*sh_history | xargs grep -E "install|sudo|sh|su|ifconfig|tcpdump|/etc/bin|/etc/sbin|/usr/bin|/usr/sbin" | sed "s/:/,/g" | while IFS= read -r line; do
         echo "$PREFIX","$line" >> $FILEPREFIX"commandshistory.csv"; done
@@ -100,18 +100,18 @@ fi
 
 if [ $ISMAC -eq 1 ]; then
 	#DNS
-	echo "Host,Epoch,Type,Locations" > $FILEPREFIX"dnsresolvers.csv"
+	echo "Computername,AuditDate,Type,Locations" > $FILEPREFIX"dnsresolvers.csv"
 	if [ $DEBUG -eq 1 ]; then echo "Getting the DNS data"; fi
 	cat /etc/resolv.conf | while IFS= read -r line; do printf "$line\n"; done | awk -v host=$(hostname) -v date=$(date +%s) '!/^[ \t]*#/{print host,date,$1,$2}' | sed "s/ /,/g" >> $FILEPREFIX"dnsresolvers.csv"
 else
 	if [ $DEBUG -eq 1 ]; then echo "Getting the DNS data"; fi
-	echo "Hostname,Epoch,DNSType,Address" > $FILEPREFIX"dnsresolvers.csv"
+	echo "Computername,AuditDate,DNSType,Address" > $FILEPREFIX"dnsresolvers.csv"
 	cat /etc/resolv.conf | while IFS= read -r line; do printf "$PREFIX","$line","\n"; done | awk 'NR>1{print $1,$2}' | sed "s/ /,/g" >> $FILEPREFIX"dnsresolvers.csv"
 fi
 
 #IPConfig Start
 if [ $ISMAC -eq 1 ]; then
-	echo "Hostname,Epoch,Interface,IPv4,IPv6,Network Mask" > $FILEPREFIX"IPConfig.csv"
+	echo "Computername,AuditDate,Interface,IPv4,IPv6,Network Mask" > $FILEPREFIX"IPConfig.csv"
 
 	interface=""
 	ipv4=""
@@ -160,7 +160,7 @@ else
 	line_number=1
 	interface_name=""; mac=""; ipv4=""; ipv6=""
 
-	echo "Hostname,Epoch,Interface,Link,Address" > $FILEPREFIX"IPConfig.csv"
+	echo "Computername,AuditDate,Interface,Link,Address" > $FILEPREFIX"IPConfig.csv"
 	ip -o -a addr | awk '{sub (/\/.*$/, _, $4); print $2,$3,$4}' | sed "s/ /,/g" | while IFS= read -r line;
 	do
 	 echo "$PREFIX", "$line" >> $FILEPREFIX"IPConfig.csv"
@@ -174,7 +174,7 @@ fi
 #IPConfig Done
 
 #Logon Events
-echo "Host,Epoch,User,LogonType,Date,Time,Duration" > $FILEPREFIX"LogonEvents.csv";
+echo "Computername,AuditDate,User,LogonType,Date,Time,Duration" > $FILEPREFIX"LogonEvents.csv";
 if [$ISMAC -eq 1 ]; then
   last |  while read line; do
 
@@ -208,7 +208,7 @@ else
 fi
 
 if [ $ISMAC -eq 2 ]; then
-	echo "Host,Epoch,Date,User,HomeDir,Method,Command\n"> $FILEPREFIX'authlog.csv'
+	echo "Computername,AuditDate,Date,User,HomeDir,Method,Command\n"> $FILEPREFIX'authlog.csv'
 	cat /var/log/auth.log | grep "TTY=pts" |while IFS= read -r line; do 
           printf "$PREFIX","$line","\n" | awk '{print $1"-"$2"-"$3,$12,$10,$8,$14}' | sed "s|/bin/su,|/bin/su|g" | sed "s/ /,/g";
         done >> $FILEPREFIX"authlog.csv"; 
@@ -220,13 +220,13 @@ fi
 #End Logon Events
 
 #OS Info
-echo "Host,Epoch,KernelType,Version,ReleaseInformation" > $FILEPREFIX"os_data.csv"
+echo "Computername,AuditDate,KernelType,Version,ReleaseInformation" > $FILEPREFIX"os_data.csv"
 uname -a | awk  -v pre=$PREFIX '{print pre,$1,$3,$14}' | sed "s/ /,/g" >> $FILEPREFIX"os_data.csv"
 
 #netstat
 if [ $ISMAC -eq 1 ]; then
 	if [ $DEBUG -eq 1 ]; then echo "Creating Netstat Headers"; fi
-	echo "Host,Epoch,Protocol,LocalAddress,RemoteAddress,State,PID" > $FILEPREFIX'netstat.csv'
+	echo "Computername,AuditDate,Protocol,LocalAddress,RemoteAddress,State,PID" > $FILEPREFIX'netstat.csv'
 	##tcp
 	if [ $DEBUG -eq 1 ]; then echo "Getting the TCP"; fi
 	netstat -vanp tcp | while IFS= read -r line; do
@@ -245,7 +245,7 @@ if [ $ISMAC -eq 1 ]; then
 
 else
 	if [ $DEBUG -eq 1 ]; then echo "Creating Netstat Headers"; fi
-	echo "Host,Epoch,Protocol,LocalAddress,LocalPort,RemoteAddress,RemotePort,State,PID" > $FILEPREFIX'netstat.csv'
+	echo "Computername,AuditDate,Protocol,LocalAddress,LocalPort,RemoteAddress,RemotePort,State,PID" > $FILEPREFIX'netstat.csv'
 	##tcp
 	if [ $DEBUG -eq 1 ]; then echo "Getting the TCP"; fi
 	count=0
@@ -261,7 +261,7 @@ fi
 #ss
 if [ $ISMAC -eq 1 ]; then
 	if [ $DEBUG -eq 1 ]; then echo "Creating SS Headers"; fi
-	echo "Host,Epoch,Protocol,LocalAddress,RemoteAddress,State,PID" > $FILEPREFIX'ss.csv'
+	echo "Computername,AuditDate,Protocol,LocalAddress,RemoteAddress,State,PID" > $FILEPREFIX'ss.csv'
 	##tcp
 	if [ $DEBUG -eq 1 ]; then echo "Getting the TCP"; fi
 	ss -aneptH | while IFS= read -r line; do
@@ -280,7 +280,7 @@ if [ $ISMAC -eq 1 ]; then
 
 else
 	if [ $DEBUG -eq 1 ]; then echo "Creating SS Headers"; fi
-	echo "Host,Epoch,Protocol,LocalAddress,RemoteAddress,State,PID" > $FILEPREFIX'ss.csv'
+	echo "Computername,AuditDate,Protocol,LocalAddress,RemoteAddress,State,PID" > $FILEPREFIX'ss.csv'
 	##tcp
 	if [ $DEBUG -eq 1 ]; then echo "Getting the TCP"; fi
 	count=0
@@ -294,7 +294,7 @@ fi
 #end of ss
 
 #Processes
-echo "Host,Epoch,User,PPID,PID,Comm,Args" > $FILEPREFIX"processes.csv"
+echo "Computername,AuditDate,User,PPID,PID,Comm,Args" > $FILEPREFIX"processes.csv"
 count=0
 sudo ps -exo "user,ppid,pid,comm,args" | while read line; do
   if [ $count -eq 0 ]; then
@@ -309,7 +309,7 @@ done;
 
 #linux services
 if [ $ISMAC -eq 2 ]; then
-	echo "Host,Epoch,Service,ServiceStatus,ServiceLoaded,ServiceActive" > $FILEPREFIX"services.csv"
+	echo "Computername,AuditDate,Service,ServiceStatus,ServiceLoaded,ServiceActive" > $FILEPREFIX"services.csv"
 
 	systemctl -all list-unit-files | while read line
 	do  # start of outer loop
@@ -344,22 +344,22 @@ fi
 #linux /etc/init.d
 if [ $ISMAC -eq 2 ]; then
 
-	echo "Host,Epoch,User,DateModified,Size,Service\n"> $FILEPREFIX'StartupService.csv'
+	echo "Computername,AuditDate,User,DateModified,Size,Service\n"> $FILEPREFIX'StartupService.csv'
 		ls -la /etc/init.d/ | grep "-" | while IFS= read -r line; do echo "$PREFIX","$line" | awk -v prefix=$PREFIX '{print prefix,$3,$6"-"$7"-"$8,$5,$9}' |sed "s/ /,/g"; done >> $FILEPREFIX"StartupService.csv"; 
 fi
 #end of linux /etc/init.d
 
 #lsof 
-echo "Host,Epoch,Command,PID,User,FileDescriptor,FileType,Size,Node" > $FILEPREFIX"tasklist.csv"
+echo "Computername,AuditDate,Command,PID,User,FileDescriptor,FileType,Size,Node" > $FILEPREFIX"tasklist.csv"
 lsof | awk -v pre=$PREFIX 'NR>1&&!_[$2]++{print pre","$1","$2","$3","$4","$5","$7","$8}'  | sed "s/ /+/g" >> $FILEPREFIX"tasklist.csv"
 #end of lsof
 
 #Etc Password
 if [ $ISMAC -eq 1 ]; then 
-	echo "Host,Epoch,User,UID,GID,HomeDir,Shell" > $FILEPREFIX"etc_password.csv"
+	echo "Computername,AuditDate,User,UID,GID,HomeDir,Shell" > $FILEPREFIX"etc_password.csv"
 	cat /etc/passwd | sed "s/ /#/g" | sed "s/:/ /g" | awk -v prefix=$PREFIX 'NR>10{print prefix","$1","$3","$4","$6","$7}' >> $FILEPREFIX"etc_password.csv"
 else
-	echo "Host,Epoch,User,UID,GID,HomeDir,Shell" > $FILEPREFIX"etc_password.csv"
+	echo "Computername,AuditDate,User,UID,GID,HomeDir,Shell" > $FILEPREFIX"etc_password.csv"
 	cat /etc/passwd | sed "s/ /#/g" | sed "s/:/ /g" | awk -v prefix=$PREFIX '{print prefix","$1","$3","$4","$6","$7}' >> $FILEPREFIX"etc_password.csv"
 fi
 #end of etc passwrd
@@ -367,7 +367,7 @@ fi
 
 #user paths
 if [ $ISMAC -eq 1 ]; then
-	echo "Host,Epoch,User,DateCreated,HomeDir" > $FILEPREFIX"UserHomePaths.csv"
+	echo "Computername,AuditDate,User,DateCreated,HomeDir" > $FILEPREFIX"UserHomePaths.csv"
 	ls -l /Users | awk '{print $9}'  | while read user;
 	do
   	if [ -n "$user" ]; then
@@ -376,7 +376,7 @@ if [ $ISMAC -eq 1 ]; then
   	fi
 	done
 else
-	echo "Host,Epoch,User,DateModified,HomeDir" > $FILEPREFIX"UserHomePaths.csv"
+	echo "Computername,AuditDate,User,DateModified,HomeDir" > $FILEPREFIX"UserHomePaths.csv"
 	ls -l /home | awk '{print $9}'  | while read user;
 	do
     	#echo $user
@@ -392,7 +392,7 @@ fi
 
 #cron data
 if [ $ISMAC -eq 1 ]; then
-	echo "Host,Epoch,Min,Hour,Day,Month,DayOfWeek,Command" > $FILEPREFIX"UserCron.csv"
+	echo "Computername,AuditDate,Min,Hour,Day,Month,DayOfWeek,Command" > $FILEPREFIX"UserCron.csv"
 	for user in $(cut -d: -f1 /etc/passwd)
 	do
 		crondata=$(sudo crontab -u $user -l) 
@@ -412,7 +412,7 @@ if [ $ISMAC -eq 1 ]; then
 		fi
 	done 
 
-	echo "Host,Epoch,DateModified,Command,Time" > $FILEPREFIX"Cron.csv"
+	echo "Computername,AuditDate,DateModified,Command,Time" > $FILEPREFIX"Cron.csv"
 	ls -l /etc/cron.daily | sed -n '1!p' | awk '{print $6,$7,$8",",$9}' | sed "s/,\s/,/g" | sed "s/$/,Daily/g" | sed "s/^/$(hostname),$(date +%s),/g" >> $FILEPREFIX"Cron.csv"
 	ls -l /etc/cron.hourly | sed -n '1!p' | awk '{print $6,$7,$8",",$9}' | sed "s/,\s/,/g" | sed "s/$/,Hourly/g" | sed "s/^/$(hostname),$(date +%s),/g" >> $FILEPREFIX"Cron.csv"
 	ls -l /etc/cron.monthly | sed -n '1!p' | awk '{print $6,$7,$8",",$9}' | sed "s/,\s/,/g" | sed "s/$/,Monthly/g" | sed "s/^/$(hostname),$(date +%s),/g" >> $FILEPREFIX"Cron.csv"
@@ -422,8 +422,8 @@ fi
 # UserAllGroups & MainUserGroups
 if [ $ISMAC -eq 1 ]; then
 
-	echo "Host,Epoch,User,UID,GID,GName" >  $FILEPREFIX"MainUserGroups.csv"
-	echo "Host,Epoch,User,UID,GID,GName" >  $FILEPREFIX"UserAllGroups.csv"
+	echo "Computername,AuditDate,User,UID,GID,GName" >  $FILEPREFIX"MainUserGroups.csv"
+	echo "Computername,AuditDate,User,UID,GID,GName" >  $FILEPREFIX"UserAllGroups.csv"
 
 	dscl . list /users | while read line; do
 		#Main users and groups section
