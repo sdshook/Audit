@@ -84,7 +84,7 @@ if [ $ISMAC -eq 1 ]; then
 	done
 fi 
 
-	echo "Computername,AuditDate,Command\n" > $FILEPREFIX"commandshistory.csv"
+	echo "Computername,AuditDate,Command" > $FILEPREFIX"commandshistory.csv"
 
 	find /Users | grep .*sh_history | xargs grep -E "install|sudo|sh|su|ifconfig|tcpdump|/etc/bin|/etc/sbin|/usr/bin|/usr/sbin" | sed "s/:/,/g" | while IFS= read -r line; do
         echo "$PREFIX","$line" >> $FILEPREFIX"commandshistory.csv"; done
@@ -102,7 +102,7 @@ if [ $ISMAC -eq 1 ]; then
 	#DNS
 	echo "Computername,AuditDate,Type,Locations" > $FILEPREFIX"dnsresolvers.csv"
 	if [ $DEBUG -eq 1 ]; then echo "Getting the DNS data"; fi
-	cat /etc/resolv.conf | while IFS= read -r line; do printf "$line\n"; done | awk -v host=$(hostname) -v date=$(date +%s) '!/^[ \t]*#/{print host,date,$1,$2}' | sed "s/ /,/g" >> $FILEPREFIX"dnsresolvers.csv"
+	cat /etc/resolv.conf | while IFS= read -r line; do printf "$line","\n"; done | awk -v host=$(hostname) -v date=$(date +%s) '!/^[ \t]*#/{print host,date,$1,$2}' | sed "s/ /,/g" >> $FILEPREFIX"dnsresolvers.csv"
 else
 	if [ $DEBUG -eq 1 ]; then echo "Getting the DNS data"; fi
 	echo "Computername,AuditDate,DNSType,Address" > $FILEPREFIX"dnsresolvers.csv"
@@ -208,7 +208,7 @@ else
 fi
 
 if [ $ISMAC -eq 2 ]; then
-	echo "Computername,AuditDate,Date,User,HomeDir,Method,Command\n"> $FILEPREFIX'authlog.csv'
+	echo "Computername,AuditDate,Date,User,HomeDir,Method,Command"> $FILEPREFIX'authlog.csv'
 	cat /var/log/auth.log | grep "TTY=pts" |while IFS= read -r line; do 
           printf "$PREFIX","$line","\n" | awk '{print $1"-"$2"-"$3,$12,$10,$8,$14}' | sed "s|/bin/su,|/bin/su|g" | sed "s/ /,/g";
         done >> $FILEPREFIX"authlog.csv"; 
@@ -230,14 +230,14 @@ if [ $ISMAC -eq 1 ]; then
 	##tcp
 	if [ $DEBUG -eq 1 ]; then echo "Getting the TCP"; fi
 	netstat -vanp tcp | while IFS= read -r line; do
-                printf "$PREFIX","$line\n" | awk '{print $1,$4,$5,$6,$9}' | sed "s/ /,/g"; 
+                printf "$PREFIX","$line","\n" | awk '{print $1,$4,$5,$6,$9}' | sed "s/ /,/g"; 
         done >> $FILEPREFIX'netstat.csv'
 
 	##udp
 	if [ $DEBUG -eq 1 ]; then echo "Getting the UDP"; fi
 
 	netstat -vanp udp | while IFS= read -r line; do
-	  	printf "$PREFIX","$line\n" | awk '{print $1,$4,$5,"",$8}' | sed "s/ /,/g";
+	  	printf "$PREFIX","$line","\n" | awk '{print $1,$4,$5,"",$8}' | sed "s/ /,/g";
 	done >> $FILEPREFIX'netstat.csv'
 
 	if [ $DEBUG -eq 1 ]; then echo "End of UDP"; fi
@@ -261,18 +261,18 @@ fi
 #ss
 if [ $ISMAC -eq 1 ]; then
 	if [ $DEBUG -eq 1 ]; then echo "Creating SS Headers"; fi
-	echo "Computername,AuditDate,Protocol,LocalAddress,RemoteAddress,State,PID" > $FILEPREFIX'ss.csv'
+	echo "Computername,AuditDate,State,Protocol,LocalAddress,RemoteAddress,PID" > $FILEPREFIX'ss.csv'
 	##tcp
 	if [ $DEBUG -eq 1 ]; then echo "Getting the TCP"; fi
 	ss -aneptH | while IFS= read -r line; do
-                printf "$PREFIX","$line\n" | awk '{print "tcp",$4,$5,$1,$6}' | sed "s/ /,/g"; 
+                printf "$PREFIX","$line","\n" | awk '{print $1,"tcp",$4,$5,$6}' | sed "s/ /,/g"; 
         done >> $FILEPREFIX'ss.csv'
 
 	##udp
 	if [ $DEBUG -eq 1 ]; then echo "Getting the UDP"; fi
 
 	ss -anepuH | while IFS= read -r line; do
-	  	printf "$PREFIX","$line\n" | awk '{print "udp",$4,$5,$1,$6}' | sed "s/ /,/g";
+	  	printf "$PREFIX","$line","\n" | awk '{print $1,"udp",$4,$5,$6}' | sed "s/ /,/g";
 	done >> $FILEPREFIX'ss.csv'
 
 	if [ $DEBUG -eq 1 ]; then echo "End of UDP"; fi
@@ -280,13 +280,13 @@ if [ $ISMAC -eq 1 ]; then
 
 else
 	if [ $DEBUG -eq 1 ]; then echo "Creating SS Headers"; fi
-	echo "Computername,AuditDate,Protocol,LocalAddress,RemoteAddress,State,PID" > $FILEPREFIX'ss.csv'
+	echo "Computername,AuditDate,State,Protocol,LocalAddress,RemoteAddress,PID" > $FILEPREFIX'ss.csv'
 	##tcp
 	if [ $DEBUG -eq 1 ]; then echo "Getting the TCP"; fi
 	count=0
 	ss -aneptH | while IFS= read -r line; do 
 		if [ $count -gt 1 ]; then
-			printf "$PREFIX","$line","\n" | awk '{print "tcp",$4,$5,$1,$6}' | sed "s/ /,/g"; 
+			printf "$PREFIX","$line","\n" | awk '{print $1,"tcp",$4,$5,$6}' | sed "s/ /,/g"; 
 		fi 
 		count=$((1 + $count))
 	done >> $FILEPREFIX'ss.csv'
@@ -344,7 +344,7 @@ fi
 #linux /etc/init.d
 if [ $ISMAC -eq 2 ]; then
 
-	echo "Computername,AuditDate,User,DateModified,Size,Service\n"> $FILEPREFIX'StartupService.csv'
+	echo "Computername,AuditDate,User,DateModified,Size,Service"> $FILEPREFIX'StartupService.csv'
 		ls -la /etc/init.d/ | grep "-" | while IFS= read -r line; do echo "$PREFIX","$line" | awk -v prefix=$PREFIX '{print prefix,$3,$6"-"$7"-"$8,$5,$9}' |sed "s/ /,/g"; done >> $FILEPREFIX"StartupService.csv"; 
 fi
 #end of linux /etc/init.d
