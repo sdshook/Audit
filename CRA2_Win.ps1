@@ -385,7 +385,7 @@ export-csv -path $localpath\"$env:computername"-usbsn.csv -Encoding UTF8 -NoType
 # 16) SELECT Binary Files
 $ErrorActionPreference = 'SilentlyContinue'
 $localdrives = ([System.IO.DriveInfo]::getdrives() | Where-Object {$_.DriveType -eq 'Fixed'} | Select-Object -ExpandProperty Name)
-foreach ($a in $localdrives) {Get-ChildItem -Path $a'\*' -force -include *.dll, *.exe, *.sys, *.asp, *.aspx, *.jsp, *.jar -Recurse -ErrorAction "SilentlyContinue" |
+foreach ($a in $localdrives) {Get-ChildItem -Path $a'\*' -force -include *.dll, *.exe, *.sys, *.asp, *.aspx, *.jsp, *.jar, *.iso -Recurse -ErrorAction "SilentlyContinue" |
 where-object {$_.DirectoryName -notlike '*common*'} |
 where-object {$_.DirectoryName -notlike '*\IME\*'} |
 where-object {$_.DirectoryName -notlike '*onedrive*'} |
