@@ -2,16 +2,6 @@
 # Created by Shane Shook (c)2024
 # Note: adjust username and days as required
 
-# Define the user
-$username = "username@domain.com"
-
-# Define the number of days for the date range
-$days = 30
-
-# Calculate start and end dates
-$startDate = (Get-Date).AddDays(-$days)
-$endDate = Get-Date
-
 # Function to perform an NSLookup for an IP address
 function Get-HostnameFromIP {
     param (
@@ -56,6 +46,18 @@ Connect-AzureAD
 
 # Get Azure AD tenant identifier
 $azureADTenant = (Get-AzureADTenantDetail).ObjectId
+
+###### Edit this section #####
+# Define the user
+$username = "username@domain.com"
+
+# Define the number of days for the date range
+$days = 30
+
+# Calculate start and end dates
+$startDate = (Get-Date).AddDays(-$days)
+$endDate = Get-Date
+###### Edit this section #####
 
 # Get user activities from Office 365
 $userActivities = Search-UnifiedAuditLog -UserIds $username -StartDate $startDate -EndDate $endDate |
