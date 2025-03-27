@@ -1,6 +1,10 @@
 # Google GSuite User Activity Report
 # Updated by Shane Shook (c) 2025
 # Note: requires ipstack key for geolocation; provide days, user_email, and ipstack keys in script
+# RunAs follows (after updating script)
+# python gsuite_audit.py \
+#  --service_account_file path/to/credentials.json \
+#  --delegated_admin admin@yourdomain.com \
 
 import datetime
 import socket
@@ -33,7 +37,7 @@ MAX_RETRIES = 5
 RETRY_WAIT_SECONDS = 10
 
 # Optional Email Config (set to None to disable)
-EMAIL_REPORT = False
+EMAIL_REPORT = False  # Change to True if you want the report sent to a recipient, then update the following
 EMAIL_FROM = 'sender@domain.com'
 EMAIL_TO = 'recipient@domain.com'
 SMTP_SERVER = 'smtp.domain.com'
