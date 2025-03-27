@@ -18,4 +18,6 @@ Various security auditing tools
 
 * CBA = Cyber Breach Assessment script to automate collection of security posture information for incident triage
 
+  * CBT - Cyber Breach Triage script to quickly collect active communicating processes for incident triage
+
 Kudos to Brandon Pimentel for his help also.
