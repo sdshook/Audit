@@ -7,19 +7,20 @@
 $logFile = ".\AuditLogSearchLog.txt"
 $outputFile = ".\O365_App_Permissions_Changes.csv"
 
-# Specify a username, multiple usernames (comma-separated), or "ALL" for all users
-$username = "<user@domain.com>"  # Example: "admin@domain.com" or "user1@domain.com, user2@domain.com"
+# Specify usernames or app IDs (comma-separated), or "ALL" for all entries
+# Example: "admin@domain.com", "user1@domain.com, user2@domain.com", or app IDs like "00000000-0000-0000-0000-000000000000"
+$identityFilter = "<user@domain.com>"
 [DateTime]$start = [DateTime]::UtcNow.AddDays(-360)
 [DateTime]$end = [DateTime]::UtcNow
 $record = "AzureActiveDirectory"
 $resultSize = 5000
 $intervalMinutes = 10080
 
-# Handle user input
-if ($username -eq "ALL") {
+# Handle input
+if ($identityFilter -eq "ALL") {
     $userFilter = $null  # No filtering; retrieves logs for all users
 } else {
-    $userFilter = $username -split "," | ForEach-Object { $_.Trim() }
+    $userFilter = $identityFilter -split "," | ForEach-Object { $_.Trim() }
 }
 
 # Start script
@@ -31,8 +32,8 @@ Function Write-LogFile ([String]$Message) {
     $final | Out-File $logFile -Append
 }
 
-Write-LogFile "BEGIN: Retrieving application permission changes for $($username) between $($start) and $($end), RecordType=$record, PageSize=$resultSize."
-Write-Host "Retrieving application permission changes for $($username) between $($start) and $($end), RecordType=$record, ResultsSize=$resultSize"
+Write-LogFile "BEGIN: Retrieving application permission changes for $($identityFilter) between $($start) and $($end), RecordType=$record, PageSize=$resultSize."
+Write-Host "Retrieving application permission changes for $($identityFilter) between $($start) and $($end), RecordType=$record, ResultsSize=$resultSize"
 
 # Connect to Exchange Online
 Import-Module ExchangeOnlineManagement
@@ -109,3 +110,4 @@ Write-LogFile "END: Retrieved $totalCount application permission change records.
 
 # Disconnect session
 Disconnect-ExchangeOnline -Confirm:$false
+
