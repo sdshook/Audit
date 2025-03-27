@@ -64,6 +64,9 @@ while ($true) {
             foreach ($entry in $results) {
                 $AuditData = $entry.AuditData | ConvertFrom-Json
 
+                # Determine if context is User or App based on UserId
+                $contextType = if ($AuditData.UserId -match '@') { 'User' } else { 'App' }
+
                 # Extract old and new values if available
                 $Changes = @()
                 if ($AuditData.ModifiedProperties) {
@@ -79,6 +82,7 @@ while ($true) {
                     AppId     = $AuditData.AppId
                     AppName   = $AuditData.AppName
                     UPN       = $AuditData.UserId
+                    Context   = $contextType
                     Actions   = $AuditData.Operation
                     Changes   = $Changes -join " | "
                     RawRecord = ($AuditData | ConvertTo-Json -Depth 3 -Compress)
