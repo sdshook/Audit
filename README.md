@@ -2,20 +2,20 @@
 
 Various security auditing tools
 
-AzADSR.ps1 = Powershell Script to pull Azure Active Directory Signins by user(s) #requires POSH 7 and DotNet 8
+* AzADSR.ps1 = Powershell Script to pull Azure Active Directory Signins by user(s) #requires POSH 7 and DotNet 8
 
-UALSR.ps1 = Powershell Script to pull Unified Audit Logs from o365 by user(s)
+* UALSR.ps1 = Powershell Script to pull Unified Audit Logs from o365 by user(s)
 
-GUAR.py = Python Script to pull Unified Activity Logs from Google Workspace by user(s)
+* GUAR.py = Python Script to pull Unified Activity Logs from Google Workspace by user(s)
 
-CRA = Cyber Risk Assessments scripts to automate collection of security posture information 
+* CRA = Cyber Risk Assessments scripts to automate collection of security posture information 
 
-  Win = Windows
+  * * Win = Windows (run on each host)
   
-  LM = Linux & Mac
+  * * LM = Linux & Mac (run on each host)
   
-  AD = Active Directory 
+  * * AD = Active Directory (for on-premise AD, run only once from any domain-connected host)
 
-CBA = Cyber Breach Assessment script to automate collection of security posture information for incident triage
+* CBA = Cyber Breach Assessment script to automate collection of security posture information for incident triage
 
 Kudos to Brandon Pimentel for his help also.
