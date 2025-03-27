@@ -1,13 +1,14 @@
 # Microsoft Unified Audit Log Search Report - Application Permission Changes
-# Modified to allow querying a specific user, multiple users, or all users
-# (c) 2025 Shane Shook 
+# Allows querying a specific user, multiple users, or all users
+# Exports to CSV with raw JSON per record
+# (c) 2025 Shane Shook
 
 # Configuration
 $logFile = ".\AuditLogSearchLog.txt"
-$outputFile = ".\O365_App_Permissions_Changes.json"
+$outputFile = ".\O365_App_Permissions_Changes.csv"
 
 # Specify a username, multiple usernames (comma-separated), or "ALL" for all users
-$username = "<user@domain.com>"  # Example: "admin@contoso.com" or "user1@contoso.com, user2@contoso.com"
+$username = "<user@domain.com>"  # Example: "admin@domain.com" or "user1@domain.com, user2@domain.com"
 [DateTime]$start = [DateTime]::UtcNow.AddDays(-360)
 [DateTime]$end = [DateTime]::UtcNow
 $record = "AzureActiveDirectory"
@@ -25,8 +26,7 @@ if ($username -eq "ALL") {
 [DateTime]$currentStart = $start
 [DateTime]$currentEnd = $end
 
-Function Write-LogFile ([String]$Message)
-{
+Function Write-LogFile ([String]$Message) {
     $final = [DateTime]::Now.ToUniversalTime().ToString("s") + ":" + $Message
     $final | Out-File $logFile -Append
 }
@@ -41,8 +41,7 @@ Connect-ExchangeOnline
 $totalCount = 0
 $AuditRecords = @()
 
-while ($true)
-{
+while ($true) {
     $currentEnd = $currentStart.AddMinutes($intervalMinutes)
     if ($currentEnd -gt $end) { $currentEnd = $end }
     if ($currentStart -eq $currentEnd) { break }
@@ -51,32 +50,25 @@ while ($true)
     Write-LogFile "INFO: Retrieving audit records from $($currentStart) to $($currentEnd)"
     Write-Host "Retrieving records from $($currentStart) to $($currentEnd)"
 
-    do
-    {
-        # Retrieve audit log events for application permission changes
+    do {
+        # Retrieve audit log events including app role assignments
+        $operations = @("Consent to application", "Update application", "Remove application", "Add app role assignment to service principal")
+
         if ($userFilter) {
-            $results = Search-UnifiedAuditLog -UserIds $userFilter -StartDate $currentStart -EndDate $currentEnd -RecordType $record -Operations "Consent to application", "Update application", "Remove application" -SessionId $sessionID -SessionCommand ReturnLargeSet -ResultSize $resultSize 
+            $results = Search-UnifiedAuditLog -UserIds $userFilter -StartDate $currentStart -EndDate $currentEnd -RecordType $record -Operations $operations -SessionId $sessionID -SessionCommand ReturnLargeSet -ResultSize $resultSize 
         } else {
-            $results = Search-UnifiedAuditLog -StartDate $currentStart -EndDate $currentEnd -RecordType $record -Operations "Consent to application", "Update application", "Remove application" -SessionId $sessionID -SessionCommand ReturnLargeSet -ResultSize $resultSize 
+            $results = Search-UnifiedAuditLog -StartDate $currentStart -EndDate $currentEnd -RecordType $record -Operations $operations -SessionId $sessionID -SessionCommand ReturnLargeSet -ResultSize $resultSize 
         }
 
-        if ($results.Count -ne 0)
-        {
-            foreach ($entry in $results)
-            {
+        if ($results.Count -ne 0) {
+            foreach ($entry in $results) {
                 $AuditData = $entry.AuditData | ConvertFrom-Json
 
                 # Extract old and new values if available
                 $Changes = @()
-                if ($AuditData.ModifiedProperties)
-                {
-                    foreach ($change in $AuditData.ModifiedProperties)
-                    {
-                        $Changes += [PSCustomObject]@{
-                            Property   = $change.Name
-                            OldValue   = ($change.OldValue -join ", ")  # Convert array to string
-                            NewValue   = ($change.NewValue -join ", ")  # Convert array to string
-                        }
+                if ($AuditData.ModifiedProperties) {
+                    foreach ($change in $AuditData.ModifiedProperties) {
+                        $Changes += "Property: $($change.Name); Old: $($change.OldValue -join ', '); New: $($change.NewValue -join ', ')"
                     }
                 }
 
@@ -87,29 +79,27 @@ while ($true)
                     AppId     = $AuditData.AppId
                     AppName   = $AuditData.AppName
                     UPN       = $AuditData.UserId
-                    Actions   = $AuditData.Operation  # Detailed action performed
-                    Changes   = $Changes
-                    RawRecord = $AuditData | ConvertTo-Json -Depth 3
+                    Actions   = $AuditData.Operation
+                    Changes   = $Changes -join " | "
+                    RawRecord = ($AuditData | ConvertTo-Json -Depth 3 -Compress)
                 }
             }
 
             $totalCount += $results.Count
             Write-LogFile "INFO: Retrieved $($results.Count) records. Total so far: $totalCount"
 
-            if ($results[$results.Count - 1].ResultIndex -eq $results[0].ResultCount)
-            {
+            if ($results[$results.Count - 1].ResultIndex -eq $results[0].ResultCount) {
                 Write-LogFile "INFO: Reached the end of the result set for this time range."
                 break
             }
         }
-    }
-    while ($results.Count -ne 0)
+    } while ($results.Count -ne 0)
 
     $currentStart = $currentEnd
 }
 
-# Export results to JSON
-$AuditRecords | ConvertTo-Json -Depth 3 | Out-File $outputFile
+# Export results to CSV
+$AuditRecords | Export-Csv -Path $outputFile -NoTypeInformation -Encoding UTF8
 Write-Host "Audit data saved to $outputFile" -ForegroundColor Green
 Write-LogFile "END: Retrieved $totalCount application permission change records."
 
