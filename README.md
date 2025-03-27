@@ -10,11 +10,11 @@ Various security auditing tools
 
 * CRA = Cyber Risk Assessments scripts to automate collection of security posture information 
 
-  * * Win = Windows (run on each host)
+  * Win = Windows (run on each host)
   
-  * * LM = Linux & Mac (run on each host)
+  * LM = Linux & Mac (run on each host)
   
-  * * AD = Active Directory (for on-premise AD, run only once from any domain-connected host)
+  * AD = Active Directory (for on-premise AD, run only once from any domain-connected host)
 
 * CBA = Cyber Breach Assessment script to automate collection of security posture information for incident triage
 
