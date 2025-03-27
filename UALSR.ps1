@@ -1,12 +1,12 @@
 # Microsoft  Unified Audit Log Search Report
-# Created by Shane Shook (c)2024
+# Updated by Shane Shook (c)2025
 # Reference https://learn.microsoft.com/en-us/purview/audit-log-search-script 
 # Modifications based on Reference https://www.invictus-ir.com/news/what-dfir-experts-need-to-know-about-the-current-state-of-the-unified-audit-log
 
 # Change the values for the following variables to configure the audit log search.
 $logFile = ".\AuditLogSearchLog.txt"
 $outputFile = ".\AuditLogRecords.csv"
-$username = "<user@domain.com>"
+$identityFilter = "<user@domain.com>"  # Can be UPNs or App IDs, comma-separated, or "ALL"
 [DateTime]$start = [DateTime]::UtcNow.AddDays(-360)
 [DateTime]$end = [DateTime]::UtcNow
 # Note, to specify record types change the following
@@ -18,6 +18,13 @@ $resultSize = 5000
 # whether smaller window is needed (i.e. incidents involving mass downloads or deletions etc.)
 $intervalMinutes = 10080
 
+# Handle identity input (usernames or app IDs)
+if ($identityFilter -eq "ALL") {
+    $userFilter = $null
+} else {
+    $userFilter = $identityFilter -split "," | ForEach-Object { $_.Trim() }
+}
+
 #Start script
 [DateTime]$currentStart = $start
 [DateTime]$currentEnd = $end
@@ -28,48 +35,53 @@ Function Write-LogFile ([String]$Message)
     $final | Out-File $logFile -Append
 }
 
-Write-LogFile "BEGIN: Retrieving audit records for $($username) between $($start) and $($end), RecordType=$record, PageSize=$resultSize."
-Write-Host "Retrieving audit $($username) records for the date range between $($start) and $($end), RecordType=$record, ResultsSize=$resultSize"
+Write-LogFile "BEGIN: Retrieving audit records for $($identityFilter) between $($start) and $($end), RecordType=$record, PageSize=$resultSize."
+Write-Host "Retrieving audit $($identityFilter) records for the date range between $($start) and $($end), RecordType=$record, ResultsSize=$resultSize"
 
 # Note requires ExchangeOnlineManagement Module and Powershell v5.1+
 Import-Module ExchangeOnlineManagement
 Connect-ExchangeOnline 
 
 $totalCount = 0
+$firstExport = $true
+
 while ($true)
 {
     $currentEnd = $currentStart.AddMinutes($intervalMinutes)
-    if ($currentEnd -gt $end)
-    {
+    if ($currentEnd -gt $end) {
         $currentEnd = $end
     }
-
-if ($currentStart -eq $currentEnd)
-    {
+    if ($currentStart -eq $currentEnd) {
         break
     }
 
-$sessionID = [Guid]::NewGuid().ToString() + "_" +  "ExtractLogs" + (Get-Date).ToString("yyyyMMddHHmmssfff")
-    Write-LogFile "INFO: Retrieving $($username) audit records for activities performed between $($currentStart) and $($currentEnd)"
-    Write-Host "Retrieving $($username) audit records for activities performed between $($currentStart) and $($currentEnd)"
+    $sessionID = [Guid]::NewGuid().ToString() + "_" +  "ExtractLogs" + (Get-Date).ToString("yyyyMMddHHmmssfff")
+    Write-LogFile "INFO: Retrieving $($identityFilter) audit records for activities performed between $($currentStart) and $($currentEnd)"
+    Write-Host "Retrieving $($identityFilter) audit records for activities performed between $($currentStart) and $($currentEnd)"
     $currentCount = 0
 
-$sw = [Diagnostics.StopWatch]::StartNew()
-    do
-    {
-        $results = Search-UnifiedAuditLog -UserIds $username -StartDate $currentStart -EndDate $currentEnd -RecordType $record -SessionId $sessionID -SessionCommand ReturnLargeSet -ResultSize $resultSize
+    $sw = [Diagnostics.StopWatch]::StartNew()
+    do {
+        if ($userFilter) {
+            $results = Search-UnifiedAuditLog -UserIds $userFilter -StartDate $currentStart -EndDate $currentEnd -RecordType $record -SessionId $sessionID -SessionCommand ReturnLargeSet -ResultSize $resultSize
+        } else {
+            $results = Search-UnifiedAuditLog -StartDate $currentStart -EndDate $currentEnd -RecordType $record -SessionId $sessionID -SessionCommand ReturnLargeSet -ResultSize $resultSize
+        }
 
-if (($results | Measure-Object).Count -ne 0)
-        {
-            $results | export-csv -Path $outputFile -Append -NoTypeInformation
+        if ($results.Count -ne 0) {
+            if ($firstExport) {
+                $results | Export-Csv -Path $outputFile -NoTypeInformation -Encoding UTF8
+                $firstExport = $false
+            } else {
+                $results | Export-Csv -Path $outputFile -Append -NoTypeInformation -Encoding UTF8
+            }
 
-$currentTotal = $results[0].ResultCount
+            $currentTotal = $results[0].ResultCount
             $totalCount += $results.Count
             $currentCount += $results.Count
             Write-LogFile "INFO: Retrieved $($currentCount) audit records out of the total $($currentTotal)"
 
-if ($currentTotal -eq $results[$results.Count - 1].ResultIndex)
-            {
+            if ($currentTotal -eq $results[$results.Count - 1].ResultIndex) {
                 $message = "INFO: Successfully retrieved $($currentTotal) audit records for the current time range. Moving on!"
                 Write-LogFile $message
                 Write-Host "Successfully retrieved $($currentTotal) audit records for the current time range. Moving on to the next interval." -foregroundColor Yellow
@@ -77,12 +89,10 @@ if ($currentTotal -eq $results[$results.Count - 1].ResultIndex)
                 break
             }
         }
-    }
-    while (($results | Measure-Object).Count -ne 0)
+    } while ($results.Count -ne 0)
 
-$currentStart = $currentEnd
+    $currentStart = $currentEnd
 }
 
-Write-LogFile "END: Retrieving $($username) audit records between $($start) and $($end), RecordType=$record, PageSize=$resultSize, total count: $totalCount."
-Write-Host "Script complete! Finished retrieving $($username) audit records for the date range between $($start) and $($end). Total count: $totalCount" -foregroundColor Green
-
+Write-LogFile "END: Retrieving $($identityFilter) audit records between $($start) and $($end), RecordType=$record, PageSize=$resultSize, total count: $totalCount."
+Write-Host "Script complete! Finished retrieving $($identityFilter) audit records for the date range between $($start) and $($end). Total count: $totalCount" -foregroundColor Green
