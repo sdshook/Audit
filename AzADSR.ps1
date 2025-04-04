@@ -1,13 +1,16 @@
 # Microsoft Azure AD Audit & Access Report Summary
 # Updated by Shane Shook (c)2025
 
-# Update lines 69, 72, 77 as required - defaults to 360 day all users in PWD
-# runas from commandline pwsh.exe <script>
 # Requires PSv7 and DotNetv8
 # Modules must be manually installed before use:
 ## Install-Module -Name PackageManagement
 ## Install-Module -Name Microsoft.Graph -Scope AllUsers
 ## Install-Module -Name Microsoft.Graph.Beta
+
+# Update lines 72, 73, 76 as required - defaults to 360 day all users in PWD
+
+# runas from commandline pwsh.exe <script>
+# Connect-MgGraph -Scopes "AuditLog.Read.All" -TenantId <tenant-id> -NoWelcome -UseDeviceAuthentication
 
 $null = @'
 
@@ -65,7 +68,8 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
 }
 
 ###### Edit this section #####
-$userInput = "All"
+# "<user>@domain", comma-separated users or APPiD(s), or "All"
+$userInput = "All" 
 $days = 360
 $startDate = (Get-Date).AddDays(-$days)
 $endDate = Get-Date
