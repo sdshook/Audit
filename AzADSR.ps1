@@ -9,7 +9,7 @@
 
 # Update lines 76, 77, 80 as required - defaults to 360 day all users in PWD
 
-# runas from commandline pwsh.exe <script>
+# runas from commandline pwsh.exe <script> and authenticate
 ## Connect-MgGraph -Scopes "AuditLog.Read.All" -TenantId <tenant-id> -NoWelcome -UseDeviceAuthentication
 # or
 ## Connect-MgGraph -Scopes "AuditLog.Read.All,Directory.Read.All,IdentityRiskEvent.Read.All,Compliance.Read.All,Application.Read.All" -ContextScope Process -NoWelcome -TenantId <YourTenantId>
