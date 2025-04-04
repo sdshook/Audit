@@ -65,13 +65,8 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
 }
 
 ###### Edit this section #####
-# Provide a single username, comma-separated usernames, or "All"
-$userInput = "All"  # e.g., "user1@domain.com,user2@domain.com" or "All"
-
-# Define number of days for the date range
+$userInput = "All"
 $days = 360
-
-# Calculate start and end dates
 $startDate = (Get-Date).AddDays(-$days)
 $endDate = Get-Date
 $outputPath = ".\output"
@@ -79,16 +74,44 @@ New-Item -ItemType Directory -Path $outputPath -Force | Out-Null
 ###### Edit this section #####
 
 # Validate required modules
-$requiredModules = @("Microsoft.Graph", "Microsoft.Graph.Beta.Reports", "Microsoft.Graph.Authentication")
+$requiredModules = @(
+    "Microsoft.Graph",
+    "Microsoft.Graph.Beta.Reports",
+    "Microsoft.Graph.Authentication",
+    "Microsoft.Graph.DirectoryRoles"
+)
 $missingModules = $requiredModules | Where-Object { -not (Get-Module -ListAvailable -Name $_) }
 if ($missingModules) {
     Write-Error "Missing required modules: $($missingModules -join ', '). Please install them before proceeding."
     return
 }
+foreach ($mod in $requiredModules) { Import-Module $mod -ErrorAction Stop }
+
+# Throttling wrapper
+function Invoke-WithThrottling {
+    param (
+        [scriptblock]$ScriptBlock,
+        [int]$MaxRetries = 5
+    )
+    $retry = 0
+    while ($retry -lt $MaxRetries) {
+        try {
+            return & $ScriptBlock
+        } catch {
+            if ($_.Exception.Message -match "TooManyRequests" -or $_.Exception.Message -match "429") {
+                $wait = 2 * ($retry + 1)
+                Write-Warning "Throttled. Waiting $wait seconds..."
+                Start-Sleep -Seconds $wait
+                $retry++
+            } else {
+                throw $_
+            }
+        }
+    }
+    throw "Max retry attempts reached after throttling."
+}
 
 # Connect to Microsoft Graph
-Import-Module Microsoft.Graph.Authentication
-Import-Module Microsoft.Graph.Beta.Reports
 if (-not (Get-MgContext)) {
     Connect-MgGraph -Scopes "AuditLog.Read.All,Directory.Read.All,IdentityRiskEvent.Read.All,Compliance.Read.All,Application.Read.All" -ContextScope Process -NoWelcome
 }
@@ -96,11 +119,11 @@ if (-not (Get-MgContext)) {
 # Retrieve core logs
 $azureADAuthHistory = @()
 if ($userInput -eq "All") {
-    $azureADAuthHistory = Get-MgBetaAuditLogSignIn -All | Where-Object { $_.CreatedDateTime -ge $startDate }
+    $azureADAuthHistory = Invoke-WithThrottling { Get-MgBetaAuditLogSignIn -All | Where-Object { $_.CreatedDateTime -ge $startDate } }
 } else {
     $userList = $userInput -split "," | ForEach-Object { $_.Trim() }
     foreach ($user in $userList) {
-        $userResults = Get-MgBetaAuditLogSignIn -All -Filter "userPrincipalName eq '$user'" | Where-Object { $_.CreatedDateTime -ge $startDate }
+        $userResults = Invoke-WithThrottling { Get-MgBetaAuditLogSignIn -All -Filter "userPrincipalName eq '$user'" | Where-Object { $_.CreatedDateTime -ge $startDate } }
         $azureADAuthHistory += $userResults
     }
 }
@@ -128,14 +151,16 @@ $results = foreach ($signIn in $azureADAuthHistory) {
 $results | Export-Csv -Path "$outputPath\UALDF.csv" -NoTypeInformation -Encoding UTF8
 $azureADAuthHistory | ConvertTo-Json -Depth 10 | Out-File "$outputPath\UALDR.json" -Encoding UTF8
 
-# Permission grants and role assignments
-$permissionChanges = Get-MgBetaAuditLogDirectoryAudit -All | Where-Object {
-    $_.ActivityDisplayName -match 'Add delegated permission grant|Add app role assignment|Consent to application' -and $_.ActivityDateTime -ge $startDate
+# Permission and role data
+$permissionChanges = Invoke-WithThrottling {
+    Get-MgBetaAuditLogDirectoryAudit -All | Where-Object {
+        $_.ActivityDisplayName -match 'Add delegated permission grant|Add app role assignment|Consent to application' -and $_.ActivityDateTime -ge $startDate
+    }
 }
 $permissionChanges | ConvertTo-Json -Depth 10 | Out-File "$outputPath\PermissionChanges.json" -Encoding UTF8
 
-$roleAssignments = Get-MgDirectoryRoleAssignment -All | Where-Object { $_.CreatedDateTime -ge $startDate }
-$roleDefinitions = Get-MgDirectoryRole -All
+$roleAssignments = Invoke-WithThrottling { Get-MgDirectoryRoleAssignment -All | Where-Object { $_.CreatedDateTime -ge $startDate } }
+$roleDefinitions = Invoke-WithThrottling { Get-MgDirectoryRole -All }
 $roleAssignmentsDetailed = foreach ($assignment in $roleAssignments) {
     $role = $roleDefinitions | Where-Object { $_.Id -eq $assignment.RoleDefinitionId }
     [PSCustomObject]@{
@@ -150,12 +175,14 @@ $roleAssignmentsDetailed = foreach ($assignment in $roleAssignments) {
 $roleAssignmentsDetailed | ConvertTo-Json -Depth 10 | Out-File "$outputPath\RoleAssignments.json" -Encoding UTF8
 
 # Risky sign-ins
-$riskySignIns = Get-MgBetaRiskyUser -All | Where-Object { $_.RiskLastUpdatedDateTime -ge $startDate }
+$riskySignIns = Invoke-WithThrottling { Get-MgBetaRiskyUser -All | Where-Object { $_.RiskLastUpdatedDateTime -ge $startDate } }
 $riskySignIns | ConvertTo-Json -Depth 10 | Out-File "$outputPath\RiskySignIns.json" -Encoding UTF8
 
 # App secret tracking and reuse
-$appSecretChanges = Get-MgBetaAuditLogDirectoryAudit -All | Where-Object {
-    $_.ActivityDisplayName -match 'Add password|Update password' -and $_.ActivityDateTime -ge $startDate
+$appSecretChanges = Invoke-WithThrottling {
+    Get-MgBetaAuditLogDirectoryAudit -All | Where-Object {
+        $_.ActivityDisplayName -match 'Add password|Update password' -and $_.ActivityDateTime -ge $startDate
+    }
 }
 $appSecretDetails = foreach ($entry in $appSecretChanges) {
     $entry.TargetResources | ForEach-Object {
@@ -175,8 +202,18 @@ $reusedSecrets = $appSecretDetails | Group-Object SecretId | Where-Object { $_.C
 $reusedSecrets | Export-Csv -Path "$outputPath\ReusedAppSecrets.csv" -NoTypeInformation -Encoding UTF8
 $reusedSecretIds = $reusedSecrets | Select-Object -ExpandProperty SecretId -Unique
 
-# Resource-level access logs and joined access report
-$ualEvents = Search-UnifiedAuditLog -StartDate $startDate -EndDate $endDate -RecordType Mailbox,SharePointFileOperation,OneDriveFileOperation,MicrosoftTeams -ResultSize 5000
+# Unified audit log - loop RecordTypes
+$recordTypes = @("Mailbox", "SharePointFileOperation", "OneDriveFileOperation", "MicrosoftTeams")
+$ualEvents = @()
+foreach ($recordType in $recordTypes) {
+    try {
+        $events = Search-UnifiedAuditLog -StartDate $startDate -EndDate $endDate -RecordType $recordType -ResultSize 5000 -ErrorAction Stop
+        $ualEvents += $events
+    } catch {
+        Write-Warning "Failed to retrieve $recordType audit logs: $_"
+    }
+}
+
 $ualFiltered = $ualEvents | Where-Object {
     $_.Operations -match 'Bind|Sync' -and ($_.UserIds -ne $_.AuditData.ObjectId)
 }
@@ -201,7 +238,6 @@ $ualDetailed = foreach ($entry in $ualFiltered) {
 $ualDetailed | Export-Csv -Path "$outputPath\CrossAccessResourceAudit.csv" -NoTypeInformation -Encoding UTF8
 $ualFiltered | ConvertTo-Json -Depth 10 | Out-File "$outputPath\CrossAccessResourceAudit.json" -Encoding UTF8
 
-# High-volume access detection per user and secret
 $suspectThreshold = 20
 $groupedCounts = $ualDetailed | Group-Object UserId | Where-Object { $_.Count -gt $suspectThreshold }
 $suspectUsers = $groupedCounts.Name
@@ -218,7 +254,6 @@ foreach ($entry in $ualDetailed) {
     }
 }
 
-# Join resource access and sign-in info
 $crossAccess = foreach ($entry in $ualDetailed) {
     $signInMatch = $azureADAuthHistory | Where-Object {
         ($_.UserPrincipalName -eq $entry.UserId -or $_.AppId -eq $entry.AppId) -and $_.CreatedDateTime -le $entry.Date
