@@ -6,8 +6,9 @@
 ## Install-Module -Name PackageManagement
 ## Install-Module -Name Microsoft.Graph -Scope AllUsers
 ## Install-Module -Name Microsoft.Graph.Beta
+## Install-Module Microsoft.Graph.Identity.DirectoryManagement -Scope CurrentUser
 
-# Update lines 76, 77, 80 as required - defaults to 360 day all users in PWD
+# Update lines 77, 78, 81 as required - defaults to 360 day all users in PWD
 
 # runas from commandline pwsh.exe <script> and authenticate
 ## Connect-MgGraph -Scopes "AuditLog.Read.All" -TenantId <tenant-id> -NoWelcome -UseDeviceAuthentication
@@ -86,7 +87,7 @@ $requiredModules = @(
     "Microsoft.Graph",
     "Microsoft.Graph.Beta.Reports",
     "Microsoft.Graph.Authentication",
-    "Microsoft.Graph.DirectoryRoles"
+    "Microsoft.Graph.Identity.DirectoryManagement"
 )
 $missingModules = $requiredModules | Where-Object { -not (Get-Module -ListAvailable -Name $_) }
 if ($missingModules) {
