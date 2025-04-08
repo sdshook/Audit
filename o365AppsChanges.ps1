@@ -1,7 +1,7 @@
 # Microsoft Unified Audit Log Search Report - Application Permission Changes
-# Allows querying a specific user, multiple users, or all users
-# Exports to CSV with raw JSON per record
 # (c) 2025 Shane Shook
+# ref https://learn.microsoft.com/en-us/purview/audit-log-activities 
+# Note that this script can be simply modified for any types of operations report by user or App
 
 # Configuration
 $logFile = ".\AuditLogSearchLog.txt"
@@ -9,7 +9,7 @@ $outputFile = ".\O365_App_Permissions_Changes.csv"
 
 # Specify usernames or app IDs (comma-separated), or "ALL" for all entries
 # Example: "admin@domain.com", "user1@domain.com, user2@domain.com", or app IDs like "00000000-0000-0000-0000-000000000000"
-$identityFilter = "<user@domain.com>"
+$identityFilter = "ALL"
 [DateTime]$start = [DateTime]::UtcNow.AddDays(-360)
 [DateTime]$end = [DateTime]::UtcNow
 $record = "AzureActiveDirectory"
@@ -18,7 +18,7 @@ $intervalMinutes = 10080
 
 # Handle input
 if ($identityFilter -eq "ALL") {
-    $userFilter = $null  # No filtering; retrieves logs for all users
+    $userFilter = $null
 } else {
     $userFilter = $identityFilter -split "," | ForEach-Object { $_.Trim() }
 }
@@ -47,28 +47,52 @@ while ($true) {
     if ($currentEnd -gt $end) { $currentEnd = $end }
     if ($currentStart -eq $currentEnd) { break }
 
-    $sessionID = [Guid]::NewGuid().ToString() + "_" +  "ExtractLogs" + (Get-Date).ToString("yyyyMMddHHmmssfff")
+    $sessionID = [Guid]::NewGuid().ToString() + "_" + "ExtractLogs" + (Get-Date).ToString("yyyyMMddHHmmssfff")
     Write-LogFile "INFO: Retrieving audit records from $($currentStart) to $($currentEnd)"
     Write-Host "Retrieving records from $($currentStart) to $($currentEnd)"
 
+    #Note: Modify list of operations below according to your interests
     do {
-        # Retrieve audit log events including app role assignments
-        $operations = @("Consent to application", "Update application", "Remove application", "Add app role assignment to service principal")
+        $operations = @(
+            "Add application.",
+            "Update application.",
+            "Update application – Certificates and secrets management ",
+            "Remove app role assignment from service principal.",
+            "Add app role assignment to service principal.",
+            "Add service principal.",
+            "Add service principal credentials.",
+            "Add owner to service principal.",
+            "Update service principal."
+        )
 
-        if ($userFilter) {
-            $results = Search-UnifiedAuditLog -UserIds $userFilter -StartDate $currentStart -EndDate $currentEnd -RecordType $record -Operations $operations -SessionId $sessionID -SessionCommand ReturnLargeSet -ResultSize $resultSize 
-        } else {
-            $results = Search-UnifiedAuditLog -StartDate $currentStart -EndDate $currentEnd -RecordType $record -Operations $operations -SessionId $sessionID -SessionCommand ReturnLargeSet -ResultSize $resultSize 
+        try {
+            if ($userFilter) {
+                $results = Search-UnifiedAuditLog -UserIds $userFilter -StartDate $currentStart -EndDate $currentEnd -RecordType $record -Operations $operations -SessionId $sessionID -SessionCommand ReturnLargeSet -ResultSize $resultSize 
+            } else {
+                $results = Search-UnifiedAuditLog -StartDate $currentStart -EndDate $currentEnd -RecordType $record -Operations $operations -SessionId $sessionID -SessionCommand ReturnLargeSet -ResultSize $resultSize 
+            }
+        } catch {
+            Write-LogFile "ERROR: Failed retrieving logs for $currentStart to $currentEnd - $_"
+            break
         }
 
         if ($results.Count -ne 0) {
             foreach ($entry in $results) {
                 $AuditData = $entry.AuditData | ConvertFrom-Json
-
-                # Determine if context is User or App based on UserId
                 $contextType = if ($AuditData.UserId -match '@') { 'User' } else { 'App' }
 
-                # Extract old and new values if available
+                # Resolve AppName
+                $appName = $AuditData.AppName
+                if (-not $appName -or $appName -eq "") {
+                    $displayNameProp = ($AuditData.ModifiedProperties | Where-Object { $_.Name -eq "DisplayName" }).NewValue
+                    if ($displayNameProp) {
+                        try { $appName = $displayNameProp | ConvertFrom-Json } catch { $appName = $displayNameProp }
+                    }
+                }
+                if (-not $appName -or $appName -eq "") {
+                    $appName = ($AuditData.Target | Where-Object { $_.Type -eq 1 } | Select-Object -First 1).ID
+                }
+
                 $Changes = @()
                 if ($AuditData.ModifiedProperties) {
                     foreach ($change in $AuditData.ModifiedProperties) {
@@ -80,8 +104,7 @@ while ($true) {
                 $AuditRecords += [PSCustomObject]@{
                     Date      = $entry.CreationDate
                     Operation = $entry.Operations
-                    AppId     = $AuditData.AppId
-                    AppName   = $AuditData.AppName
+                    AppName   = $appName
                     UPN       = $AuditData.UserId
                     Context   = $contextType
                     Actions   = $AuditData.Operation
@@ -110,4 +133,3 @@ Write-LogFile "END: Retrieved $totalCount application permission change records.
 
 # Disconnect session
 Disconnect-ExchangeOnline -Confirm:$false
-
