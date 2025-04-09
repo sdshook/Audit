@@ -4,9 +4,11 @@ Various security auditing tools
 
 * CSR = Cloud Services Reports scripts to automate collection of cloud services activities for posture and triage
 
-  * AzADSR.ps1 = Powershell Script to pull Azure Active Directory and o365 activities by user(s) #requires POSH 7 and DotNet 8
+  * AzAuditFull.ps1 = Powershell Script to pull Azure Active Directory and o365 activities by user(s) #requires POSH 7 and DotNet 8
+ 
+  * AzUAR.ps1 = Powershell Script to pull Azure Active Directory authentication activities by user(s) #requires POSH 7 and DotNet 8
 
-  * UALSR.ps1 = Powershell Script to pull Unified Audit Logs from o365 by user(s)
+  * o365UAR.ps1 = Powershell Script to pull Unified Audit Logs from o365 by user(s)
 
   * GUAR.py = Python Script to pull Unified Activity Logs from Google Workspace by user(s)
 
