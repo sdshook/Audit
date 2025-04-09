@@ -9,6 +9,8 @@ Various security auditing tools
   * AzUAR.ps1 = Powershell Script to pull Azure Active Directory authentication activities by user(s) #requires POSH 7 and DotNet 8
 
   * o365UAR.ps1 = Powershell Script to pull Unified Audit Logs from o365 by user(s)
+ 
+  * o365AppChanges.ps1 = Powershell Script to pull changes made to applications by user(s)
 
   * GUAR.py = Python Script to pull Unified Activity Logs from Google Workspace by user(s)
 
