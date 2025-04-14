@@ -3,8 +3,6 @@
 Various security auditing tools
 
 * CSR = Cloud Services Reports scripts to automate collection of cloud services activities for posture and triage
-
-  * AzAuditFull.ps1 = Powershell Script to pull Azure Active Directory and o365 activities by user(s) #requires POSH 7 and DotNet 8
  
   * AzUAR.ps1 = Powershell Script to pull Azure Active Directory authentication activities by user(s) #requires POSH 7 and DotNet 8
 
