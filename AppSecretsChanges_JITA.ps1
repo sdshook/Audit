@@ -25,7 +25,7 @@ $outputPath = ".\output\AppChanges_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
 New-Item -ItemType Directory -Path $outputPath -Force | Out-Null
 
 # === Graph Auth via Device Code ===
-$clientId = "<insert tenantID>"
+$clientId = "04b07795-8ddb-461a-bbee-02f9e1bf7b46"  # Microsoft Azure Public CLI
 if (-not (Get-Module -ListAvailable -Name MSAL.PS)) {
     Install-Module -Name MSAL.PS -Scope CurrentUser -Force
 }
