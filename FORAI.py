@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
+r"""
 FORAI.py (c) 2025 All Rights Reserved Shane D. Shook
 Automated collection and processing for essential forensic Q&A
 Supported by TinyLLaMA 1.1b
@@ -936,7 +936,7 @@ def write_chain_of_custody(case_id: str) -> Path:
 
 def write_case_archive() -> Path:
     """
-    Create archives\MMDDYYYY.zip containing artifacts\, extracts\, and reports\ trees.
+    Create archives\\MMDDYYYY.zip containing artifacts\\, extracts\\, and reports\\ trees.
     If a same-day archive already exists, append _HHMMSS to avoid overwriting.
     """
     DIR_ARCHIVES.mkdir(parents=True, exist_ok=True)
@@ -962,6 +962,8 @@ def write_case_archive() -> Path:
     return out_zip
 
 def main():
+    global DIR_EXTRACTS, DB_PATH
+    
     parser = argparse.ArgumentParser(description="FORAI end-to-end analysis")
     parser.add_argument('--case-id', required=True, help='Case identifier')
     parser.add_argument('--mode', choices=['ALL','BETWEEN','DAYS_BEFORE'], default='ALL')
@@ -994,7 +996,6 @@ def main():
 
     ensure_dirs()
 
-    global DIR_EXTRACTS, DB_PATH
     if args.extracts_dir and Path(args.extracts_dir) != DIR_EXTRACTS:
         DIR_EXTRACTS = Path(args.extracts_dir)
         DB_PATH = DIR_EXTRACTS / 'forai.db'
