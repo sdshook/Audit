@@ -487,7 +487,7 @@ def run_live_only_supplements():
         print(f"[LIVE] saved: {art_path}  |  copied to: {dst_path}")
 
 def copy_setupapi_logs():
-    """
+    r"""
     Copy setupapi.* from artifacts\*\Windows\INF\ into extracts\Registry.
     This runs regardless of live vs. mounted evidence.
     """
