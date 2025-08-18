@@ -486,6 +486,41 @@ def run_live_only_supplements():
 
         print(f"[LIVE] saved: {art_path}  |  copied to: {dst_path}")
 
+def copy_setupapi_logs():
+    """
+    Copy setupapi.* from artifacts\*\Windows\INF\ into extracts\Registry.
+    This runs regardless of live vs. mounted evidence.
+    """
+    reg_dir = DIR_EXTRACTS / "Registry"
+    reg_dir.mkdir(parents=True, exist_ok=True)
+
+    copied = 0
+    for p in DIR_ARTIFACTS.rglob("setupapi*"):
+        try:
+            if not p.is_file():
+                continue
+            # only if the parent path contains \windows\inf\ (case-insensitive)
+            parent_norm = str(p.parent).lower().replace("/", "\\")
+            if "\\windows\\inf" not in parent_norm:
+                continue
+
+            dest = reg_dir / p.name
+            # avoid collisions by adding a numeric suffix
+            if dest.exists():
+                stem, suf = p.stem, p.suffix
+                i = 1
+                while (reg_dir / f"{stem}_{i}{suf}").exists():
+                    i += 1
+                dest = reg_dir / f"{stem}_{i}{suf}"
+
+            shutil.copy2(p, dest)
+            print(f"[COPY] setupapi: {p} -> {dest}")
+            copied += 1
+        except Exception as e:
+            print(f"[WARN] copy setupapi failed for {p}: {e}")
+
+    print(f"[INFO] setupapi files copied: {copied}")
+
 def detect_artifact(filename: str) -> str:
     for rx, name in ARTIFACT_HINTS:
         if rx.search(filename):
@@ -1026,6 +1061,13 @@ def main():
     except Exception as e:
         print(f"[WARN] KAPE step skipped or failed: {e}")
 
+    # Always copy setupapi.* from artifacts into extracts\Registry
+    try:
+        copy_setupapi_logs()
+    except Exception as e:
+        print(f"[WARN] setupapi copy failed: {e}")
+
+    # Ensure user is Admin when running this program
     if os.name == 'nt':
         try:
             import ctypes
