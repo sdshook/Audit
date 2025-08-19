@@ -162,184 +162,270 @@ CREATE TABLE IF NOT EXISTS evidence_fts_map (
 """
 
 VIEWS_SQL = {
+
+    # 0) Normalize once, reuse everywhere
+    "evidence_norm": """
+    CREATE TEMP VIEW evidence_norm AS
+    SELECT
+      ts_utc, host, user, artifact, src_file, summary, fields_json,
+
+      /* normalized identities */
+      COALESCE(
+        user,
+        json_extract(fields_json,'$.User'),
+        json_extract(fields_json,'$.UserName'),
+        json_extract(fields_json,'$.Username'),
+        json_extract(fields_json,'$.AccountName'),
+        json_extract(fields_json,'$.SubjectUserName'),
+        json_extract(fields_json,'$.TargetUserName')
+      ) AS n_user,
+
+      COALESCE(
+        json_extract(fields_json,'$.SID'),
+        json_extract(fields_json,'$.Sid'),
+        json_extract(fields_json,'$.["User SID"]'),
+        json_extract(fields_json,'$.SecurityId'),
+        json_extract(fields_json,'$.TargetSid')
+      ) AS n_sid,
+
+      /* system identity */
+      COALESCE(
+        json_extract(fields_json,'$.SystemManufacturer'),
+        json_extract(fields_json,'$.System_Manufacturer'),
+        json_extract(fields_json,'$.["System Manufacturer"]'),
+        json_extract(fields_json,'$.Manufacturer')
+      ) AS n_make,
+
+      COALESCE(
+        json_extract(fields_json,'$.SystemProductName'),
+        json_extract(fields_json,'$.System_Product_Name'),
+        json_extract(fields_json,'$.["System Model"]'),
+        json_extract(fields_json,'$.Model')
+      ) AS n_model,
+
+      COALESCE(
+        json_extract(fields_json,'$.SystemSerialNumber'),
+        json_extract(fields_json,'$.System_Serial_Number'),
+        json_extract(fields_json,'$.["Serial Number"]'),
+        json_extract(fields_json,'$.SerialNumber'),
+        json_extract(fields_json,'$.["Chassis Serial Number"]')
+      ) AS n_serial,
+
+      COALESCE(
+        json_extract(fields_json,'$.DriveModel'),
+        json_extract(fields_json,'$.DiskModel'),
+        json_extract(fields_json,'$.["Model"]')
+      ) AS n_drive_model,
+
+      COALESCE(
+        json_extract(fields_json,'$.DriveSerial'),
+        json_extract(fields_json,'$.DiskSerial'),
+        json_extract(fields_json,'$.["SerialNumber"]'),
+        json_extract(fields_json,'$.["Disk Serial Number"]')
+      ) AS n_drive_serial,
+
+      /* unify path/action and usb hints */
+      COALESCE(
+        json_extract(fields_json,'$.FullPath'),
+        json_extract(fields_json,'$.TargetPath'),
+        json_extract(fields_json,'$.FileName'),
+        json_extract(fields_json,'$.Path')
+      ) AS n_file_path,
+
+      lower(COALESCE(
+        json_extract(fields_json,'$.Reason'),
+        json_extract(fields_json,'$.UsnReason'),
+        json_extract(fields_json,'$.Operation')
+      )) AS n_action,
+
+      json_extract(fields_json,'$.DriveType')  AS n_drive_type,
+      json_extract(fields_json,'$.BusType')    AS n_bus_type,
+      json_extract(fields_json,'$.DeviceType') AS n_device_type,
+
+      /* lowercase once for keyword scans */
+      lower(summary)     AS lsum,
+      lower(fields_json) AS ljson
+    FROM evidence_scope;
+    """,
+
     "mv_computer_identity": """
     CREATE TEMP VIEW mv_computer_identity AS
     SELECT DISTINCT
-        host AS computer_name,
-        json_extract(fields_json, '$.SystemManufacturer') AS make,
-        json_extract(fields_json, '$.SystemProductName') AS model,
-        json_extract(fields_json, '$.SystemSerialNumber') AS serial,
-        json_extract(fields_json, '$.DriveModel') AS drive_model,
-        json_extract(fields_json, '$.DriveSerial') AS drive_serial,
-        ts_utc,
-        src_file
-    FROM evidence_scope
-    WHERE artifact IN ('systeminfo', 'setupapi', 'storage');
+      host AS computer_name,
+      n_make   AS make,
+      n_model  AS model,
+      n_serial AS serial,
+      n_drive_model  AS drive_model,
+      n_drive_serial AS drive_serial,
+      ts_utc,
+      src_file
+    FROM evidence_norm
+    WHERE artifact IN ('systeminfo','setupapi','storage');
     """,
+
     "mv_accounts_activity": """
     CREATE TEMP VIEW mv_accounts_activity AS
     SELECT
-        user,
-        json_extract(fields_json, '$.SID') AS sid,
-        MIN(ts_utc) AS first_activity,
-        MAX(ts_utc) AS last_activity,
-        COUNT(*) AS evidence_count
-    FROM evidence_scope
-    GROUP BY user, sid;
+      n_user AS user,
+      n_sid  AS sid,
+      MIN(ts_utc) AS first_activity,
+      MAX(ts_utc) AS last_activity,
+      COUNT(*)    AS evidence_count
+    FROM evidence_norm
+    GROUP BY n_user, n_sid;
     """,
+
     "mv_primary_user": """
     CREATE TEMP VIEW mv_primary_user AS
     SELECT
-        a.user, a.sid, a.first_activity, a.last_activity, a.evidence_count
+      a.user, a.sid, a.first_activity, a.last_activity, a.evidence_count
     FROM mv_accounts_activity a
     WHERE a.sid IS NOT NULL
-      AND a.sid LIKE 'S-1-5-21-%'               -- domain/local user SIDs
-      AND (
-            a.sid GLOB '*-[1-9][0-9][0-9][0-9]'  -- 4+ digit RID at end…
-         OR a.sid GLOB '*-[1-9][0-9][0-9][0-9][0-9]*'  -- …or 5+ digits
-      )
+      AND a.sid LIKE 'S-1-5-21-%'
     ORDER BY a.last_activity DESC, a.evidence_count DESC
     LIMIT 1;
     """,
+
     "mv_tamper": """
     CREATE TEMP VIEW mv_tamper AS
-    SELECT ts_utc, user, summary, src_file
-    FROM evidence_scope
-    WHERE lower(summary) LIKE '%wevtutil cl%'
-       OR lower(summary) LIKE '%sdelete%'
-       OR lower(summary) LIKE '%timestomp%'
-       OR lower(summary) LIKE '%log cleared%';
+    SELECT ts_utc, n_user AS user, summary, src_file
+    FROM evidence_norm
+    WHERE lsum LIKE '%wevtutil cl%'
+       OR lsum LIKE '%sdelete%'
+       OR lsum LIKE '%timestomp%'
+       OR lsum LIKE '%log cleared%';
     """,
+
     "mv_usb_devices": """
     CREATE TEMP VIEW mv_usb_devices AS
     SELECT
-        ts_utc, user,
-        json_extract(fields_json, '$.DeviceMake')  AS make,
-        json_extract(fields_json, '$.DeviceModel') AS model,
-        json_extract(fields_json, '$.SerialNumber') AS serial,
-        src_file
-    FROM evidence_scope
-    WHERE artifact IN ('USBSTOR', 'setupapi', 'MountPoints2');
+      ts_utc,
+      n_user AS user,
+      COALESCE(
+        json_extract(fields_json,'$.DeviceMake'),
+        json_extract(fields_json,'$.FriendlyName'),
+        json_extract(fields_json,'$.DeviceDesc'),
+        json_extract(fields_json,'$.Product'),
+        json_extract(fields_json,'$.Model'),
+        json_extract(fields_json,'$.ModelName')
+      ) AS make,
+      COALESCE(
+        json_extract(fields_json,'$.DeviceModel'),
+        json_extract(fields_json,'$.Model'),
+        json_extract(fields_json,'$.Product')
+      ) AS model,
+      COALESCE(
+        json_extract(fields_json,'$.SerialNumber'),
+        json_extract(fields_json,'$.Serial'),
+        json_extract(fields_json,'$.ContainerId'),
+        json_extract(fields_json,'$.ParentIdPrefix')
+      ) AS serial,
+      src_file
+    FROM evidence_norm
+    WHERE artifact IN ('USBSTOR','setupapi','MountPoints2');
     """,
+
     "mv_usb_file_transfers": """
     CREATE TEMP VIEW mv_usb_file_transfers AS
     WITH base AS (
       SELECT
-          ts_utc,
-          user,
-          artifact,
-          summary,
-          src_file,
-          -- unify the file path across tools
-          COALESCE(
-            json_extract(fields_json,'$.FullPath'),
-            json_extract(fields_json,'$.TargetPath'),
-            json_extract(fields_json,'$.FileName')
-          ) AS file_path,
-          -- unify action/operation across tools
-          lower(COALESCE(
-            json_extract(fields_json,'$.Reason'),
-            json_extract(fields_json,'$.UsnReason'),
-            json_extract(fields_json,'$.Operation')
-          )) AS action,
-          -- common device/drive hints (when provided by EZ_Parser outputs)
-          json_extract(fields_json,'$.DriveType')  AS drive_type,   -- e.g., "Removable" or 2
-          json_extract(fields_json,'$.BusType')    AS bus_type,     -- e.g., "USB"
-          json_extract(fields_json,'$.DeviceType') AS device_type,  -- e.g., "USB"
-          fields_json
-      FROM evidence_scope
+        ts_utc, n_user AS user, artifact, summary, src_file,
+        n_file_path AS file_path,
+        n_action    AS action,
+        n_drive_type AS drive_type,
+        n_bus_type   AS bus_type,
+        n_device_type AS device_type,
+        lsum, ljson
+      FROM evidence_norm
       WHERE artifact IN ('MFT','USNJRNL','LECmd','JumpLists')
     )
     SELECT
       ts_utc,
       user,
-      file_path   AS file_name,
+      file_path AS file_name,
       action,
       src_file
     FROM base
     WHERE
-      -- action heuristics for file movement/creation
-      (
-           action LIKE '%create%'
-        OR action LIKE '%rename%'
-        OR action LIKE '%write%'
-        OR lower(summary) LIKE '%jumplist%'
-      )
-      AND
-      (
-          -- STRONG signals the media is removable / USB
-             lower(bus_type)    = 'usb'
-          OR lower(device_type) = 'usb'
-          OR lower(CAST(drive_type AS TEXT)) LIKE '%removable%'
-          OR (CASE
-                 WHEN CAST(drive_type AS TEXT) GLOB '[0-9]*'
-                 THEN CAST(drive_type AS INTEGER)
-                 ELSE NULL
-              END) = 2   -- Windows DRIVE_REMOVABLE
-
-          -- FALLBACK signals (useful when tools don't emit typed fields):
-          OR lower(summary) LIKE '%usb%'
-          -- heuristic: path on a non-system letter (commonly removable). Keep conservative: exclude C:
-          OR (
-               file_path IS NOT NULL
-               AND substr(file_path,2,1) = ':'
-               AND (substr(upper(file_path),1,1) <> 'C')
-             )
+      ( action LIKE '%create%' OR action LIKE '%rename%' OR action LIKE '%write%' OR lsum LIKE '%jumplist%' )
+      AND (
+           lower(bus_type) = 'usb'
+        OR lower(device_type) = 'usb'
+        OR lower(CAST(drive_type AS TEXT)) LIKE '%removable%'
+        OR (CASE WHEN CAST(drive_type AS TEXT) GLOB '[0-9]*' THEN CAST(drive_type AS INTEGER) ELSE NULL END) = 2
+        OR ljson LIKE '%\\usb%'
+        OR ( file_path IS NOT NULL AND substr(file_path,2,1)=':' AND substr(upper(file_path),1,1) <> 'C' )
       );
     """,
+
     "mv_cloud_exfil": """
     CREATE TEMP VIEW mv_cloud_exfil AS
     SELECT
-        ts_utc, user,
-        COALESCE(json_extract(fields_json, '$.FileName'), json_extract(fields_json, '$.URL')) AS file_name,
-        CASE
-            WHEN lower(summary) LIKE '%onedrive%' OR lower(summary) LIKE '%graph.microsoft.com%' THEN 'OneDrive/SharePoint'
-            WHEN lower(summary) LIKE '%dropbox%' OR lower(summary) LIKE '%content.dropboxapi.com%' THEN 'Dropbox'
-            WHEN lower(summary) LIKE '%box.com%' THEN 'Box'
-            WHEN lower(summary) LIKE '%drive.google%' OR lower(summary) LIKE '%www.googleapis.com/upload%' THEN 'Google Drive'
-            WHEN lower(summary) LIKE '%slack%' OR lower(summary) LIKE '%slack-files.com%' THEN 'Slack'
-            WHEN lower(summary) LIKE '%icloud%' THEN 'iCloud'
-            ELSE 'Other'
-        END AS cloud_service,
-        src_file
-    FROM evidence_scope
-    WHERE artifact IN ('BrowserHistory','EventLog_App','FileSystem')
-      AND (
-        lower(summary) LIKE '%onedrive%' OR lower(summary) LIKE '%dropbox%' OR lower(summary) LIKE '%box.com%'
-        OR lower(summary) LIKE '%drive.google%' OR lower(summary) LIKE '%icloud%' OR lower(summary) LIKE '%slack%'
-      );
+      ts_utc,
+      n_user AS user,
+      COALESCE(json_extract(fields_json,'$.FileName'),
+               json_extract(fields_json,'$.URL'),
+               json_extract(fields_json,'$.Url'),
+               json_extract(fields_json,'$.Address')) AS file_name,
+      CASE
+        WHEN ljson LIKE '%onedrive%' OR ljson LIKE '%graph.microsoft.com%' THEN 'OneDrive/SharePoint'
+        WHEN ljson LIKE '%dropbox%'  OR ljson LIKE '%content.dropboxapi.com%' THEN 'Dropbox'
+        WHEN ljson LIKE '%box.com%'  THEN 'Box'
+        WHEN ljson LIKE '%drive.google%' OR ljson LIKE '%www.googleapis.com/upload%' THEN 'Google Drive'
+        WHEN ljson LIKE '%slack%' OR ljson LIKE '%slack-files.com%' THEN 'Slack'
+        WHEN ljson LIKE '%icloud%' THEN 'iCloud'
+        ELSE 'Other'
+      END AS cloud_service,
+      src_file
+    FROM evidence_norm
+    WHERE artifact IN ('BrowserHistory','EventLog_App','FileSystem');
     """,
+
     "mv_screenshots": """
     CREATE TEMP VIEW mv_screenshots AS
     SELECT
-        ts_utc, user,
-        json_extract(fields_json, '$.FilePath') AS screenshot_file,
-        src_file
-    FROM evidence_scope
+      ts_utc,
+      n_user AS user,
+      COALESCE(json_extract(fields_json,'$.FilePath'),
+               json_extract(fields_json,'$.FullPath'),
+               json_extract(fields_json,'$.TargetPath'),
+               json_extract(fields_json,'$.FileName')) AS screenshot_file,
+      src_file
+    FROM evidence_norm
     WHERE artifact IN ('FileSystem')
-      AND (
-        lower(summary) LIKE '%.png%' OR lower(summary) LIKE '%.jpg%' OR lower(summary) LIKE '%screenshot%'
-      );
+      AND ( ljson LIKE '%.png%' OR ljson LIKE '%.jpg%' OR ljson LIKE '%screenshot%'
+            OR lsum  LIKE '%.png%' OR lsum  LIKE '%.jpg%' OR lsum  LIKE '%screenshot%' );
     """,
+
     "mv_printing": """
     CREATE TEMP VIEW mv_printing AS
     SELECT
-        ts_utc, user,
-        json_extract(fields_json, '$.DocumentName') AS document,
-        json_extract(fields_json, '$.PrinterName')  AS printer,
-        src_file
-    FROM evidence_scope
-    WHERE artifact IN ('PrintService', 'Spooler');
+      ts_utc,
+      n_user AS user,
+      COALESCE(json_extract(fields_json,'$.DocumentName'),
+               json_extract(fields_json,'$.FileName'),
+               json_extract(fields_json,'$.DocName')) AS document,
+      COALESCE(json_extract(fields_json,'$.PrinterName'),
+               json_extract(fields_json,'$.Printer')) AS printer,
+      src_file
+    FROM evidence_norm
+    WHERE artifact IN ('PrintService','Spooler','EventLog_App');
     """,
+
     "mv_installs_services": """
     CREATE TEMP VIEW mv_installs_services AS
     SELECT
-        ts_utc, user,
-        json_extract(fields_json, '$.ProgramName') AS program,
-        json_extract(fields_json, '$.ServiceName') AS service,
-        summary, src_file
-    FROM evidence_scope
-    WHERE artifact IN ('setupapi', 'Amcache', 'Services', 'EventLog_App');
+      ts_utc,
+      n_user AS user,
+      COALESCE(json_extract(fields_json,'$.ProgramName'),
+               json_extract(fields_json,'$.DisplayName'),
+               json_extract(fields_json,'$.ProductName')) AS program,
+      COALESCE(json_extract(fields_json,'$.ServiceName'),
+               json_extract(fields_json,'$.Name'),
+               json_extract(fields_json,'$.Service')) AS service,
+      summary, src_file
+    FROM evidence_norm
+    WHERE artifact IN ('setupapi','Amcache','Services','EventLog_App');
     """,
 }
 
@@ -622,7 +708,11 @@ def ingest_extracts(con: sqlite3.Connection, case_id: str, extracts_dir: Path = 
                 row_counter += 1
                 ts = pick_timestamp(row, str(csv_path), con)
                 host = row.get("Computer") or row.get("Host") or None
-                user = row.get("User") or row.get("Username") or row.get("TargetUserName") or None
+                user = (row.get("User") or row.get("Username") or row.get("UserName") or
+                        row.get("AccountName") or row.get("Account") or
+                        row.get("SubjectUserName") or row.get("TargetUserName") or
+                        row.get("SamAccountName") or row.get("LogonUser") or
+                        row.get("Owner") or row.get("CreatedBy") or None)
                 row_id = sha256_text(f"{csv_path}:{row_counter}")
                 fields_json = json.dumps(row)[:150000]
                 summary = build_summary(artifact, row)
@@ -647,6 +737,117 @@ def ingest_extracts(con: sqlite3.Connection, case_id: str, extracts_dir: Path = 
                 cur.execute("INSERT INTO evidence_fts_map(fts_rowid, row_id) VALUES (?, ?)", (fts_rowid, row_id))
             con.commit()
         total += row_counter
+    return total
+
+def ingest_setupapi_text(con: sqlite3.Connection, case_id: str, root: Optional[Path] = None) -> int:
+    """
+    Ingest setupapi.* text logs from extracts\\Registry into the evidence table
+    as artifact='setupapi'. Extracts coarse timestamps and useful context.
+    """
+    root = root or (DIR_EXTRACTS / "Registry")
+    if not root.exists():
+        return 0
+
+    log_files = sorted(p for p in root.glob("setupapi*") if p.is_file())
+    if not log_files:
+        return 0
+
+    # Regexes for time / sections in SetupAPI logs (e.g., "2025/08/18 17:41:17.363")
+    rx_dt = re.compile(r'(?P<dt>\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}(?:\.\d{3})?)')
+    rx_hdr = re.compile(r'^\>\>\>\s+\[(?P<header>.+?)\]\s*$')   # >>>  [Device Install ...]
+    rx_start = re.compile(r'Section start', re.IGNORECASE)
+    rx_end   = re.compile(r'Section end',   re.IGNORECASE)
+
+    cur = con.cursor()
+    total = 0
+
+    for path in log_files:
+        try:
+            src_hash = sha256_file(path)
+        except Exception:
+            src_hash = None
+
+        con.execute(
+            "INSERT OR REPLACE INTO sources(src_file, tool, tool_version, src_sha256, ingested_utc) VALUES (?,?,?,?,?)",
+            (str(path), "SetupAPI", None, src_hash, int(time.time()))
+        )
+
+        header_ctx = None
+        last_ts = None
+
+        with path.open('r', encoding='utf-8', errors='ignore') as f:
+            for lineno, line in enumerate(f, 1):
+                line_s = line.strip()
+                if not line_s:
+                    continue
+
+                # Timestamp (carry forward last seen)
+                mdt = rx_dt.search(line_s)
+                ts = None
+                if mdt:
+                    s = mdt.group('dt')
+                    try:
+                        fmt = "%Y/%m/%d %H:%M:%S.%f" if '.' in s else "%Y/%m/%d %H:%M:%S"
+                        dt = datetime.strptime(s, fmt).replace(tzinfo=timezone.utc)
+                        ts = int(dt.timestamp())
+                        last_ts = ts
+                    except Exception:
+                        ts = last_ts
+                else:
+                    ts = last_ts
+
+                event = None
+                mh = rx_hdr.match(line_s)
+                if mh:
+                    header_ctx = mh.group('header')
+                    event = "section"
+                elif rx_start.search(line_s):
+                    event = "section_start"
+                elif rx_end.search(line_s):
+                    event = "section_end"
+                elif line_s.lower().startswith(("inf:", "dvi:", "ndi:", "ump:")):
+                    event = line_s[:3].lower().rstrip(':')  # inf / dvi / ndi / ump
+                else:
+                    # Keep only higher-signal lines
+                    continue
+
+                fields = {
+                    "Event": event,
+                    "Header": header_ctx,
+                    "Line": line_s,
+                    "LogFile": str(path)
+                }
+                summary = f"setupapi {event}: {(header_ctx or '')} {line_s}"[:200]
+
+                row_id = sha256_text(f"{path}:{lineno}")
+                cur.execute(
+                    """
+                    INSERT OR REPLACE INTO evidence
+                    (row_id,case_id,host,user,ts_utc,artifact,src_file,summary,fields_json,src_sha256,row_sha256)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                    """,
+                    (
+                        row_id, case_id, None, None, ts, "setupapi", str(path), summary,
+                        json.dumps(fields)[:150000], src_hash,
+                        sha256_text(f"{case_id}|{ts}|setupapi|{summary}|{fields}|{src_hash}")
+                    )
+                )
+
+                # FTS upsert to keep contentless FTS in sync (same pattern you use for CSVs)
+                cur.execute("SELECT fts_rowid FROM evidence_fts_map WHERE row_id=?", (row_id,))
+                r = cur.fetchone()
+                if r:
+                    cur.execute("DELETE FROM evidence_fts WHERE rowid=?", (r[0],))
+                    cur.execute("DELETE FROM evidence_fts_map WHERE row_id=?", (row_id,))
+                cur.execute("INSERT INTO evidence_fts(summary, fields_json) VALUES (?, ?)", (summary, json.dumps(fields)[:150000]))
+                fts_rowid = cur.lastrowid
+                cur.execute("INSERT INTO evidence_fts_map(fts_rowid, row_id) VALUES (?, ?)", (fts_rowid, row_id))
+
+                total += 1
+
+        con.commit()
+
+    print(f"[*] Ingested setupapi text rows: {total}")
     return total
 
 def db_connect() -> sqlite3.Connection:
@@ -1077,6 +1278,12 @@ def main():
             pass
 
     con = db_connect()
+    
+    # Ingest setupapi.* text logs staged in extracts\Registry
+    try:
+        ingest_setupapi_text(con, args.case_id)
+    except Exception as e:
+        print(f"[WARN] setupapi ingest failed: {e}")
 
     if not args.no_ingest:
         print(f"[*] Ingesting CSVs from {DIR_EXTRACTS} into {DB_PATH}")
