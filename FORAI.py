@@ -831,7 +831,7 @@ def build_llm_prompt(header: Dict[str, str], qa: List[Dict[str, object]]) -> str
         ev = item.get('evidence') or []
         for row in ev[:10]:  # cap context
             ts = row.get('ts_utc')
-            when = datetime.utcfromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%SZ") if ts else ""
+            when = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ") if ts else ""
             # keep each row compact for context budget
             snippet = json.dumps(row, ensure_ascii=False)[:300]
             lines.append(f"- {when} {snippet}")
@@ -909,7 +909,7 @@ def llm_answer_custom(con: sqlite3.Connection, header: Dict[str,str], nl_questio
     lines.append("")
     lines.append("EVIDENCE (most recent first):")
     for row in context_hits:
-        when = datetime.utcfromtimestamp(row['ts_utc']).strftime("%Y-%m-%d %H:%M:%SZ") if row['ts_utc'] else ""
+        when = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ") if ts else ""
         lines.append(f"- {when} [{row['artifact']}] {row['summary']} ({row['src_file']})")
 
     lines.append("")
