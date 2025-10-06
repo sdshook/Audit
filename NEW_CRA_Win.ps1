@@ -932,6 +932,428 @@ function Get-PrefetchFiles {
     Write-CompatibleLog "Prefetch files collection completed. Found $($results.Count) files."
 }
 
+function Get-AMCacheHistory {
+    Write-CompatibleLog "Collecting AMCACHE history..."
+    
+    $results = @()
+    try {
+        # Ensure HKLM drive is available
+        if (!(Get-PSDrive -Name HKLM -PSProvider Registry -ErrorAction SilentlyContinue)) {
+            try {
+                New-PSDrive -Name HKLM -PSProvider Registry -Root HKEY_LOCAL_MACHINE -ErrorAction SilentlyContinue | Out-Null
+            } catch {
+                Write-CompatibleLog "Failed to create HKLM registry drive" "ERROR"
+                return
+            }
+        }
+        
+        # Try to get AppCompatCache from registry
+        $AppCompatCache = $null
+        try {
+            $AppCompatCache = Get-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Session Manager\AppCompatCache\' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty AppCompatCache
+        } catch { }
+        
+        if (-not $AppCompatCache) {
+            try {
+                $AppCompatCache = Get-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Session Manager\AppCompatibility\AppCompatCache' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty AppCompatCache
+            } catch { }
+        }
+        
+        if ($AppCompatCache -ne $null) {
+            Write-CompatibleLog "Found AppCompatCache data, parsing..."
+            
+            $MemoryStream = New-Object System.IO.MemoryStream(,$AppCompatCache)
+            $BinReader = New-Object System.IO.BinaryReader $MemoryStream
+            $UnicodeEncoding = New-Object System.Text.UnicodeEncoding
+            $ASCIIEncoding = New-Object System.Text.ASCIIEncoding
+            
+            try {
+                $Header = ([System.BitConverter]::ToString($BinReader.ReadBytes(4))) -replace "-",""
+                Write-CompatibleLog "AMCACHE header detected: $Header"
+                
+                switch ($Header) {
+                    "30000000" {
+                        Write-CompatibleLog "Processing AMCACHE format 30000000"
+                        $BinReader.ReadBytes(32) | Out-Null
+                        $NumberOfEntries = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                        $BinReader.ReadBytes(8) | Out-Null
+                        
+                        for ($i=0; $i -lt $NumberOfEntries; $i++) {
+                            try {
+                                $TempObject = New-Object PSObject -Property @{
+                                    FileName = ""
+                                    LastModifiedTime = ""
+                                    Data = ""
+                                }
+                                $TempObject | Add-Member -MemberType NoteProperty -Name "Tag" -Value ($ASCIIEncoding.GetString($BinReader.ReadBytes(4)))
+                                $BinReader.ReadBytes(4) | Out-Null
+                                $CacheEntrySize = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                                $NameLength = [System.BitConverter]::ToUInt16($BinReader.ReadBytes(2),0)
+                                $TempObject.FileName = $UnicodeEncoding.GetString($BinReader.ReadBytes($NameLength))
+                                $TempObject.LastModifiedTime = [DateTime]::FromFileTime([System.BitConverter]::ToUInt64($BinReader.ReadBytes(8),0)).ToString("G")
+                                $DataLength = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                                $TempObject.Data = $ASCIIEncoding.GetString($BinReader.ReadBytes($DataLength))
+                                
+                                $result = [PSCustomObject]@{
+                                    Computername = $env:COMPUTERNAME
+                                    AuditDate = Get-Date -Uformat %s
+                                    Command = ($TempObject.FileName -split "\\")[-1]
+                                    Path = $TempObject.FileName
+                                    LastMod = try { $TempObject.LastModifiedTime | Get-Date -Uformat %s } catch { 0 }
+                                }
+                                $results += $result
+                            } catch {
+                                Write-CompatibleLog "Error processing AMCACHE entry $i`: $($_.Exception.Message)" "ERROR"
+                                break
+                            }
+                        }
+                    }
+                    
+                    "34000000" {
+                        Write-CompatibleLog "Processing AMCACHE format 34000000"
+                        $BinReader.ReadBytes(36) | Out-Null
+                        $NumberOfEntries = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                        $BinReader.ReadBytes(8) | Out-Null
+                        
+                        for ($i=0; $i -lt $NumberOfEntries; $i++) {
+                            try {
+                                $TempObject = New-Object PSObject -Property @{
+                                    FileName = ""
+                                    LastModifiedTime = ""
+                                    Data = ""
+                                }
+                                $TempObject | Add-Member -MemberType NoteProperty -Name "Tag" -Value ($ASCIIEncoding.GetString($BinReader.ReadBytes(4)))
+                                $BinReader.ReadBytes(4) | Out-Null
+                                $CacheEntrySize = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                                $NameLength = [System.BitConverter]::ToUInt16($BinReader.ReadBytes(2),0)
+                                $TempObject.FileName = $UnicodeEncoding.GetString($BinReader.ReadBytes($NameLength))
+                                $TempObject.LastModifiedTime = [DateTime]::FromFileTime([System.BitConverter]::ToUInt64($BinReader.ReadBytes(8),0)).ToString("G")
+                                $DataLength = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                                $TempObject.Data = $ASCIIEncoding.GetString($BinReader.ReadBytes($DataLength))
+                                
+                                $result = [PSCustomObject]@{
+                                    Computername = $env:COMPUTERNAME
+                                    AuditDate = Get-Date -Uformat %s
+                                    Command = ($TempObject.FileName -split "\\")[-1]
+                                    Path = $TempObject.FileName
+                                    LastMod = try { $TempObject.LastModifiedTime | Get-Date -Uformat %s } catch { 0 }
+                                }
+                                $results += $result
+                            } catch {
+                                Write-CompatibleLog "Error processing AMCACHE entry $i`: $($_.Exception.Message)" "ERROR"
+                                break
+                            }
+                        }
+                    }
+                    
+                    "80000000" {
+                        Write-CompatibleLog "Processing AMCACHE format 80000000"
+                        $Offset = [System.BitConverter]::ToUInt32($AppCompatCache[0..3],0)
+                        $Tag = [System.BitConverter]::ToString($AppCompatCache[$Offset..($Offset+3)],0) -replace "-",""
+                        
+                        if ($Tag -eq "30307473" -or $Tag -eq "31307473") {
+                            $MemoryStream.Position = ($Offset)
+                            while ($MemoryStream.Position -lt $MemoryStream.Length) {
+                                try {
+                                    $EntryTag = [System.BitConverter]::ToString($BinReader.ReadBytes(4),0) -replace "-",""
+                                    if ($EntryTag -eq "30307473" -or $EntryTag -eq "31307473") {
+                                        $BinReader.ReadBytes(4) | Out-Null
+                                        $TempObject = New-Object PSObject -Property @{
+                                            Name = ""
+                                            Time = ""
+                                        }
+                                        $JMP = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                                        $SZ = [System.BitConverter]::ToUInt16($BinReader.ReadBytes(2),0)
+                                        $TempObject.Name = $UnicodeEncoding.GetString($BinReader.ReadBytes($SZ + 2))
+                                        $BinReader.ReadBytes(8) | Out-Null
+                                        $TempObject.Time = [DateTime]::FromFileTime([System.BitConverter]::ToUInt64($BinReader.ReadBytes(8),0)).ToString("G")
+                                        $BinReader.ReadBytes(4) | Out-Null
+                                        
+                                        $result = [PSCustomObject]@{
+                                            Computername = $env:COMPUTERNAME
+                                            AuditDate = Get-Date -Uformat %s
+                                            Command = ($TempObject.Name -split "\\")[-1]
+                                            Path = $TempObject.Name
+                                            LastMod = try { $TempObject.Time | Get-Date -Uformat %s } catch { 0 }
+                                        }
+                                        $results += $result
+                                    } else {
+                                        # Scan for next valid entry
+                                        $Exit = $False
+                                        while ($Exit -ne $true -and $MemoryStream.Position -lt $MemoryStream.Length) {
+                                            $Byte1 = [System.BitConverter]::ToString($BinReader.ReadBytes(1),0) -replace "-",""
+                                            if ($Byte1 -eq "30" -or $Byte1 -eq "31") {
+                                                $Byte2 = [System.BitConverter]::ToString($BinReader.ReadBytes(1),0) -replace "-",""
+                                                if ($Byte2 -eq "30") {
+                                                    $Byte3 = [System.BitConverter]::ToString($BinReader.ReadBytes(1),0) -replace "-",""
+                                                    if ($Byte3 -eq "74") {
+                                                        $Byte4 = [System.BitConverter]::ToString($BinReader.ReadBytes(1),0) -replace "-",""
+                                                        if ($Byte4 -eq "73") {
+                                                            $MemoryStream.Position = ($MemoryStream.Position - 4)
+                                                            $Exit = $True
+                                                        } else {
+                                                            $MemoryStream.Position = ($MemoryStream.Position - 3)
+                                                        }
+                                                    } else {
+                                                        $MemoryStream.Position = ($MemoryStream.Position - 2)
+                                                    }
+                                                } else {
+                                                    $MemoryStream.Position = ($MemoryStream.Position - 1)
+                                                }
+                                            }
+                                        }
+                                    }
+                                } catch {
+                                    Write-CompatibleLog "Error in AMCACHE 80000000 parsing: $($_.Exception.Message)" "ERROR"
+                                    break
+                                }
+                            }
+                        } elseif ($Tag -eq "726F7473") {
+                            $MemoryStream.Position = ($Offset + 8)
+                            while ($MemoryStream.Position -lt $MemoryStream.Length) {
+                                try {
+                                    $TempObject = New-Object PSObject -Property @{
+                                        Name = ""
+                                        Time = ""
+                                    }
+                                    $JMP = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                                    $TempObject.Time = [DateTime]::FromFileTime([System.BitConverter]::ToUInt64($BinReader.ReadBytes(8),0)).ToString("G")
+                                    $SZ = [System.BitConverter]::ToUInt16($BinReader.ReadBytes(2),0)
+                                    $TempObject.Name = $UnicodeEncoding.GetString($BinReader.ReadBytes($SZ))
+                                    
+                                    $result = [PSCustomObject]@{
+                                        Computername = $env:COMPUTERNAME
+                                        AuditDate = Get-Date -Uformat %s
+                                        Command = ($TempObject.Name -split "\\")[-1]
+                                        Path = $TempObject.Name
+                                        LastMod = try { $TempObject.Time | Get-Date -Uformat %s } catch { 0 }
+                                    }
+                                    $results += $result
+                                } catch {
+                                    Write-CompatibleLog "Error in AMCACHE 726F7473 parsing: $($_.Exception.Message)" "ERROR"
+                                    break
+                                }
+                            }
+                        }
+                    }
+                    
+                    "EE0FDCBA" {
+                        Write-CompatibleLog "Processing AMCACHE format EE0FDCBA"
+                        $NumberOfEntries = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                        $MemoryStream.Position=128
+                        $Length = [System.BitConverter]::ToUInt16($BinReader.ReadBytes(2),0)
+                        $MaxLength = [System.BitConverter]::ToUInt16($BinReader.ReadBytes(2),0)
+                        $Padding = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                        $MemoryStream.Position=128
+                        
+                        if (($MaxLength - $Length) -eq 2) {
+                            if ($Padding -eq 0) {
+                                for ($i=0; $i -lt $NumberOfEntries; $i++) {
+                                    try {
+                                        $TempObject = New-Object PSObject -Property @{
+                                            Name = ""
+                                            Length = 0
+                                            MaxLength = 0
+                                            Padding = 0
+                                            Offset0 = 0
+                                            Offset1 = 0
+                                            Time = ""
+                                            Flag0 = 0
+                                            Flag1 = 0
+                                        }
+                                        $TempObject.Length = [System.BitConverter]::ToUInt16($BinReader.ReadBytes(2),0)
+                                        $TempObject.MaxLength = [System.BitConverter]::ToUInt16($BinReader.ReadBytes(2),0)
+                                        $TempObject.Padding = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                                        $TempObject.Offset0 = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                                        $TempObject.Offset1 = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                                        $TempObject.Time = [DateTime]::FromFileTime([System.BitConverter]::ToUInt64($BinReader.ReadBytes(8),0)).ToString("G")
+                                        $TempObject.Flag0 = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                                        $TempObject.Flag1 = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                                        $TempObject.Name = ($UnicodeEncoding.GetString($AppCompatCache[$TempObject.Offset0..($TempObject.Offset0+$TempObject.Length-1)])) -replace "\\\?\?\\",""
+                                        $BinReader.ReadBytes(16) | Out-Null
+                                        
+                                        $result = [PSCustomObject]@{
+                                            Computername = $env:COMPUTERNAME
+                                            AuditDate = Get-Date -Uformat %s
+                                            Command = ($TempObject.Name -split "\\")[-1]
+                                            Path = $TempObject.Name
+                                            LastMod = try { $TempObject.Time | Get-Date -Uformat %s } catch { 0 }
+                                        }
+                                        $results += $result
+                                    } catch {
+                                        Write-CompatibleLog "Error processing AMCACHE EE0FDCBA entry $i`: $($_.Exception.Message)" "ERROR"
+                                        break
+                                    }
+                                }
+                            } else {
+                                for ($i=0; $i -lt $NumberOfEntries; $i++) {
+                                    try {
+                                        $TempObject = New-Object PSObject -Property @{
+                                            Name = ""
+                                            Length = 0
+                                            MaxLength = 0
+                                            Offset = 0
+                                            Time = ""
+                                            Flag0 = 0
+                                            Flag1 = 0
+                                        }
+                                        $TempObject.Length = [System.BitConverter]::ToUInt16($BinReader.ReadBytes(2),0)
+                                        $TempObject.MaxLength = [System.BitConverter]::ToUInt16($BinReader.ReadBytes(2),0)
+                                        $TempObject.Offset = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                                        $TempObject.Time = [DateTime]::FromFileTime([System.BitConverter]::ToUInt64($BinReader.ReadBytes(8),0)).ToString("G")
+                                        $TempObject.Flag0 = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                                        $TempObject.Flag1 = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                                        $TempObject.Name = ($UnicodeEncoding.GetString($AppCompatCache[$TempObject.Offset..($TempObject.Offset+$TempObject.Length-1)])) -replace "\\\?\?\\",""
+                                        $BinReader.ReadBytes(16) | Out-Null
+                                        
+                                        $result = [PSCustomObject]@{
+                                            Computername = $env:COMPUTERNAME
+                                            AuditDate = Get-Date -Uformat %s
+                                            Command = ($TempObject.Name -split "\\")[-1]
+                                            Path = $TempObject.Name
+                                            LastMod = try { $TempObject.Time | Get-Date -Uformat %s } catch { 0 }
+                                        }
+                                        $results += $result
+                                    } catch {
+                                        Write-CompatibleLog "Error processing AMCACHE EE0FDCBA entry $i`: $($_.Exception.Message)" "ERROR"
+                                        break
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    "FE0FDCBA" {
+                        Write-CompatibleLog "Processing AMCACHE format FE0FDCBA"
+                        $NumberOfEntries = [System.BitConverter]::ToUInt32($AppCompatCache[4..7],0)
+                        $Padding = [System.BitConverter]::ToUInt32($AppCompatCache[12..15],0)
+                        $MemoryStream.Position=8
+                        
+                        if ($Padding -eq 0) {
+                            for ($i=0; $i -lt $NumberOfEntries; $i++) {
+                                try {
+                                    $TempObject = New-Object PSObject -Property @{
+                                        Name = ""
+                                        ModifiedTime = ""
+                                        FileSize = 0
+                                        Executed = $false
+                                    }
+                                    $Length = [System.BitConverter]::ToUInt16($BinReader.ReadBytes(2),0)
+                                    $MaxLength = [System.BitConverter]::ToUInt16($BinReader.ReadBytes(2),0)
+                                    $Padding = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                                    $Offset = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                                    $BinReader.ReadBytes(4) | Out-Null
+                                    $TempObject.ModifiedTime = [DateTime]::FromFileTime([System.BitConverter]::ToUInt64($BinReader.ReadBytes(8),0)).ToString("G")
+                                    $TempObject.FileSize = [System.BitConverter]::ToUInt64($BinReader.ReadBytes(8),0)
+                                    $TempObject.Name = $UnicodeEncoding.GetString($AppCompatCache[$Offset..($Offset + $Length)])
+                                    $TempObject.Executed = $TempObject.FileSize -gt 0
+                                    
+                                    $result = [PSCustomObject]@{
+                                        Computername = $env:COMPUTERNAME
+                                        AuditDate = Get-Date -Uformat %s
+                                        Command = ($TempObject.Name -split "\\")[-1]
+                                        Path = $TempObject.Name
+                                        LastMod = try { $TempObject.ModifiedTime | Get-Date -Uformat %s } catch { 0 }
+                                    }
+                                    $results += $result
+                                } catch {
+                                    Write-CompatibleLog "Error processing AMCACHE FE0FDCBA entry $i`: $($_.Exception.Message)" "ERROR"
+                                    break
+                                }
+                            }
+                        } else {
+                            for ($i=0; $i -lt $NumberOfEntries; $i++) {
+                                try {
+                                    $TempObject = New-Object PSObject -Property @{
+                                        FileName = ""
+                                        ModifiedTime = ""
+                                        FileSize = 0
+                                    }
+                                    $Length = [System.BitConverter]::ToUInt16($BinReader.ReadBytes(2),0)
+                                    $MaxLength = [System.BitConverter]::ToUInt16($BinReader.ReadBytes(2),0)
+                                    $Offset = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                                    $TempObject.ModifiedTime = [DateTime]::FromFileTime([System.BitConverter]::ToUInt64($BinReader.ReadBytes(8),0)).ToString("G")
+                                    $TempObject.FileSize = [System.BitConverter]::ToUInt64($BinReader.ReadBytes(8),0)
+                                    $TempObject.FileName = $UnicodeEncoding.GetString($AppCompatCache[$Offset..($Offset + $Length)])
+                                    
+                                    $result = [PSCustomObject]@{
+                                        Computername = $env:COMPUTERNAME
+                                        AuditDate = Get-Date -Uformat %s
+                                        Command = ($TempObject.FileName -split "\\")[-1]
+                                        Path = $TempObject.FileName
+                                        LastMod = try { $TempObject.ModifiedTime | Get-Date -Uformat %s } catch { 0 }
+                                    }
+                                    $results += $result
+                                } catch {
+                                    Write-CompatibleLog "Error processing AMCACHE FE0FDCBA entry $i`: $($_.Exception.Message)" "ERROR"
+                                    break
+                                }
+                            }
+                        }
+                    }
+                    
+                    "EFBEADDE" {
+                        Write-CompatibleLog "Processing AMCACHE format EFBEADDE"
+                        $NumberOfEntries = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                        $NumberOfLRUEntries = [System.BitConverter]::ToUInt32($BinReader.ReadBytes(4),0)
+                        $BinReader.ReadBytes(4) | Out-Null
+                        
+                        # Skip LRU entries
+                        for ($i=0; $i -lt $NumberOfLRUEntries; $i++) {
+                            $BinReader.ReadBytes(8) | Out-Null
+                        }
+                        
+                        $MemoryStream.Position=400
+                        for ($i=0; $i -lt $NumberOfEntries; $i++) {
+                            try {
+                                $TempObject = New-Object PSObject -Property @{
+                                    FileName = ""
+                                    LastModifiedTime = ""
+                                    FileSize = 0
+                                    LastUpdatedTime = ""
+                                }
+                                $TempObject.FileName = ($UnicodeEncoding.GetString($BinReader.ReadBytes(528))) -replace "\\\?\?\\",""
+                                $TempObject.LastModifiedTime = [DateTime]::FromFileTime([System.BitConverter]::ToUInt64($BinReader.ReadBytes(8),0)).ToString("G")
+                                $TempObject.FileSize = [System.BitConverter]::ToUInt64($BinReader.ReadBytes(8),0)
+                                $TempObject.LastUpdatedTime = [DateTime]::FromFileTime([System.BitConverter]::ToUInt64($BinReader.ReadBytes(8),0)).ToString("G")
+                                
+                                $result = [PSCustomObject]@{
+                                    Computername = $env:COMPUTERNAME
+                                    AuditDate = Get-Date -Uformat %s
+                                    Command = ($TempObject.FileName -split "\\")[-1]
+                                    Path = $TempObject.FileName
+                                    LastMod = try { $TempObject.LastModifiedTime | Get-Date -Uformat %s } catch { 0 }
+                                }
+                                $results += $result
+                            } catch {
+                                Write-CompatibleLog "Error processing AMCACHE EFBEADDE entry $i`: $($_.Exception.Message)" "ERROR"
+                                break
+                            }
+                        }
+                    }
+                    
+                    default {
+                        Write-CompatibleLog "Unknown AMCACHE format: $Header" "WARNING"
+                    }
+                }
+            } catch {
+                Write-CompatibleLog "Error parsing AMCACHE header: $($_.Exception.Message)" "ERROR"
+            } finally {
+                # Clean up resources
+                if ($BinReader) { $BinReader.Dispose() }
+                if ($MemoryStream) { $MemoryStream.Dispose() }
+            }
+        } else {
+            Write-CompatibleLog "No AppCompatCache data found in registry" "WARNING"
+        }
+    } catch {
+        Write-CompatibleLog "Failed to collect AMCACHE history: $($_.Exception.Message)" "ERROR"
+    }
+    
+    $results | Export-CompatibleCSV -Path "$localpath\$env:Computername-amcache.csv"
+    Write-CompatibleLog "AMCACHE history collection completed. Found $($results.Count) entries."
+}
+
 # ============================================================================
 # MAIN EXECUTION
 # ============================================================================
@@ -979,6 +1401,7 @@ If (-Not (Test-Path $outputfile.trim())) {
         Get-USBHistory
         Get-BinaryFiles
         Get-PrefetchFiles
+        Get-AMCacheHistory
         
         Write-CompatibleLog "All data collection completed successfully."
         
