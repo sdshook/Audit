@@ -350,6 +350,14 @@ def initialize_database() -> None:
     
     LOGGER.info("Database initialized with optimized schema")
 
+def calculate_file_hash(file_path: Path) -> str:
+    """Calculate file hash using streaming to handle large files"""
+    hash_obj = hashlib.sha256()
+    with open(file_path, 'rb') as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            hash_obj.update(chunk)
+    return hash_obj.hexdigest()
+
 @performance_monitor
 def process_csv_file(file_path: Path, case_id: str) -> int:
     """Process CSV file with modern pandas optimizations"""
@@ -368,7 +376,7 @@ def process_csv_file(file_path: Path, case_id: str) -> int:
         
         total_rows = 0
         artifact_type = detect_artifact_type(file_path.name)
-        file_hash = hashlib.sha256(file_path.read_bytes()).hexdigest()
+        file_hash = calculate_file_hash(file_path)
         
         with get_database_connection() as conn:
             # Record source file
@@ -522,14 +530,14 @@ class ModernLLM:
             return "Error generating response"
     
     def _validate_response(self, response: str) -> bool:
-        """Advanced response validation"""
+        """Advanced response validation - less restrictive for forensic analysis"""
         if not response or len(response) < 10:
             return False
         
-        # Check for hallucination indicators
+        # Check for clear hallucination indicators (more permissive for forensic language)
         hallucination_patterns = [
-            r"I believe", r"I think", r"probably", r"likely", r"seems like",
-            r"appears to", r"suggests that", r"indicates that"
+            r"I believe", r"I think", r"in my opinion", r"I assume",
+            r"I guess", r"I suppose", r"I imagine"
         ]
         
         for pattern in hallucination_patterns:
@@ -657,7 +665,7 @@ class ForensicAnalyzer:
         if not evidence_results:
             return "Insufficient evidence in scope."
         
-        # Format evidence for LLM
+        # Format evidence for analysis
         evidence_text = []
         for result in evidence_results[:10]:  # Limit to top 10 results
             timestamp_str = ""
@@ -674,8 +682,14 @@ class ForensicAnalyzer:
         
         evidence_str = "\n---\n".join(evidence_text)
         
-        # Generate response using LLM
-        return self.llm.generate_response(question, evidence_str)
+        # Try LLM analysis first, fallback to structured summary
+        if self.llm.llm:
+            llm_response = self.llm.generate_response(question, evidence_str)
+            if llm_response not in ["LLM not available", "Error generating response", "Response failed validation checks"]:
+                return llm_response
+        
+        # Fallback: Provide structured evidence summary
+        return f"LLM analysis unavailable. Found {len(evidence_results)} relevant evidence items:\n\n{evidence_str[:1000]}{'...' if len(evidence_str) > 1000 else ''}"
 
 # =============================================================================
 # REPORT GENERATION
@@ -726,12 +740,44 @@ class ModernReportGenerator:
         LOGGER.info(f"Report saved: {report_path}")
         return report_path
     
+    def _sanitize_text_for_pdf(self, text: str) -> str:
+        """Sanitize text for PDF generation to handle Unicode issues"""
+        if not text:
+            return ""
+        
+        # Convert to string and handle None values
+        text = str(text)
+        
+        # Replace problematic Unicode characters with ASCII equivalents
+        replacements = {
+            '\u2013': '-',  # en dash
+            '\u2014': '--', # em dash
+            '\u2018': "'",  # left single quote
+            '\u2019': "'",  # right single quote
+            '\u201c': '"',  # left double quote
+            '\u201d': '"',  # right double quote
+            '\u2026': '...' # ellipsis
+        }
+        
+        for unicode_char, ascii_char in replacements.items():
+            text = text.replace(unicode_char, ascii_char)
+        
+        # Remove or replace other non-ASCII characters
+        try:
+            text.encode('latin1')
+            return text
+        except UnicodeEncodeError:
+            # Replace non-encodable characters with '?'
+            return text.encode('latin1', errors='replace').decode('latin1')
+
     def _generate_pdf_report(self, report: Dict[str, Any], output_path: Path):
-        """Generate PDF report using modern FPDF"""
+        """Generate PDF report using modern FPDF with Unicode handling"""
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font('Arial', 'B', 16)
-        pdf.cell(0, 10, f'Forensic Analysis Report - Case {self.case_id}', 0, 1, 'C')
+        
+        title = self._sanitize_text_for_pdf(f'Forensic Analysis Report - Case {self.case_id}')
+        pdf.cell(0, 10, title, 0, 1, 'C')
         
         pdf.set_font('Arial', '', 12)
         pdf.ln(10)
@@ -744,7 +790,9 @@ class ModernReportGenerator:
             
             for key, value in report['computer_identity'].items():
                 if value:
-                    pdf.cell(0, 8, f'{key.replace("_", " ").title()}: {value}', 0, 1)
+                    clean_key = self._sanitize_text_for_pdf(key.replace("_", " ").title())
+                    clean_value = self._sanitize_text_for_pdf(str(value))
+                    pdf.cell(0, 8, f'{clean_key}: {clean_value}', 0, 1)
             pdf.ln(5)
         
         # User Accounts
@@ -754,7 +802,9 @@ class ModernReportGenerator:
             pdf.set_font('Arial', '', 12)
             
             for account in report['user_accounts'][:5]:  # Top 5 accounts
-                pdf.cell(0, 8, f"User: {account['username']} (Activity: {account['activity_count']})", 0, 1)
+                username = self._sanitize_text_for_pdf(account['username'])
+                activity = self._sanitize_text_for_pdf(str(account['activity_count']))
+                pdf.cell(0, 8, f"User: {username} (Activity: {activity})", 0, 1)
             pdf.ln(5)
         
         # Forensic Answers
@@ -764,9 +814,12 @@ class ModernReportGenerator:
         
         for question, answer in report['forensic_answers'].items():
             pdf.set_font('Arial', 'B', 11)
-            pdf.multi_cell(0, 6, f'Q: {question}', 0, 1)
+            clean_question = self._sanitize_text_for_pdf(question)
+            pdf.multi_cell(0, 6, f'Q: {clean_question}', 0, 1)
+            
             pdf.set_font('Arial', '', 10)
-            pdf.multi_cell(0, 5, f'A: {answer}', 0, 1)
+            clean_answer = self._sanitize_text_for_pdf(answer)
+            pdf.multi_cell(0, 5, f'A: {clean_answer}', 0, 1)
             pdf.ln(3)
         
         pdf.output(str(output_path))
