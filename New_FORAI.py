@@ -196,7 +196,6 @@ class EnhancedForensicSearch:
             params = [weight, query]
             
             if days_back:
-                from datetime import datetime, timedelta
                 cutoff_date = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
                 time_conditions.append("e.timestamp >= ?")
                 params.append(cutoff_date)
@@ -2231,7 +2230,7 @@ def main():
     # END-TO-END WORKFLOW OPTIONS
     parser.add_argument('--full-analysis', action='store_true', 
                        help='Complete end-to-end forensic analysis: collect → parse → analyze → report')
-    parser.add_argument('--target-drive', required='--full-analysis' in sys.argv or '--collect-artifacts' in sys.argv, 
+    parser.add_argument('--target-drive', 
                        help='Target drive letter (e.g., C:) for live collection')
     
     # TIME WINDOW FILTERING
