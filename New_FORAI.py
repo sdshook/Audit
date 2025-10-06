@@ -45,6 +45,272 @@ from llama_cpp import Llama
 import psutil
 
 # =============================================================================
+# ENHANCED SEARCH SYSTEM FOR IMPROVED TINYLLAMA ACCURACY
+# =============================================================================
+
+class EnhancedForensicSearch:
+    """Advanced FTS5 search system optimized for TinyLLama forensic analysis"""
+    
+    def __init__(self):
+        self.artifact_weights = {
+            'registry': 1.5,
+            'filesystem': 1.3,
+            'network': 1.4,
+            'process': 1.2,
+            'usb': 1.6,
+            'browser': 1.1,
+            'email': 1.4,
+            'system': 1.2
+        }
+        
+        self.forensic_expansions = {
+            'exfiltration': ['copy', 'transfer', 'usb', 'upload', 'email', 'download'],
+            'malware': ['virus', 'trojan', 'suspicious', 'executable', 'infection', 'payload'],
+            'intrusion': ['login', 'access', 'authentication', 'breach', 'unauthorized'],
+            'deletion': ['delete', 'remove', 'wipe', 'shred', 'format', 'destroy'],
+            'modification': ['edit', 'change', 'alter', 'update', 'write', 'modify'],
+            'communication': ['email', 'chat', 'message', 'call', 'contact', 'skype'],
+            'storage': ['usb', 'drive', 'disk', 'volume', 'mount', 'device'],
+            'network': ['internet', 'connection', 'traffic', 'packet', 'protocol'],
+            'user': ['account', 'login', 'session', 'profile', 'authentication']
+        }
+    
+    def enhanced_search_evidence(self, query: str, limit: int = 15) -> List[Dict]:
+        """Multi-stage enhanced search with intelligent ranking"""
+        
+        # Stage 1: Query expansion with forensic keywords
+        expanded_queries = self._expand_forensic_keywords(query)
+        
+        # Stage 2: Multi-query search with weighting
+        all_results = []
+        
+        with get_database_connection() as conn:
+            for expanded_query, weight in expanded_queries:
+                results = self._weighted_fts_search(conn, expanded_query, weight, limit * 2)
+                all_results.extend(results)
+        
+        # Stage 3: Remove duplicates and merge scores
+        merged_results = self._merge_duplicate_results(all_results)
+        
+        # Stage 4: Temporal clustering
+        clustered_results = self._cluster_by_time(merged_results)
+        
+        # Stage 5: Evidence correlation
+        correlated_results = self._correlate_evidence(clustered_results)
+        
+        # Stage 6: Intelligent final ranking
+        final_results = self._intelligent_ranking(correlated_results, query)
+        
+        return final_results[:limit]
+    
+    def _expand_forensic_keywords(self, query: str) -> List[Tuple[str, float]]:
+        """Expand query with forensic-specific synonyms and related terms"""
+        
+        expanded_queries = [(query, 1.0)]  # Original query with highest weight
+        query_lower = query.lower()
+        
+        # Add forensic domain expansions
+        for key, expansions in self.forensic_expansions.items():
+            if key in query_lower:
+                for expansion in expansions[:3]:  # Limit to top 3 expansions
+                    if expansion not in query_lower:
+                        expanded_queries.append((f"({query}) OR {expansion}", 0.7))
+        
+        # Add common forensic patterns
+        if any(term in query_lower for term in ['suspicious', 'anomaly', 'unusual']):
+            expanded_queries.append((f"({query}) OR (anomalous OR irregular)", 0.6))
+        
+        return expanded_queries[:4]  # Limit total expansions
+    
+    def _weighted_fts_search(self, conn: sqlite3.Connection, query: str, weight: float, limit: int) -> List[Dict]:
+        """FTS5 search with artifact type weighting and BM25 ranking"""
+        
+        try:
+            results = conn.execute("""
+                SELECT 
+                    e.*,
+                    bm25(evidence_fts, 1.0, 1.0, 1.0) as base_score,
+                    ? as query_weight
+                FROM evidence e
+                JOIN evidence_fts ON evidence_fts.rowid = e.id
+                WHERE evidence_fts MATCH ?
+                ORDER BY bm25(evidence_fts) DESC
+                LIMIT ?
+            """, (weight, query, limit)).fetchall()
+            
+            # Convert to dictionaries and apply artifact weighting
+            weighted_results = []
+            for row in results:
+                result_dict = dict(row)
+                artifact_type = result_dict.get('artifact_type', '').lower()
+                
+                # Apply artifact-specific weighting
+                artifact_weight = self.artifact_weights.get(artifact_type, 1.0)
+                result_dict['weighted_score'] = result_dict['base_score'] * artifact_weight * weight
+                
+                weighted_results.append(result_dict)
+            
+            return weighted_results
+            
+        except sqlite3.OperationalError:
+            # Fallback to basic search if FTS5 fails
+            return self._basic_search_fallback(conn, query, limit)
+    
+    def _basic_search_fallback(self, conn: sqlite3.Connection, query: str, limit: int) -> List[Dict]:
+        """Fallback search when FTS5 is not available"""
+        
+        results = conn.execute("""
+            SELECT * FROM evidence 
+            WHERE summary LIKE ? OR details LIKE ?
+            ORDER BY timestamp DESC
+            LIMIT ?
+        """, (f'%{query}%', f'%{query}%', limit)).fetchall()
+        
+        return [dict(row) for row in results]
+    
+    def _merge_duplicate_results(self, results: List[Dict]) -> List[Dict]:
+        """Merge duplicate results and combine their scores"""
+        
+        merged = {}
+        
+        for result in results:
+            result_id = result.get('id')
+            if result_id:
+                if result_id in merged:
+                    # Combine scores for duplicate results
+                    merged[result_id]['weighted_score'] += result.get('weighted_score', 0)
+                    merged[result_id]['query_matches'] = merged[result_id].get('query_matches', 1) + 1
+                else:
+                    result['query_matches'] = 1
+                    merged[result_id] = result
+        
+        return list(merged.values())
+    
+    def _cluster_by_time(self, results: List[Dict]) -> List[Dict]:
+        """Group evidence by temporal proximity for better context"""
+        
+        time_clusters = defaultdict(list)
+        
+        for result in results:
+            if result.get('timestamp'):
+                # Group by hour for temporal correlation
+                dt = datetime.fromtimestamp(result['timestamp'])
+                hour_key = dt.replace(minute=0, second=0, microsecond=0)
+                time_clusters[hour_key].append(result)
+        
+        # Boost scores for items in clusters with multiple evidence
+        clustered_results = []
+        for cluster_time, cluster_items in time_clusters.items():
+            cluster_boost = min(len(cluster_items) * 0.1, 0.4)  # Max 40% boost
+            
+            for item in cluster_items:
+                item['temporal_score'] = item.get('weighted_score', 0) + cluster_boost
+                item['cluster_size'] = len(cluster_items)
+                item['cluster_time'] = cluster_time
+                clustered_results.append(item)
+        
+        return clustered_results
+    
+    def _correlate_evidence(self, results: List[Dict]) -> List[Dict]:
+        """Find correlations between different evidence types"""
+        
+        # Group by user and host for correlation analysis
+        user_host_groups = defaultdict(list)
+        
+        for result in results:
+            key = (result.get('username', ''), result.get('hostname', ''))
+            user_host_groups[key].append(result)
+        
+        # Boost scores for evidence from same user/host
+        correlated_results = []
+        for (user, host), group_items in user_host_groups.items():
+            if len(group_items) > 1:  # Multiple evidence from same source
+                correlation_boost = min(len(group_items) * 0.12, 0.5)
+                
+                for item in group_items:
+                    item['correlation_score'] = item.get('temporal_score', 0) + correlation_boost
+                    item['correlation_count'] = len(group_items)
+                    correlated_results.append(item)
+            else:
+                # Single evidence, no correlation boost
+                item = group_items[0]
+                item['correlation_score'] = item.get('temporal_score', 0)
+                item['correlation_count'] = 1
+                correlated_results.append(item)
+        
+        return correlated_results
+    
+    def _intelligent_ranking(self, results: List[Dict], original_query: str) -> List[Dict]:
+        """Final intelligent ranking considering multiple factors"""
+        
+        # Extract key terms from original query for relevance scoring
+        query_terms = set(re.findall(r'\w+', original_query.lower()))
+        
+        for result in results:
+            # Calculate term relevance score
+            content = f"{result.get('summary', '')} {result.get('details', '')}".lower()
+            content_terms = set(re.findall(r'\w+', content))
+            
+            term_overlap = len(query_terms.intersection(content_terms))
+            relevance_score = term_overlap / max(len(query_terms), 1)
+            
+            # Final composite score
+            result['final_ranking_score'] = (
+                result.get('correlation_score', 0) * 0.4 +    # Correlation weight
+                relevance_score * 0.25 +                      # Relevance weight
+                (result.get('cluster_size', 1) / 10) * 0.15 + # Temporal clustering
+                result.get('query_matches', 1) * 0.1 +        # Multi-query matches
+                result.get('weighted_score', 0) * 0.1         # Original FTS5 score
+            )
+        
+        # Sort by final ranking score
+        return sorted(results, key=lambda x: x.get('final_ranking_score', 0), reverse=True)
+    
+    def build_optimized_context(self, results: List[Dict], max_tokens: int = 1800) -> str:
+        """Build optimized context for TinyLLama within token limits"""
+        
+        context_parts = []
+        current_tokens = 0
+        seen_types = set()
+        
+        for result in results:
+            artifact_type = result.get('artifact_type', '')
+            
+            # Prefer diverse evidence types for better context
+            type_penalty = 0.1 if artifact_type in seen_types else 0
+            adjusted_score = result.get('final_ranking_score', 0) - type_penalty
+            
+            if adjusted_score > 0.2:  # Quality threshold
+                # Build concise evidence summary
+                timestamp_str = ""
+                if result.get('timestamp'):
+                    dt = datetime.fromtimestamp(result['timestamp'])
+                    timestamp_str = f"[{dt.strftime('%m/%d %H:%M')}] "
+                
+                # Create concise but informative summary
+                summary = result.get('summary', '')[:90]
+                evidence_text = f"{timestamp_str}{artifact_type.upper()}: {summary}"
+                
+                # Add correlation info if significant
+                if result.get('correlation_count', 1) > 2:
+                    evidence_text += f" (correlated with {result['correlation_count']} events)"
+                
+                # Estimate tokens (rough: 4 chars per token)
+                estimated_tokens = len(evidence_text) // 4
+                
+                if current_tokens + estimated_tokens < max_tokens:
+                    context_parts.append(evidence_text)
+                    current_tokens += estimated_tokens
+                    seen_types.add(artifact_type)
+                else:
+                    break
+        
+        return "\n".join(context_parts)
+
+# Global instance for enhanced search
+enhanced_search = EnhancedForensicSearch()
+
+# =============================================================================
 # CONFIGURATION
 # =============================================================================
 
@@ -658,38 +924,125 @@ class ForensicAnalyzer:
             return results
     
     def answer_forensic_question(self, question: str, case_id: str) -> str:
-        """Answer forensic question using modern analysis"""
-        # Get relevant evidence
-        evidence_results = search_evidence(question, limit=50)
+        """Enhanced forensic question answering with improved TinyLLama accuracy"""
+        
+        # Use enhanced search system for better evidence retrieval
+        evidence_results = enhanced_search.enhanced_search_evidence(question, limit=20)
         
         if not evidence_results:
             return "Insufficient evidence in scope."
         
-        # Format evidence for analysis
-        evidence_text = []
-        for result in evidence_results[:10]:  # Limit to top 10 results
-            timestamp_str = ""
-            if result['timestamp']:
-                dt = datetime.fromtimestamp(result['timestamp'], tz=timezone.utc)
-                timestamp_str = f" [{dt.strftime('%Y-%m-%d %H:%M:%S UTC')}]"
-            
-            evidence_text.append(
-                f"Artifact: {result['artifact']}{timestamp_str}\n"
-                f"User: {result['user'] or 'Unknown'}\n"
-                f"Host: {result['host'] or 'Unknown'}\n"
-                f"Summary: {result['summary']}\n"
-            )
+        # Build optimized context for TinyLLama
+        optimized_context = enhanced_search.build_optimized_context(evidence_results, max_tokens=1800)
         
-        evidence_str = "\n---\n".join(evidence_text)
+        # Enhanced prompt structure for better TinyLLama performance
+        enhanced_prompt = f"""FORENSIC ANALYSIS TASK:
+Question: {question}
+
+EVIDENCE (chronological, correlated):
+{optimized_context}
+
+ANALYSIS INSTRUCTIONS:
+- Focus on temporal patterns and correlations between evidence
+- Identify key artifacts and their relationships
+- Provide specific evidence-based conclusions
+- Note any suspicious activity patterns or anomalies
+- Consider user behavior and system interactions
+
+FORENSIC RESPONSE:"""
         
-        # Try LLM analysis first, fallback to structured summary
+        # Try LLM analysis with enhanced context
         if self.llm.llm:
-            llm_response = self.llm.generate_response(question, evidence_str)
+            llm_response = self.llm.generate_response(question, enhanced_prompt)
             if llm_response not in ["LLM not available", "Error generating response", "Response failed validation checks"]:
                 return llm_response
         
-        # Fallback: Provide structured evidence summary
-        return f"LLM analysis unavailable. Found {len(evidence_results)} relevant evidence items:\n\n{evidence_str[:1000]}{'...' if len(evidence_str) > 1000 else ''}"
+        # Enhanced fallback with structured analysis
+        return self._generate_enhanced_structured_analysis(evidence_results, question)
+    
+    def _generate_enhanced_structured_analysis(self, evidence_results: List[Dict], question: str) -> str:
+        """Generate enhanced structured analysis when LLM unavailable"""
+        
+        # Analyze evidence patterns for better insights
+        artifact_counts = defaultdict(int)
+        time_range = {"earliest": None, "latest": None}
+        users = set()
+        hosts = set()
+        correlations = defaultdict(list)
+        
+        for result in evidence_results:
+            # Count artifact types
+            artifact_type = result.get('artifact_type', 'unknown')
+            artifact_counts[artifact_type] += 1
+            
+            # Track time range
+            if result.get('timestamp'):
+                ts = result['timestamp']
+                if not time_range["earliest"] or ts < time_range["earliest"]:
+                    time_range["earliest"] = ts
+                if not time_range["latest"] or ts > time_range["latest"]:
+                    time_range["latest"] = ts
+            
+            # Track users and hosts
+            if result.get('username'):
+                users.add(result['username'])
+            if result.get('hostname'):
+                hosts.add(result['hostname'])
+            
+            # Track correlations
+            if result.get('correlation_count', 0) > 1:
+                key = f"{result.get('username', 'Unknown')}@{result.get('hostname', 'Unknown')}"
+                correlations[key].append(result)
+        
+        # Generate enhanced structured response
+        analysis = f"ENHANCED FORENSIC ANALYSIS - {question}\n"
+        analysis += "=" * 60 + "\n\n"
+        
+        analysis += "EVIDENCE SUMMARY:\n"
+        analysis += f"• Total artifacts analyzed: {len(evidence_results)}\n"
+        analysis += f"• Artifact types: {', '.join(sorted(artifact_counts.keys()))}\n"
+        analysis += f"• Users involved: {', '.join(sorted(users)) if users else 'Unknown'}\n"
+        analysis += f"• Hosts involved: {', '.join(sorted(hosts)) if hosts else 'Unknown'}\n"
+        
+        if time_range["earliest"] and time_range["latest"]:
+            start_time = datetime.fromtimestamp(time_range["earliest"])
+            end_time = datetime.fromtimestamp(time_range["latest"])
+            duration = end_time - start_time
+            analysis += f"• Time range: {start_time.strftime('%Y-%m-%d %H:%M')} to {end_time.strftime('%Y-%m-%d %H:%M')}\n"
+            analysis += f"• Duration: {duration}\n"
+        
+        analysis += "\nKEY FINDINGS (ranked by relevance):\n"
+        for i, result in enumerate(evidence_results[:8], 1):
+            score = result.get('final_ranking_score', 0)
+            cluster_info = f" (clustered with {result.get('cluster_size', 1)} events)" if result.get('cluster_size', 1) > 1 else ""
+            correlation_info = f" (correlated with {result.get('correlation_count', 1)} events)" if result.get('correlation_count', 1) > 1 else ""
+            
+            timestamp_str = ""
+            if result.get('timestamp'):
+                dt = datetime.fromtimestamp(result['timestamp'])
+                timestamp_str = f"[{dt.strftime('%m/%d %H:%M')}] "
+            
+            analysis += f"{i}. {timestamp_str}{result.get('artifact_type', 'UNKNOWN').upper()}: "
+            analysis += f"{result.get('summary', 'No summary available')[:100]}"
+            analysis += f"{cluster_info}{correlation_info} (score: {score:.2f})\n"
+        
+        # Add correlation analysis if significant correlations found
+        if correlations:
+            analysis += "\nCORRELATION ANALYSIS:\n"
+            for user_host, correlated_events in correlations.items():
+                if len(correlated_events) > 2:
+                    analysis += f"• {user_host}: {len(correlated_events)} correlated events detected\n"
+        
+        # Add pattern analysis
+        analysis += "\nPATTERN ANALYSIS:\n"
+        if 'usb' in artifact_counts and artifact_counts['usb'] > 1:
+            analysis += "• Multiple USB device activities detected - potential data transfer\n"
+        if 'network' in artifact_counts and 'filesystem' in artifact_counts:
+            analysis += "• Network and filesystem activity correlation - potential exfiltration pattern\n"
+        if len(users) > 1:
+            analysis += f"• Multiple user accounts involved ({len(users)} users) - potential privilege escalation\n"
+        
+        return analysis
 
 # =============================================================================
 # REPORT GENERATION
