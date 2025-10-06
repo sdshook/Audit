@@ -7,8 +7,8 @@ Zero backward compatibility - Modern Python only
 
 Automated collection and processing for essential forensic Q&A
 Supported by TinyLLaMA 1.1b
-Note: prototype utilizing KAPE and Eric Zimmerman's Tools
-requirements (pip install pandas wmi pywin32 fpdf llama-cpp-python psutil)
+Note: prototype utilizing KAPE and Plaso timeline analysis
+requirements (pip install pandas wmi pywin32 fpdf llama-cpp-python psutil plaso)
 dotNet 9 performs better than 6 also.
 
 DESIGN PRINCIPLES:
@@ -1817,6 +1817,168 @@ class ForensicAnalyzer:
         return analysis
 
 # =============================================================================
+# FORENSIC PROCESSOR
+# =============================================================================
+
+class ForensicProcessor:
+    """Modern forensic data processor for Plaso timeline integration"""
+    
+    def __init__(self, db_path: str):
+        self.db_path = db_path
+        self.analyzer = ForensicAnalyzer()
+        
+    def initialize_database(self) -> None:
+        """Initialize database with optimized schema"""
+        with get_database_connection() as conn:
+            conn.executescript(DATABASE_SCHEMA)
+            conn.commit()
+        LOGGER.info("Database initialized with optimized schema")
+    
+    def process_csv_file(self, csv_file: Path) -> int:
+        """Process Plaso CSV timeline file with optimized handling"""
+        LOGGER.info(f"Processing Plaso timeline CSV: {csv_file}")
+        
+        # Validate input file
+        if not csv_file.exists():
+            LOGGER.error(f"CSV file does not exist: {csv_file}")
+            return 0
+            
+        if csv_file.stat().st_size == 0:
+            LOGGER.warning(f"CSV file is empty: {csv_file}")
+            return 0
+        
+        try:
+            # Read CSV with optimizations for Plaso format
+            df = pd.read_csv(
+                csv_file,
+                dtype=str,
+                na_filter=False,
+                engine='c',
+                low_memory=False,
+                chunksize=10000,  # Process in chunks for large timelines
+                encoding='utf-8',
+                on_bad_lines='skip'  # Skip malformed lines
+            )
+            
+            total_rows = 0
+            
+            with get_database_connection() as conn:
+                # Use batch processing for better performance
+                conn.execute("BEGIN TRANSACTION")
+                
+                for chunk_num, chunk in enumerate(df):
+                    # Map Plaso columns to our database schema
+                    processed_rows = self._process_plaso_chunk(chunk, csv_file, conn)
+                    total_rows += processed_rows
+                    
+                    # Commit every 50 chunks to prevent memory issues
+                    if chunk_num % 50 == 0:
+                        conn.commit()
+                        conn.execute("BEGIN TRANSACTION")
+                        LOGGER.debug(f"Processed {total_rows} rows so far...")
+                    
+                conn.commit()
+                
+            LOGGER.info(f"Processed {total_rows} timeline entries from {csv_file.name}")
+            return total_rows
+            
+        except Exception as e:
+            LOGGER.error(f"Error processing CSV file {csv_file}: {e}")
+            return 0
+    
+    def _process_plaso_chunk(self, chunk: pd.DataFrame, source_file: Path, conn) -> int:
+        """Process a chunk of Plaso timeline data with optimized batch inserts"""
+        processed_count = 0
+        batch_data = []
+        
+        for _, row in chunk.iterrows():
+            try:
+                # Map Plaso timeline fields to our evidence schema
+                timestamp = self._parse_plaso_timestamp(row.get('datetime', ''))
+                
+                # Skip entries with invalid timestamps
+                if timestamp == 0:
+                    continue
+                
+                evidence_data = (
+                    'CURRENT',  # case_id - Will be updated by caller
+                    row.get('hostname', '')[:255],  # Truncate to prevent DB errors
+                    row.get('username', '')[:255],
+                    timestamp,
+                    row.get('parser', 'unknown')[:100],
+                    str(source_file)[:500],
+                    self._build_plaso_summary(row)[:1000],
+                    json.dumps(dict(row))[:10000],  # Limit JSON size
+                    calculate_file_hash(source_file) if source_file.exists() else ''
+                )
+                
+                batch_data.append(evidence_data)
+                processed_count += 1
+                
+            except Exception as e:
+                LOGGER.warning(f"Error processing timeline row: {e}")
+                continue
+        
+        # Batch insert for better performance
+        if batch_data:
+            try:
+                conn.executemany("""
+                    INSERT INTO evidence (case_id, host, user, timestamp, artifact, source_file, summary, data_json, file_hash)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, batch_data)
+            except Exception as e:
+                LOGGER.error(f"Error inserting batch data: {e}")
+                # Fallback to individual inserts
+                for data in batch_data:
+                    try:
+                        conn.execute("""
+                            INSERT INTO evidence (case_id, host, user, timestamp, artifact, source_file, summary, data_json, file_hash)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """, data)
+                    except Exception as inner_e:
+                        LOGGER.warning(f"Error inserting individual row: {inner_e}")
+                        continue
+                
+        return processed_count
+    
+    def _parse_plaso_timestamp(self, datetime_str: str) -> int:
+        """Parse Plaso datetime string to Unix timestamp"""
+        if not datetime_str:
+            return 0
+            
+        try:
+            # Plaso typically uses ISO format: 2024-01-01T12:00:00.000000+00:00
+            dt = datetime.fromisoformat(datetime_str.replace('Z', '+00:00'))
+            return int(dt.timestamp())
+        except Exception:
+            try:
+                # Fallback parsing for different formats
+                dt = pd.to_datetime(datetime_str, errors='coerce')
+                if pd.isna(dt):
+                    return 0
+                return int(dt.timestamp())
+            except Exception:
+                return 0
+    
+    def _build_plaso_summary(self, row: pd.Series) -> str:
+        """Build a summary from Plaso timeline row"""
+        summary_parts = []
+        
+        # Include key fields in summary
+        if row.get('message'):
+            summary_parts.append(str(row['message'])[:200])
+        if row.get('filename'):
+            summary_parts.append(f"File: {row['filename']}")
+        if row.get('source_type'):
+            summary_parts.append(f"Source: {row['source_type']}")
+            
+        return ' | '.join(summary_parts) if summary_parts else 'Timeline entry'
+    
+    def answer_forensic_question(self, question: str, case_id: str, date_from: str = None, date_to: str = None, days_back: int = None) -> str:
+        """Answer forensic questions using the analyzer"""
+        return self.analyzer.answer_forensic_question(question, case_id, date_from, date_to, days_back)
+
+# =============================================================================
 # REPORT GENERATION
 # =============================================================================
 
@@ -2016,13 +2178,13 @@ class ForensicWorkflowManager:
             if not kape_path.exists():
                 raise FileNotFoundError(f"KAPE not found at {kape_path}")
                 
-            # KAPE command for comprehensive collection
+            # KAPE command for comprehensive collection including browser history recovery
             kape_cmd = [
                 str(kape_path),
                 "--tsource", target,
                 "--tdest", str(self.artifacts_dir),
                 "--tflush",
-                "--target", "!SANS_Triage",  # Comprehensive target set
+                "--target", "!SANS_Triage,Chrome,Firefox,Edge,InternetExplorer,BrowserArtifacts",  # Enhanced browser collection
                 "--vhdx", str(self.artifacts_dir / f"{self.case_id}_artifacts.vhdx")
             ]
             
@@ -2042,65 +2204,124 @@ class ForensicWorkflowManager:
             self.log_custody_event("COLLECTION_ERROR", f"KAPE collection error: {str(e)}")
             return False
             
-    def parse_artifacts_ez_tools(self, ez_tools_path: Path) -> bool:
-        """Parse artifacts using Eric Zimmerman's tools"""
+    def parse_artifacts_plaso(self, plaso_path: Path) -> bool:
+        """Parse artifacts using Plaso for comprehensive timeline analysis"""
         try:
-            self.log_custody_event("PARSING_START", "Starting artifact parsing with EZ Tools")
+            self.log_custody_event("PARSING_START", "Starting comprehensive artifact parsing with Plaso")
             
-            if not ez_tools_path.exists():
-                raise FileNotFoundError(f"EZ Tools not found at {ez_tools_path}")
+            if not plaso_path.exists():
+                raise FileNotFoundError(f"Plaso not found at {plaso_path}")
                 
-            # Key EZ Tools and their purposes
-            ez_tools = {
-                'MFTECmd.exe': {'input': '$MFT', 'output': 'mft_analysis.csv'},
-                'JLECmd.exe': {'input': '*.automaticDestinations-ms', 'output': 'jumplist_analysis.csv'},
-                'LECmd.exe': {'input': '*.lnk', 'output': 'lnk_analysis.csv'},
-                'PECmd.exe': {'input': 'NTUSER.DAT', 'output': 'prefetch_analysis.csv'},
-                'RBCmd.exe': {'input': '$Recycle.Bin', 'output': 'recycle_bin_analysis.csv'},
-                'RECmd.exe': {'input': 'SYSTEM', 'output': 'registry_system.csv'},
-                'SBECmd.exe': {'input': '*.db', 'output': 'shellbags_analysis.csv'},
-                'WxTCmd.exe': {'input': 'UsrClass.dat', 'output': 'timeline_analysis.csv'}
-            }
+            # Step 1: Create Plaso timeline storage file
+            timeline_file = self.parsed_dir / f"{self.case_id}_timeline.plaso"
+            log2timeline_exe = plaso_path / "log2timeline.py"
             
-            success_count = 0
-            for tool, config in ez_tools.items():
-                tool_path = ez_tools_path / tool
-                if tool_path.exists():
-                    try:
-                        # Find input files in artifacts directory
-                        input_files = list(self.artifacts_dir.rglob(config['input']))
-                        if input_files:
-                            output_file = self.parsed_dir / config['output']
-                            
-                            cmd = [str(tool_path), "-d", str(self.artifacts_dir), 
-                                  "--csv", str(self.parsed_dir), "--csvf", config['output']]
-                            
-                            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-                            
-                            if result.returncode == 0 and output_file.exists():
-                                self.log_custody_event("PARSING_SUCCESS", f"{tool} completed successfully", str(output_file))
-                                success_count += 1
-                            else:
-                                self.logger.warning(f"{tool} failed or no output: {result.stderr}")
-                                
-                    except Exception as e:
-                        self.logger.error(f"Error running {tool}: {e}")
-                        
-            if success_count > 0:
-                self.log_custody_event("PARSING_COMPLETE", f"Parsed {success_count} artifact types successfully")
-                return True
-            else:
-                self.log_custody_event("PARSING_ERROR", "No artifacts were successfully parsed")
+            if not log2timeline_exe.exists():
+                raise FileNotFoundError(f"log2timeline.py not found at {log2timeline_exe}")
+            
+            self.logger.info(f"Creating Plaso timeline from artifacts in {self.artifacts_dir}")
+            
+            # log2timeline command for comprehensive parsing with optimized parsers
+            log2timeline_cmd = [
+                "python", str(log2timeline_exe),
+                "--storage-file", str(timeline_file),
+                "--parsers", "chrome_history,firefox_history,safari_history,edge_history,mft,prefetch,registry,lnk,jumplist,recycle_bin,shellbags,usnjrnl,evtx",  # Optimized parser selection
+                "--hashers", "md5,sha256",  # Essential hashes only for performance
+                "--process-archives",  # Process archive files
+                "--vss-stores", "all",  # Process Volume Shadow Copies if present
+                "--workers", "4",  # Parallel processing
+                str(self.artifacts_dir)
+            ]
+            
+            self.logger.info(f"Executing log2timeline: {' '.join(log2timeline_cmd)}")
+            result = subprocess.run(log2timeline_cmd, capture_output=True, text=True, timeout=3600)
+            
+            if result.returncode != 0:
+                self.logger.error(f"log2timeline failed: {result.stderr}")
+                self.log_custody_event("PARSING_ERROR", f"log2timeline failed: {result.stderr}")
                 return False
                 
+            if not timeline_file.exists():
+                self.logger.error("Timeline file was not created")
+                self.log_custody_event("PARSING_ERROR", "Timeline file was not created")
+                return False
+                
+            self.log_custody_event("PARSING_SUCCESS", f"Timeline created successfully: {timeline_file}")
+            
+            # Step 2: Export timeline to CSV for database integration
+            csv_file = self.parsed_dir / f"{self.case_id}_plaso_timeline.csv"
+            psort_exe = plaso_path / "psort.py"
+            
+            if not psort_exe.exists():
+                raise FileNotFoundError(f"psort.py not found at {psort_exe}")
+            
+            # Export to CSV with comprehensive fields
+            psort_cmd = [
+                "python", str(psort_exe),
+                "-o", "dynamic",  # Dynamic CSV output with all available fields
+                "-w", str(csv_file),
+                str(timeline_file)
+            ]
+            
+            self.logger.info(f"Executing psort: {' '.join(psort_cmd)}")
+            result = subprocess.run(psort_cmd, capture_output=True, text=True, timeout=1800)
+            
+            if result.returncode != 0:
+                self.logger.error(f"psort failed: {result.stderr}")
+                self.log_custody_event("PARSING_ERROR", f"psort failed: {result.stderr}")
+                return False
+                
+            if not csv_file.exists():
+                self.logger.error("CSV export file was not created")
+                self.log_custody_event("PARSING_ERROR", "CSV export file was not created")
+                return False
+                
+            # Step 3: Create additional specialized exports for browser history
+            browser_csv = self.parsed_dir / f"{self.case_id}_browser_timeline.csv"
+            browser_cmd = [
+                "python", str(psort_exe),
+                "-o", "dynamic",
+                "--analysis", "browser_search",  # Focus on browser artifacts
+                "-w", str(browser_csv),
+                str(timeline_file)
+            ]
+            
+            # Run browser-specific export (non-critical)
+            try:
+                subprocess.run(browser_cmd, capture_output=True, text=True, timeout=600)
+                if browser_csv.exists():
+                    self.log_custody_event("PARSING_SUCCESS", f"Browser timeline created: {browser_csv}")
+            except Exception as e:
+                self.logger.warning(f"Browser timeline export failed (non-critical): {e}")
+            
+            # Verify CSV file has content
+            try:
+                import pandas as pd
+                df = pd.read_csv(csv_file, nrows=1)
+                if len(df.columns) == 0:
+                    raise ValueError("CSV file has no columns")
+                    
+                self.logger.info(f"Plaso timeline CSV created with {len(df.columns)} columns")
+                
+            except Exception as e:
+                self.logger.error(f"CSV validation failed: {e}")
+                self.log_custody_event("PARSING_ERROR", f"CSV validation failed: {e}")
+                return False
+            
+            self.log_custody_event("PARSING_COMPLETE", f"Plaso parsing completed successfully - Timeline: {timeline_file}, CSV: {csv_file}")
+            self.logger.info(f"Plaso parsing completed. Timeline: {timeline_file}, CSV: {csv_file}")
+            
+            return True
+                
         except Exception as e:
-            self.logger.error(f"EZ Tools parsing error: {e}")
-            self.log_custody_event("PARSING_ERROR", f"EZ Tools parsing error: {str(e)}")
+            self.logger.error(f"Plaso parsing error: {e}")
+            self.log_custody_event("PARSING_ERROR", f"Plaso parsing error: {str(e)}")
             return False
             
-    def run_full_analysis(self, target: str, kape_path: Path, ez_tools_path: Path, 
+    def run_full_analysis(self, target: str, kape_path: Path, plaso_path: Path, 
                          questions: List[str] = None, date_from: str = None, date_to: str = None, days_back: int = None) -> bool:
-        """Execute complete end-to-end forensic analysis"""
+        """Execute complete end-to-end forensic analysis with performance monitoring"""
+        start_time = time.time()
         try:
             self.logger.info(f"Starting full forensic analysis for case {self.case_id}")
             self.log_custody_event("ANALYSIS_START", f"Full forensic analysis initiated for {target}")
@@ -2109,8 +2330,8 @@ class ForensicWorkflowManager:
             if not self.collect_artifacts_kape(target, kape_path):
                 return False
                 
-            # Step 2: Parse artifacts  
-            if not self.parse_artifacts_ez_tools(ez_tools_path):
+            # Step 2: Parse artifacts with Plaso
+            if not self.parse_artifacts_plaso(plaso_path):
                 return False
                 
             # Step 3: Initialize database and process parsed data
@@ -2146,8 +2367,10 @@ class ForensicWorkflowManager:
             report_file = self.reports_dir / f"{self.case_id}_comprehensive_report.json"
             self._generate_comprehensive_report(processor, report_file)
             
-            self.log_custody_event("ANALYSIS_COMPLETE", "Full forensic analysis completed successfully")
-            self.logger.info(f"Full forensic analysis completed. Results in: {self.output_dir}")
+            # Performance logging
+            total_time = time.time() - start_time
+            self.log_custody_event("ANALYSIS_COMPLETE", f"Full forensic analysis completed successfully in {total_time:.2f} seconds")
+            self.logger.info(f"Full forensic analysis completed in {total_time:.2f} seconds. Results in: {self.output_dir}")
             
             return True
             
@@ -2240,9 +2463,9 @@ def main():
     
     # ARTIFACT COLLECTION & PARSING
     parser.add_argument('--collect-artifacts', action='store_true', help='Collect artifacts using KAPE')
-    parser.add_argument('--parse-artifacts', action='store_true', help='Parse artifacts using Eric Zimmerman tools')
+    parser.add_argument('--parse-artifacts', action='store_true', help='Parse artifacts using Plaso timeline analysis')
     parser.add_argument('--kape-path', type=Path, default=Path('D:/FORAI/tools/kape/kape.exe'), help='Path to KAPE executable')
-    parser.add_argument('--ez-tools-path', type=Path, default=Path('D:/FORAI/tools/kape/Modules/EZTools'), help='Path to Eric Zimmerman tools directory')
+    parser.add_argument('--plaso-path', type=Path, default=Path('D:/FORAI/tools/plaso'), help='Path to Plaso tools directory')
     
     # EXISTING OPTIONS
     parser.add_argument('--csv-dir', type=Path, help='Directory containing CSV files to process')
@@ -2290,7 +2513,7 @@ def main():
             ]
             
             # Run complete analysis with time filtering
-            success = workflow.run_full_analysis(target, args.kape_path, args.ez_tools_path, questions, 
+            success = workflow.run_full_analysis(target, args.kape_path, args.plaso_path, questions, 
                                                 args.date_from, args.date_to, args.days_back)
             
             if success:
@@ -2324,7 +2547,7 @@ def main():
             
         if args.parse_artifacts:
             workflow = ForensicWorkflowManager(args.case_id, args.output_dir, args.verbose)
-            success = workflow.parse_artifacts_ez_tools(args.ez_tools_path)
+            success = workflow.parse_artifacts_plaso(args.plaso_path)
             print(f"Artifact parsing {'completed' if success else 'failed'}")
             return
         
