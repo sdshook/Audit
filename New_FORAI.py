@@ -19,6 +19,27 @@ DESIGN PRINCIPLES:
 - Streamlined codebase with no legacy support
 
 CLI USAGE EXAMPLES:
+
+🚀 COMPLETE END-TO-END FORENSIC ANALYSIS (ONE COMMAND DOES EVERYTHING):
+    # Use YOUR 12 standard forensic questions (no --question flag)
+    python New_FORAI.py --case-id CASE001 --full-analysis --target-drive C: --chain-of-custody --verbose
+    
+    # Use custom question (with --question flag)
+    python New_FORAI.py --case-id CASE001 --full-analysis --target-drive C: --question "Your specific custom question here" --chain-of-custody --verbose
+    
+    # With time filtering - last 30 days only
+    python New_FORAI.py --case-id CASE001 --full-analysis --target-drive C: --days-back 30 --chain-of-custody --verbose
+    
+    # With specific date range (YYYYMMDD format)
+    python New_FORAI.py --case-id CASE001 --full-analysis --target-drive C: --date-from 20241201 --date-to 20241215 --chain-of-custody --verbose
+
+🔧 INDIVIDUAL WORKFLOW COMPONENTS:
+    # Collect artifacts only
+    python New_FORAI.py --case-id CASE001 --collect-artifacts --target-drive C: --kape-path /tools/KAPE/kape.exe
+    
+    # Parse artifacts only
+    python New_FORAI.py --case-id CASE001 --parse-artifacts --ez-tools-path /tools/EZTools
+    
     # Initialize database for a new case
     python New_FORAI.py --case-id CASE001 --init-db
     
@@ -31,12 +52,23 @@ CLI USAGE EXAMPLES:
     # Search for evidence
     python New_FORAI.py --case-id CASE001 --search "usb device activity"
     
+    # Search with time filtering
+    python New_FORAI.py --case-id CASE001 --search "usb device activity" --days-back 7
+    python New_FORAI.py --case-id CASE001 --search "malware execution" --date-from 20241201 --date-to 20241215
+    
     # Ask forensic questions with enhanced TinyLLama analysis
     python New_FORAI.py --case-id CASE001 --question "What suspicious file transfers occurred?"
+    
+    # Ask questions with time filtering
+    python New_FORAI.py --case-id CASE001 --question "What USB devices were connected?" --days-back 30
+    python New_FORAI.py --case-id CASE001 --question "What network activity occurred?" --date-from 20241201 --date-to 20241215
     
     # Generate comprehensive forensic report
     python New_FORAI.py --case-id CASE001 --report json
     python New_FORAI.py --case-id CASE001 --report pdf
+    
+    # Generate chain of custody documentation
+    python New_FORAI.py --case-id CASE001 --chain-of-custody
     
     # Verbose mode for detailed logging
     python New_FORAI.py --case-id CASE001 --search "malware" --verbose
@@ -119,18 +151,18 @@ class EnhancedForensicSearch:
             'user': ['account', 'login', 'session', 'profile', 'authentication']
         }
     
-    def enhanced_search_evidence(self, query: str, limit: int = 15) -> List[Dict]:
-        """Multi-stage enhanced search with intelligent ranking"""
+    def enhanced_search_evidence(self, query: str, limit: int = 15, date_from: str = None, date_to: str = None, days_back: int = None) -> List[Dict]:
+        """Multi-stage enhanced search with intelligent ranking and time filtering"""
         
         # Stage 1: Query expansion with forensic keywords
         expanded_queries = self._expand_forensic_keywords(query)
         
-        # Stage 2: Multi-query search with weighting
+        # Stage 2: Multi-query search with weighting and time filtering
         all_results = []
         
         with get_database_connection() as conn:
             for expanded_query, weight in expanded_queries:
-                results = self._weighted_fts_search(conn, expanded_query, weight, limit * 2)
+                results = self._weighted_fts_search(conn, expanded_query, weight, limit * 2, date_from, date_to, days_back)
                 all_results.extend(results)
         
         # Stage 3: Remove duplicates and merge scores
@@ -166,11 +198,34 @@ class EnhancedForensicSearch:
         
         return expanded_queries[:4]  # Limit total expansions
     
-    def _weighted_fts_search(self, conn: sqlite3.Connection, query: str, weight: float, limit: int) -> List[Dict]:
-        """FTS5 search with artifact type weighting and BM25 ranking"""
+    def _weighted_fts_search(self, conn: sqlite3.Connection, query: str, weight: float, limit: int, date_from: str = None, date_to: str = None, days_back: int = None) -> List[Dict]:
+        """FTS5 search with artifact type weighting, BM25 ranking, and time filtering"""
         
         try:
-            results = conn.execute("""
+            # Build time filter conditions
+            time_conditions = []
+            params = [weight, query]
+            
+            if days_back:
+                from datetime import datetime, timedelta
+                cutoff_date = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
+                time_conditions.append("e.timestamp >= ?")
+                params.append(cutoff_date)
+            
+            if date_from:
+                # Convert YYYYMMDD to YYYY-MM-DD
+                formatted_date = f"{date_from[:4]}-{date_from[4:6]}-{date_from[6:8]}"
+                time_conditions.append("e.timestamp >= ?")
+                params.append(formatted_date)
+                
+            if date_to:
+                # Convert YYYYMMDD to YYYY-MM-DD
+                formatted_date = f"{date_to[:4]}-{date_to[4:6]}-{date_to[6:8]}"
+                time_conditions.append("e.timestamp <= ?")
+                params.append(formatted_date)
+            
+            # Build query with time filters
+            base_query = """
                 SELECT 
                     e.*,
                     bm25(evidence_fts, 1.0, 1.0, 1.0) as base_score,
@@ -178,9 +233,15 @@ class EnhancedForensicSearch:
                 FROM evidence e
                 JOIN evidence_fts ON evidence_fts.rowid = e.id
                 WHERE evidence_fts MATCH ?
-                ORDER BY bm25(evidence_fts) DESC
-                LIMIT ?
-            """, (weight, query, limit)).fetchall()
+            """
+            
+            if time_conditions:
+                base_query += " AND " + " AND ".join(time_conditions)
+            
+            base_query += " ORDER BY bm25(evidence_fts) DESC LIMIT ?"
+            params.append(limit)
+            
+            results = conn.execute(base_query, params).fetchall()
             
             # Convert to dictionaries and apply artifact weighting
             weighted_results = []
@@ -1265,19 +1326,48 @@ def process_csv_file(file_path: Path, case_id: str) -> int:
         return 0
 
 @performance_monitor
-def search_evidence(query: str, limit: int = 100) -> List[Dict[str, Any]]:
-    """Advanced full-text search with modern FTS5"""
+def search_evidence(query: str, limit: int = 100, date_from: str = None, date_to: str = None, days_back: int = None) -> List[Dict[str, Any]]:
+    """Advanced full-text search with modern FTS5 and time filtering"""
     with get_database_connection() as conn:
-        cursor = conn.execute("""
+        # Build time filter conditions
+        time_conditions = []
+        params = [query]
+        
+        if days_back:
+            from datetime import datetime, timedelta
+            cutoff_date = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
+            time_conditions.append("e.timestamp >= ?")
+            params.append(cutoff_date)
+        
+        if date_from:
+            # Convert YYYYMMDD to YYYY-MM-DD
+            formatted_date = f"{date_from[:4]}-{date_from[4:6]}-{date_from[6:8]}"
+            time_conditions.append("e.timestamp >= ?")
+            params.append(formatted_date)
+            
+        if date_to:
+            # Convert YYYYMMDD to YYYY-MM-DD
+            formatted_date = f"{date_to[:4]}-{date_to[4:6]}-{date_to[6:8]}"
+            time_conditions.append("e.timestamp <= ?")
+            params.append(formatted_date)
+        
+        # Build query with time filters
+        base_query = """
             SELECT e.id, e.case_id, e.host, e.user, e.timestamp, e.artifact,
                    e.source_file, e.summary, e.data_json,
                    rank
             FROM evidence_search 
             JOIN evidence e ON evidence_search.rowid = e.id
             WHERE evidence_search MATCH ?
-            ORDER BY rank
-            LIMIT ?
-        """, (query, limit))
+        """
+        
+        if time_conditions:
+            base_query += " AND " + " AND ".join(time_conditions)
+        
+        base_query += " ORDER BY rank LIMIT ?"
+        params.append(limit)
+        
+        cursor = conn.execute(base_query, params)
         
         results = []
         for row in cursor.fetchall():
@@ -1482,11 +1572,11 @@ class ForensicAnalyzer:
             
             return results
     
-    def answer_forensic_question(self, question: str, case_id: str) -> str:
+    def answer_forensic_question(self, question: str, case_id: str, date_from: str = None, date_to: str = None, days_back: int = None) -> str:
         """ADVANCED forensic question answering with 7 techniques for 85-95% TinyLLama accuracy"""
         
-        # Use enhanced search system for better evidence retrieval
-        evidence_results = enhanced_search.enhanced_search_evidence(question, limit=25)
+        # Use enhanced search system for better evidence retrieval with time filtering
+        evidence_results = enhanced_search.enhanced_search_evidence(question, limit=25, date_from=date_from, date_to=date_to, days_back=days_back)
         
         if not evidence_results:
             return "Insufficient evidence in scope."
@@ -1872,6 +1962,269 @@ class ModernReportGenerator:
         pdf.output(str(output_path))
 
 # =============================================================================
+# END-TO-END FORENSIC WORKFLOW SYSTEM
+# =============================================================================
+
+class ForensicWorkflowManager:
+    """Complete end-to-end forensic analysis workflow manager"""
+    
+    def __init__(self, case_id: str, output_dir: Path, verbose: bool = False):
+        self.case_id = case_id
+        self.output_dir = Path(output_dir)
+        self.verbose = verbose
+        self.logger = LOGGER
+        
+        # Create output directory structure
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.artifacts_dir = self.output_dir / "artifacts"
+        self.parsed_dir = self.output_dir / "parsed"
+        self.reports_dir = self.output_dir / "reports"
+        self.custody_dir = self.output_dir / "chain_of_custody"
+        
+        for dir_path in [self.artifacts_dir, self.parsed_dir, self.reports_dir, self.custody_dir]:
+            dir_path.mkdir(exist_ok=True)
+            
+        self.chain_of_custody = []
+        self.start_time = datetime.now(timezone.utc)
+        
+    def log_custody_event(self, event_type: str, description: str, file_path: str = None):
+        """Log chain of custody event"""
+        event = {
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'case_id': self.case_id,
+            'event_type': event_type,
+            'description': description,
+            'file_path': str(file_path) if file_path else None,
+            'hash_md5': None,
+            'hash_sha256': None
+        }
+        
+        if file_path and Path(file_path).exists():
+            event['hash_md5'] = self._calculate_hash(file_path, 'md5')
+            event['hash_sha256'] = self._calculate_hash(file_path, 'sha256')
+            
+        self.chain_of_custody.append(event)
+        self.logger.info(f"Chain of Custody: {event_type} - {description}")
+        
+    def _calculate_hash(self, file_path: str, algorithm: str) -> str:
+        """Calculate file hash for chain of custody"""
+        hash_func = hashlib.md5() if algorithm == 'md5' else hashlib.sha256()
+        try:
+            with open(file_path, 'rb') as f:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    hash_func.update(chunk)
+            return hash_func.hexdigest()
+        except Exception as e:
+            self.logger.error(f"Hash calculation failed for {file_path}: {e}")
+            return "ERROR"
+            
+    def collect_artifacts_kape(self, target: str, kape_path: Path) -> bool:
+        """Collect artifacts using KAPE"""
+        try:
+            self.log_custody_event("COLLECTION_START", f"Starting KAPE collection from {target}")
+            
+            if not kape_path.exists():
+                raise FileNotFoundError(f"KAPE not found at {kape_path}")
+                
+            # KAPE command for comprehensive collection
+            kape_cmd = [
+                str(kape_path),
+                "--tsource", target,
+                "--tdest", str(self.artifacts_dir),
+                "--tflush",
+                "--target", "!SANS_Triage",  # Comprehensive target set
+                "--vhdx", str(self.artifacts_dir / f"{self.case_id}_artifacts.vhdx")
+            ]
+            
+            self.logger.info(f"Executing KAPE: {' '.join(kape_cmd)}")
+            result = subprocess.run(kape_cmd, capture_output=True, text=True, timeout=3600)
+            
+            if result.returncode == 0:
+                self.log_custody_event("COLLECTION_SUCCESS", f"KAPE collection completed successfully")
+                return True
+            else:
+                self.logger.error(f"KAPE failed: {result.stderr}")
+                self.log_custody_event("COLLECTION_ERROR", f"KAPE collection failed: {result.stderr}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"KAPE collection error: {e}")
+            self.log_custody_event("COLLECTION_ERROR", f"KAPE collection error: {str(e)}")
+            return False
+            
+    def parse_artifacts_ez_tools(self, ez_tools_path: Path) -> bool:
+        """Parse artifacts using Eric Zimmerman's tools"""
+        try:
+            self.log_custody_event("PARSING_START", "Starting artifact parsing with EZ Tools")
+            
+            if not ez_tools_path.exists():
+                raise FileNotFoundError(f"EZ Tools not found at {ez_tools_path}")
+                
+            # Key EZ Tools and their purposes
+            ez_tools = {
+                'MFTECmd.exe': {'input': '$MFT', 'output': 'mft_analysis.csv'},
+                'JLECmd.exe': {'input': '*.automaticDestinations-ms', 'output': 'jumplist_analysis.csv'},
+                'LECmd.exe': {'input': '*.lnk', 'output': 'lnk_analysis.csv'},
+                'PECmd.exe': {'input': 'NTUSER.DAT', 'output': 'prefetch_analysis.csv'},
+                'RBCmd.exe': {'input': '$Recycle.Bin', 'output': 'recycle_bin_analysis.csv'},
+                'RECmd.exe': {'input': 'SYSTEM', 'output': 'registry_system.csv'},
+                'SBECmd.exe': {'input': '*.db', 'output': 'shellbags_analysis.csv'},
+                'WxTCmd.exe': {'input': 'UsrClass.dat', 'output': 'timeline_analysis.csv'}
+            }
+            
+            success_count = 0
+            for tool, config in ez_tools.items():
+                tool_path = ez_tools_path / tool
+                if tool_path.exists():
+                    try:
+                        # Find input files in artifacts directory
+                        input_files = list(self.artifacts_dir.rglob(config['input']))
+                        if input_files:
+                            output_file = self.parsed_dir / config['output']
+                            
+                            cmd = [str(tool_path), "-d", str(self.artifacts_dir), 
+                                  "--csv", str(self.parsed_dir), "--csvf", config['output']]
+                            
+                            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+                            
+                            if result.returncode == 0 and output_file.exists():
+                                self.log_custody_event("PARSING_SUCCESS", f"{tool} completed successfully", str(output_file))
+                                success_count += 1
+                            else:
+                                self.logger.warning(f"{tool} failed or no output: {result.stderr}")
+                                
+                    except Exception as e:
+                        self.logger.error(f"Error running {tool}: {e}")
+                        
+            if success_count > 0:
+                self.log_custody_event("PARSING_COMPLETE", f"Parsed {success_count} artifact types successfully")
+                return True
+            else:
+                self.log_custody_event("PARSING_ERROR", "No artifacts were successfully parsed")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"EZ Tools parsing error: {e}")
+            self.log_custody_event("PARSING_ERROR", f"EZ Tools parsing error: {str(e)}")
+            return False
+            
+    def run_full_analysis(self, target: str, kape_path: Path, ez_tools_path: Path, 
+                         questions: List[str] = None, date_from: str = None, date_to: str = None, days_back: int = None) -> bool:
+        """Execute complete end-to-end forensic analysis"""
+        try:
+            self.logger.info(f"Starting full forensic analysis for case {self.case_id}")
+            self.log_custody_event("ANALYSIS_START", f"Full forensic analysis initiated for {target}")
+            
+            # Step 1: Collect artifacts
+            if not self.collect_artifacts_kape(target, kape_path):
+                return False
+                
+            # Step 2: Parse artifacts  
+            if not self.parse_artifacts_ez_tools(ez_tools_path):
+                return False
+                
+            # Step 3: Initialize database and process parsed data
+            db_path = self.output_dir / f"{self.case_id}.db"
+            processor = ForensicProcessor(str(db_path))
+            processor.initialize_database()
+            
+            # Process all CSV files from parsing
+            csv_files = list(self.parsed_dir.glob("*.csv"))
+            for csv_file in csv_files:
+                self.logger.info(f"Processing {csv_file.name}")
+                processor.process_csv_file(csv_file)
+                self.log_custody_event("DATA_PROCESSING", f"Processed {csv_file.name}", str(csv_file))
+                
+            # Step 4: Answer forensic questions if provided
+            if questions:
+                for i, question in enumerate(questions, 1):
+                    self.logger.info(f"Analyzing question: {question}")
+                    answer = processor.answer_forensic_question(question, self.case_id, date_from, date_to, days_back)
+                    
+                    # Save answer to report
+                    answer_file = self.reports_dir / f"question_{i}.json"
+                    with open(answer_file, 'w') as f:
+                        json.dump({
+                            'question': question,
+                            'answer': answer,
+                            'timestamp': datetime.now(timezone.utc).isoformat()
+                        }, f, indent=2)
+                        
+                    self.log_custody_event("QUESTION_ANALYSIS", f"Analyzed question: {question}", str(answer_file))
+                    
+            # Step 5: Generate comprehensive report
+            report_file = self.reports_dir / f"{self.case_id}_comprehensive_report.json"
+            self._generate_comprehensive_report(processor, report_file)
+            
+            self.log_custody_event("ANALYSIS_COMPLETE", "Full forensic analysis completed successfully")
+            self.logger.info(f"Full forensic analysis completed. Results in: {self.output_dir}")
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Full analysis error: {e}")
+            self.log_custody_event("ANALYSIS_ERROR", f"Full analysis error: {str(e)}")
+            return False
+            
+    def _generate_comprehensive_report(self, processor: 'ForensicProcessor', report_file: Path):
+        """Generate comprehensive forensic report"""
+        try:
+            report = {
+                'case_id': self.case_id,
+                'generated_at': datetime.now(timezone.utc).isoformat(),
+                'analysis_summary': {
+                    'processing_duration': str(datetime.now(timezone.utc) - self.start_time),
+                    'chain_of_custody_events': len(self.chain_of_custody)
+                },
+                'output_files': {
+                    'artifacts_directory': str(self.artifacts_dir),
+                    'parsed_directory': str(self.parsed_dir),
+                    'reports_directory': str(self.reports_dir),
+                    'custody_directory': str(self.custody_dir)
+                }
+            }
+            
+            with open(report_file, 'w') as f:
+                json.dump(report, f, indent=2)
+                
+            self.log_custody_event("REPORT_GENERATION", "Comprehensive report generated", str(report_file))
+            
+        except Exception as e:
+            self.logger.error(f"Report generation error: {e}")
+            
+    def generate_chain_of_custody_report(self) -> Path:
+        """Generate comprehensive chain of custody documentation"""
+        try:
+            custody_file = self.custody_dir / f"{self.case_id}_chain_of_custody.json"
+            
+            custody_report = {
+                'case_id': self.case_id,
+                'generated_at': datetime.now(timezone.utc).isoformat(),
+                'analysis_start': self.start_time.isoformat(),
+                'analysis_duration': str(datetime.now(timezone.utc) - self.start_time),
+                'total_events': len(self.chain_of_custody),
+                'events': self.chain_of_custody,
+                'system_info': {
+                    'hostname': os.environ.get('COMPUTERNAME', 'Unknown'),
+                    'username': os.environ.get('USERNAME', 'Unknown'),
+                    'python_version': sys.version,
+                    'platform': sys.platform,
+                    'working_directory': str(Path.cwd()),
+                    'tool_version': 'New_FORAI.py v2.0 Enhanced'
+                }
+            }
+            
+            with open(custody_file, 'w') as f:
+                json.dump(custody_report, f, indent=2)
+                
+            self.log_custody_event("CUSTODY_REPORT", "Chain of custody report generated", str(custody_file))
+            return custody_file
+            
+        except Exception as e:
+            self.logger.error(f"Chain of custody report error: {e}")
+            return None
+
+# =============================================================================
 # MAIN WORKFLOW
 # =============================================================================
 
@@ -1883,12 +2236,35 @@ def main():
     )
     
     parser.add_argument('--case-id', required=True, help='Case identifier')
+    
+    # END-TO-END WORKFLOW OPTIONS
+    parser.add_argument('--full-analysis', action='store_true', 
+                       help='Complete end-to-end forensic analysis: collect → parse → analyze → report')
+    parser.add_argument('--target-drive', required='--full-analysis' in sys.argv or '--collect-artifacts' in sys.argv, 
+                       help='Target drive letter (e.g., C:) for live collection')
+    
+    # TIME WINDOW FILTERING
+    parser.add_argument('--date-from', help='Start date for analysis (YYYYMMDD format)')
+    parser.add_argument('--date-to', help='End date for analysis (YYYYMMDD format)')
+    parser.add_argument('--days-back', type=int, help='Number of days back from today (e.g., --days-back 30)')
+    
+    # ARTIFACT COLLECTION & PARSING
+    parser.add_argument('--collect-artifacts', action='store_true', help='Collect artifacts using KAPE')
+    parser.add_argument('--parse-artifacts', action='store_true', help='Parse artifacts using Eric Zimmerman tools')
+    parser.add_argument('--kape-path', type=Path, default=Path('C:/KAPE/kape.exe'), help='Path to KAPE executable')
+    parser.add_argument('--ez-tools-path', type=Path, default=Path('C:/EZTools'), help='Path to Eric Zimmerman tools directory')
+    
+    # EXISTING OPTIONS
     parser.add_argument('--csv-dir', type=Path, help='Directory containing CSV files to process')
     parser.add_argument('--csv-file', type=Path, help='Single CSV file to process')
     parser.add_argument('--search', help='Search query for evidence')
     parser.add_argument('--question', help='Forensic question to answer')
     parser.add_argument('--report', choices=['json', 'pdf'], help='Generate comprehensive report')
     parser.add_argument('--init-db', action='store_true', help='Initialize database')
+    
+    # CHAIN OF CUSTODY & OUTPUT
+    parser.add_argument('--chain-of-custody', action='store_true', help='Generate chain of custody documentation')
+    parser.add_argument('--output-dir', type=Path, default=Path('./forensic_output'), help='Output directory for all results')
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose logging')
     
     args = parser.parse_args()
@@ -1897,6 +2273,71 @@ def main():
         LOGGER.setLevel(logging.DEBUG)
     
     try:
+        # END-TO-END FULL ANALYSIS WORKFLOW
+        if args.full_analysis:
+            if not args.target_drive:
+                LOGGER.error("Full analysis requires --target-drive")
+                sys.exit(1)
+            target = args.target_drive
+            
+            # Initialize workflow manager
+            workflow = ForensicWorkflowManager(args.case_id, args.output_dir, args.verbose)
+            
+            # Prepare questions list - YOUR 12 STANDARD FORENSIC QUESTIONS
+            questions = [args.question] if args.question else [
+                "What is the computer name, make, model, and serial number?",
+                "What are the internal storage devices (make, model, serial numbers)?", 
+                "What user accounts exist with their SIDs and activity timeframes?",
+                "Who is the primary user based on activity volume and recency?",
+                "Is there evidence of anti-forensic activities (log clearing, file deletion, timestamp modification)?",
+                "What removable storage devices were connected (make, model, serial, timeframes)?",
+                "What files were transferred to/from removable storage devices?",
+                "What cloud storage services were accessed and what files were transferred?",
+                "Were screenshots or screen recordings created?",
+                "What documents were printed and when?",
+                "What software was installed, uninstalled, or modified?",
+                "What network connections and communications occurred?"
+            ]
+            
+            # Run complete analysis with time filtering
+            success = workflow.run_full_analysis(target, args.kape_path, args.ez_tools_path, questions, 
+                                                args.date_from, args.date_to, args.days_back)
+            
+            if success:
+                print(f"\n🎉 FULL FORENSIC ANALYSIS COMPLETED SUCCESSFULLY!")
+                print(f"📁 Results Directory: {args.output_dir}")
+                print(f"📊 Artifacts: {workflow.artifacts_dir}")
+                print(f"📋 Parsed Data: {workflow.parsed_dir}")
+                print(f"📄 Reports: {workflow.reports_dir}")
+                print(f"🔗 Chain of Custody: {workflow.custody_dir}")
+                
+                # Generate chain of custody if requested
+                if args.chain_of_custody:
+                    custody_file = workflow.generate_chain_of_custody_report()
+                    print(f"📜 Chain of Custody: {custody_file}")
+            else:
+                print("❌ Full forensic analysis failed. Check logs for details.")
+                sys.exit(1)
+            return
+        
+        # INDIVIDUAL WORKFLOW COMPONENTS
+        if args.collect_artifacts:
+            if not args.target_drive:
+                LOGGER.error("Artifact collection requires --target-drive")
+                sys.exit(1)
+            target = args.target_drive
+                
+            workflow = ForensicWorkflowManager(args.case_id, args.output_dir, args.verbose)
+            success = workflow.collect_artifacts_kape(target, args.kape_path)
+            print(f"Artifact collection {'completed' if success else 'failed'}")
+            return
+            
+        if args.parse_artifacts:
+            workflow = ForensicWorkflowManager(args.case_id, args.output_dir, args.verbose)
+            success = workflow.parse_artifacts_ez_tools(args.ez_tools_path)
+            print(f"Artifact parsing {'completed' if success else 'failed'}")
+            return
+        
         # Initialize database if requested
         if args.init_db:
             initialize_database()
@@ -1925,16 +2366,26 @@ def main():
         
         # Search evidence
         if args.search:
-            results = search_evidence(args.search)
-            print(f"\nFound {len(results)} results for: {args.search}")
+            results = search_evidence(args.search, date_from=args.date_from, date_to=args.date_to, days_back=args.days_back)
+            time_filter_msg = ""
+            if args.days_back:
+                time_filter_msg = f" (last {args.days_back} days)"
+            elif args.date_from or args.date_to:
+                time_filter_msg = f" ({args.date_from or 'start'} to {args.date_to or 'end'})"
+            print(f"\nFound {len(results)} results for: {args.search}{time_filter_msg}")
             for result in results[:10]:
                 print(f"- {result['artifact']}: {result['summary'][:100]}...")
         
         # Answer forensic question
         if args.question:
             analyzer = ForensicAnalyzer()
-            answer = analyzer.answer_forensic_question(args.question, args.case_id)
-            print(f"\nQuestion: {args.question}")
+            answer = analyzer.answer_forensic_question(args.question, args.case_id, args.date_from, args.date_to, args.days_back)
+            time_filter_msg = ""
+            if args.days_back:
+                time_filter_msg = f" (analyzing last {args.days_back} days)"
+            elif args.date_from or args.date_to:
+                time_filter_msg = f" (analyzing {args.date_from or 'start'} to {args.date_to or 'end'})"
+            print(f"\nQuestion: {args.question}{time_filter_msg}")
             print(f"Answer: {answer}")
         
         # Generate report
@@ -1943,6 +2394,12 @@ def main():
             report = generator.generate_comprehensive_report()
             report_path = generator.save_report(report, args.report)
             print(f"\nReport generated: {report_path}")
+        
+        # Generate chain of custody documentation
+        if args.chain_of_custody:
+            workflow = ForensicWorkflowManager(args.case_id, args.output_dir, args.verbose)
+            custody_file = workflow.generate_chain_of_custody_report()
+            print(f"\nChain of custody generated: {custody_file}")
     
     except Exception as e:
         LOGGER.error(f"Error in main workflow: {e}")
