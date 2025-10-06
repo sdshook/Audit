@@ -5,12 +5,41 @@ New_FORAI.py (c) 2025 All Rights Reserved Shane D. Shook
 Modern forensic analysis tool - Maximum efficiency and accuracy
 Zero backward compatibility - Modern Python only
 
+Automated collection and processing for essential forensic Q&A
+Supported by TinyLLaMA 1.1b
+Note: prototype utilizing KAPE and Eric Zimmerman's Tools
+requirements (pip install pandas wmi pywin32 fpdf llama-cpp-python psutil)
+dotNet 9 performs better than 6 also.
+
 DESIGN PRINCIPLES:
 - Maximum accuracy through advanced algorithms
 - Peak efficiency via modern Python patterns  
 - Zero backward compatibility - modern only
 - Required dependencies for full functionality
 - Streamlined codebase with no legacy support
+
+CLI USAGE EXAMPLES:
+    # Initialize database for a new case
+    python New_FORAI.py --case-id CASE001 --init-db
+    
+    # Process CSV files from a directory
+    python New_FORAI.py --case-id CASE001 --csv-dir /path/to/csv/files
+    
+    # Process a single CSV file
+    python New_FORAI.py --case-id CASE001 --csv-file evidence.csv
+    
+    # Search for evidence
+    python New_FORAI.py --case-id CASE001 --search "usb device activity"
+    
+    # Ask forensic questions with enhanced TinyLLama analysis
+    python New_FORAI.py --case-id CASE001 --question "What suspicious file transfers occurred?"
+    
+    # Generate comprehensive forensic report
+    python New_FORAI.py --case-id CASE001 --report json
+    python New_FORAI.py --case-id CASE001 --report pdf
+    
+    # Verbose mode for detailed logging
+    python New_FORAI.py --case-id CASE001 --search "malware" --verbose
 
 =============================================================================
 """
