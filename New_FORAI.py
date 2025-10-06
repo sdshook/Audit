@@ -73,17 +73,6 @@ CLI USAGE EXAMPLES:
     # Verbose mode for detailed logging
     python New_FORAI.py --case-id CASE001 --search "malware" --verbose
 
-🚀 ADVANCED TINYLLAMA ENHANCEMENT SYSTEM (7 TECHNIQUES FOR 85-95% ACCURACY):
-1. Chain-of-Thought Prompting (+5-8% accuracy) - Step-by-step forensic reasoning
-2. Few-Shot Learning (+3-5% accuracy) - Forensic domain examples for guidance  
-3. Multi-Pass Analysis (+4-6% accuracy) - Multiple perspectives with confidence scoring
-4. Evidence Validation (+3-4% accuracy) - Cross-reference claims against actual evidence
-5. Iterative Refinement (+4-5% accuracy) - Follow-up queries for deeper investigation
-6. Ensemble Voting (+3-4% accuracy) - Weighted combination of analysis approaches
-7. Context Windowing (+2-3% accuracy) - Sliding window analysis for large evidence sets
-
-📊 ACCURACY IMPROVEMENT: 75% baseline → 85-95% enhanced (+10-20% boost)
-
 =============================================================================
 """
 
