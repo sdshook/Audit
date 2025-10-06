@@ -35,10 +35,10 @@ CLI USAGE EXAMPLES:
 
 🔧 INDIVIDUAL WORKFLOW COMPONENTS:
     # Collect artifacts only
-    python New_FORAI.py --case-id CASE001 --collect-artifacts --target-drive C: --kape-path /tools/KAPE/kape.exe
+    python New_FORAI.py --case-id CASE001 --collect-artifacts --target-drive C:
     
     # Parse artifacts only
-    python New_FORAI.py --case-id CASE001 --parse-artifacts --ez-tools-path /tools/EZTools
+    python New_FORAI.py --case-id CASE001 --parse-artifacts
     
     # Initialize database for a new case
     python New_FORAI.py --case-id CASE001 --init-db
@@ -2240,8 +2240,8 @@ def main():
     # ARTIFACT COLLECTION & PARSING
     parser.add_argument('--collect-artifacts', action='store_true', help='Collect artifacts using KAPE')
     parser.add_argument('--parse-artifacts', action='store_true', help='Parse artifacts using Eric Zimmerman tools')
-    parser.add_argument('--kape-path', type=Path, default=Path('C:/KAPE/kape.exe'), help='Path to KAPE executable')
-    parser.add_argument('--ez-tools-path', type=Path, default=Path('C:/EZTools'), help='Path to Eric Zimmerman tools directory')
+    parser.add_argument('--kape-path', type=Path, default=Path('D:/FORAI/tools/kape/kape.exe'), help='Path to KAPE executable')
+    parser.add_argument('--ez-tools-path', type=Path, default=Path('D:/FORAI/tools'), help='Path to Eric Zimmerman tools directory')
     
     # EXISTING OPTIONS
     parser.add_argument('--csv-dir', type=Path, help='Directory containing CSV files to process')
@@ -2253,7 +2253,7 @@ def main():
     
     # CHAIN OF CUSTODY & OUTPUT
     parser.add_argument('--chain-of-custody', action='store_true', help='Generate chain of custody documentation')
-    parser.add_argument('--output-dir', type=Path, default=Path('./forensic_output'), help='Output directory for all results')
+    parser.add_argument('--output-dir', type=Path, default=Path('D:/FORAI'), help='Output directory for all results')
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose logging')
     
     args = parser.parse_args()
