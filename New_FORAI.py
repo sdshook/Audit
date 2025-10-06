@@ -927,7 +927,7 @@ advanced_enhancer = AdvancedTinyLlamaEnhancer()
 class ForaiConfig:
     """Modern configuration for maximum performance"""
     
-    base_dir: Path = Path("./FORAI")
+    base_dir: Path = Path("D:/FORAI")
     max_workers: int = min(8, (os.cpu_count() or 4))
     batch_size: int = 10000
     chunk_size: int = 50000
@@ -947,7 +947,7 @@ class ForaiConfig:
     
     def __post_init__(self):
         """Initialize directories"""
-        for subdir in ["archives", "artifacts", "extracts", "llm", "reports", "tools"]:
+        for subdir in ["archives", "artifacts", "extracts", "LLM", "reports", "tools"]:
             (self.base_dir / subdir).mkdir(parents=True, exist_ok=True)
     
     @property
@@ -1383,7 +1383,7 @@ class ModernLLM:
     """Modern LLM integration with advanced guardrails"""
     
     def __init__(self, model_path: Optional[Path] = None):
-        self.model_path = model_path or CONFIG.base_dir / "llm" / "tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
+        self.model_path = model_path or CONFIG.base_dir / "LLM" / "tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
         self.llm = None
         self._initialize_model()
     
@@ -1963,14 +1963,16 @@ class ForensicWorkflowManager:
         self.verbose = verbose
         self.logger = LOGGER
         
-        # Create output directory structure
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        # Use existing FORAI directory structure
         self.artifacts_dir = self.output_dir / "artifacts"
-        self.parsed_dir = self.output_dir / "parsed"
+        self.parsed_dir = self.output_dir / "extracts"  # Parsed extracts go in extracts folder
         self.reports_dir = self.output_dir / "reports"
-        self.custody_dir = self.output_dir / "chain_of_custody"
+        self.custody_dir = self.output_dir / "reports"  # Chain of custody goes in reports folder
+        self.archives_dir = self.output_dir / "archives"
+        self.llm_dir = self.output_dir / "LLM"
         
-        for dir_path in [self.artifacts_dir, self.parsed_dir, self.reports_dir, self.custody_dir]:
+        # Ensure directories exist (but don't create output_dir itself)
+        for dir_path in [self.artifacts_dir, self.parsed_dir, self.reports_dir, self.archives_dir]:
             dir_path.mkdir(exist_ok=True)
             
         self.chain_of_custody = []
@@ -2253,7 +2255,7 @@ def main():
     
     # CHAIN OF CUSTODY & OUTPUT
     parser.add_argument('--chain-of-custody', action='store_true', help='Generate chain of custody documentation')
-    parser.add_argument('--output-dir', type=Path, default=Path('D:/FORAI/forensic_output'), help='Output directory for all results')
+    parser.add_argument('--output-dir', type=Path, default=Path('D:/FORAI'), help='Output directory for all results')
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose logging')
     
     args = parser.parse_args()
