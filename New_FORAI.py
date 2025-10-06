@@ -32,11 +32,11 @@ requirements (pip install pandas wmi pywin32 fpdf llama-cpp-python psutil plaso)
 dotNet 9 performs better than 6 also.
 
 DESIGN PRINCIPLES:
-- Maximum accuracy through advanced algorithms
-- Peak efficiency via modern Python patterns  
-- Zero backward compatibility - modern only
-- Required dependencies for full functionality
-- Streamlined codebase with no legacy support
+- Maximum efficiency through VHDX-only workflow
+- Zero backward compatibility - optimized for new method only
+- Direct VHDX → SQLite processing (no intermediate files)
+- Streamlined codebase with no legacy fallbacks
+- Peak performance via modern Python patterns
 
 CLI USAGE EXAMPLES:
 
@@ -63,11 +63,7 @@ CLI USAGE EXAMPLES:
     # Initialize database for a new case
     python New_FORAI.py --case-id CASE001 --init-db
     
-    # Process CSV files from a directory
-    python New_FORAI.py --case-id CASE001 --csv-dir /path/to/csv/files
-    
-    # Process a single CSV file
-    python New_FORAI.py --case-id CASE001 --csv-file evidence.csv
+    # OPTIMIZED: Direct VHDX processing only (no CSV intermediary files)
     
     # Search for evidence
     python New_FORAI.py --case-id CASE001 --search "usb device activity"
@@ -119,7 +115,7 @@ from collections import defaultdict
 from functools import lru_cache, wraps
 
 # Required imports - fail fast if not available
-import pandas as pd
+# pandas removed - using direct VHDX → SQLite workflow only
 from tqdm import tqdm
 from fpdf import FPDF
 from llama_cpp import Llama
@@ -1063,13 +1059,14 @@ FORENSIC_QUESTIONS = [
 # =============================================================================
 
 DATABASE_SCHEMA = """
--- Core evidence table - optimized structure
+-- MAXIMUM EFFICIENCY SCHEMA FOR VHDX-ONLY WORKFLOW
+-- Core evidence table - streamlined for direct Plaso integration
 CREATE TABLE IF NOT EXISTS evidence (
     id          INTEGER PRIMARY KEY,
     case_id     TEXT NOT NULL,
     host        TEXT,
     user        TEXT,
-    timestamp   INTEGER,
+    timestamp   INTEGER NOT NULL,  -- Required for timeline analysis
     artifact    TEXT NOT NULL,
     source_file TEXT NOT NULL,
     summary     TEXT,
@@ -1078,7 +1075,7 @@ CREATE TABLE IF NOT EXISTS evidence (
     created     INTEGER DEFAULT (unixepoch())
 ) STRICT;
 
--- Source files tracking
+-- Source files tracking - minimal overhead for VHDX processing
 CREATE TABLE IF NOT EXISTS sources (
     file_path   TEXT PRIMARY KEY,
     file_hash   TEXT,
@@ -1087,30 +1084,25 @@ CREATE TABLE IF NOT EXISTS sources (
     status      TEXT DEFAULT 'complete'
 ) STRICT;
 
--- Analysis scope for current session
-CREATE TABLE IF NOT EXISTS scope (
-    start_time  INTEGER,
-    end_time    INTEGER,
-    description TEXT
-) STRICT;
+-- PERFORMANCE-OPTIMIZED COVERING INDEXES
+-- Covering index for timeline queries (most common)
+CREATE INDEX IF NOT EXISTS idx_evidence_timeline ON evidence(timestamp, case_id, artifact, summary);
+-- Covering index for artifact-based searches
+CREATE INDEX IF NOT EXISTS idx_evidence_artifact_search ON evidence(artifact, case_id, timestamp, host, user);
+-- Covering index for user activity analysis
+CREATE INDEX IF NOT EXISTS idx_evidence_user_activity ON evidence(user, host, timestamp, artifact);
+-- Covering index for host-based analysis
+CREATE INDEX IF NOT EXISTS idx_evidence_host_analysis ON evidence(host, timestamp, artifact, user);
 
--- High-performance indexes
-CREATE INDEX IF NOT EXISTS idx_evidence_time ON evidence(timestamp) WHERE timestamp IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_evidence_artifact ON evidence(artifact);
-CREATE INDEX IF NOT EXISTS idx_evidence_user ON evidence(user) WHERE user IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_evidence_host ON evidence(host) WHERE host IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_evidence_case ON evidence(case_id);
-CREATE INDEX IF NOT EXISTS idx_evidence_composite ON evidence(case_id, artifact, timestamp);
-
--- Advanced full-text search
+-- HIGH-PERFORMANCE FTS5 for forensic text search
 CREATE VIRTUAL TABLE IF NOT EXISTS evidence_search USING fts5(
     summary, data_json,
     content='evidence',
     content_rowid='id',
-    tokenize='trigram'
+    tokenize='porter unicode61 remove_diacritics 2'
 );
 
--- Auto-sync FTS triggers
+-- OPTIMIZED FTS TRIGGERS (batch-friendly)
 CREATE TRIGGER IF NOT EXISTS sync_fts_insert AFTER INSERT ON evidence BEGIN
     INSERT INTO evidence_search(rowid, summary, data_json) 
     VALUES (new.id, COALESCE(new.summary, ''), COALESCE(new.data_json, '{}'));
@@ -1154,19 +1146,23 @@ def performance_monitor(func):
 
 @performance_monitor
 def get_database_connection() -> sqlite3.Connection:
-    """Get optimized database connection"""
+    """Get maximum performance database connection for VHDX workflow"""
     conn = sqlite3.connect(
         CONFIG.db_path,
-        timeout=30.0,
+        timeout=60.0,  # Increased for large VHDX processing
         check_same_thread=False
     )
     
-    # Modern SQLite optimizations
+    # MAXIMUM PERFORMANCE SQLite optimizations for VHDX processing
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute(f"PRAGMA cache_size={CONFIG.db_cache_size}")
     conn.execute(f"PRAGMA mmap_size={CONFIG.db_mmap_size}")
     conn.execute("PRAGMA synchronous=NORMAL")
     conn.execute("PRAGMA temp_store=MEMORY")
+    conn.execute("PRAGMA page_size=65536")  # Larger page size for bulk operations
+    conn.execute("PRAGMA wal_autocheckpoint=10000")  # Less frequent checkpoints
+    conn.execute("PRAGMA busy_timeout=60000")  # Handle concurrent access
+    conn.execute("PRAGMA threads=4")  # Multi-threaded operations
     conn.execute("PRAGMA optimize")
     
     return conn
@@ -1253,85 +1249,7 @@ def calculate_file_hash(file_path: Path) -> str:
     return hash_obj.hexdigest()
 
 @performance_monitor
-def process_csv_file(file_path: Path, case_id: str) -> int:
-    """Process CSV file with modern pandas optimizations"""
-    LOGGER.info(f"Processing CSV file: {file_path}")
-    
-    try:
-        # Read CSV with optimizations
-        df = pd.read_csv(
-            file_path,
-            dtype=str,
-            na_filter=False,
-            engine='c',
-            low_memory=False,
-            chunksize=CONFIG.chunk_size
-        )
-        
-        total_rows = 0
-        artifact_type = detect_artifact_type(file_path.name)
-        file_hash = calculate_file_hash(file_path)
-        
-        with get_database_connection() as conn:
-            # Record source file
-            conn.execute("""
-                INSERT OR REPLACE INTO sources (file_path, file_hash, file_size)
-                VALUES (?, ?, ?)
-            """, (str(file_path), file_hash, file_path.stat().st_size))
-            
-            # Process in chunks
-            for chunk in df:
-                rows_to_insert = []
-                
-                for _, row in chunk.iterrows():
-                    # Extract timestamp
-                    timestamp = None
-                    for col in TIME_COLUMNS:
-                        if col in row and row[col]:
-                            timestamp = parse_timestamp(row[col])
-                            if timestamp:
-                                break
-                    
-                    # Extract normalized fields
-                    data_dict = row.to_dict()
-                    normalized = extract_json_fields(data_dict)
-                    
-                    # Create summary
-                    summary_parts = []
-                    for key, value in data_dict.items():
-                        if value and len(str(value)) < 100:
-                            summary_parts.append(f"{key}: {value}")
-                    summary = " | ".join(summary_parts[:5])  # Limit summary length
-                    
-                    rows_to_insert.append((
-                        case_id,
-                        normalized.get('host'),
-                        normalized.get('user'),
-                        timestamp,
-                        artifact_type,
-                        str(file_path),
-                        summary,
-                        json.dumps(data_dict, ensure_ascii=False),
-                        file_hash
-                    ))
-                
-                # Batch insert
-                conn.executemany("""
-                    INSERT INTO evidence 
-                    (case_id, host, user, timestamp, artifact, source_file, summary, data_json, file_hash)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, rows_to_insert)
-                
-                total_rows += len(rows_to_insert)
-            
-            conn.commit()
-        
-        LOGGER.info(f"Processed {total_rows} rows from {file_path}")
-        return total_rows
-        
-    except Exception as e:
-        LOGGER.error(f"Error processing {file_path}: {e}")
-        return 0
+# CSV processing removed - using direct VHDX → SQLite workflow only for maximum efficiency
 
 @performance_monitor
 def search_evidence(query: str, limit: int = 100, date_from: str = None, date_to: str = None, days_back: int = None) -> List[Dict[str, Any]]:
@@ -1854,145 +1772,11 @@ class ForensicProcessor:
             conn.commit()
         LOGGER.info("Database initialized with optimized schema")
     
-    def process_csv_file(self, csv_file: Path) -> int:
-        """Process Plaso CSV timeline file with optimized handling"""
-        LOGGER.info(f"Processing Plaso timeline CSV: {csv_file}")
-        
-        # Validate input file
-        if not csv_file.exists():
-            LOGGER.error(f"CSV file does not exist: {csv_file}")
-            return 0
-            
-        if csv_file.stat().st_size == 0:
-            LOGGER.warning(f"CSV file is empty: {csv_file}")
-            return 0
-        
-        try:
-            # Read CSV with optimizations for Plaso format
-            df = pd.read_csv(
-                csv_file,
-                dtype=str,
-                na_filter=False,
-                engine='c',
-                low_memory=False,
-                chunksize=10000,  # Process in chunks for large timelines
-                encoding='utf-8',
-                on_bad_lines='skip'  # Skip malformed lines
-            )
-            
-            total_rows = 0
-            
-            with get_database_connection() as conn:
-                # Use batch processing for better performance
-                conn.execute("BEGIN TRANSACTION")
-                
-                for chunk_num, chunk in enumerate(df):
-                    # Map Plaso columns to our database schema
-                    processed_rows = self._process_plaso_chunk(chunk, csv_file, conn)
-                    total_rows += processed_rows
-                    
-                    # Commit every 50 chunks to prevent memory issues
-                    if chunk_num % 50 == 0:
-                        conn.commit()
-                        conn.execute("BEGIN TRANSACTION")
-                        LOGGER.debug(f"Processed {total_rows} rows so far...")
-                    
-                conn.commit()
-                
-            LOGGER.info(f"Processed {total_rows} timeline entries from {csv_file.name}")
-            return total_rows
-            
-        except Exception as e:
-            LOGGER.error(f"Error processing CSV file {csv_file}: {e}")
-            return 0
+    # CSV processing removed - using direct VHDX → SQLite workflow only
     
-    def _process_plaso_chunk(self, chunk: pd.DataFrame, source_file: Path, conn) -> int:
-        """Process a chunk of Plaso timeline data with optimized batch inserts"""
-        processed_count = 0
-        batch_data = []
-        
-        for _, row in chunk.iterrows():
-            try:
-                # Map Plaso timeline fields to our evidence schema
-                timestamp = self._parse_plaso_timestamp(row.get('datetime', ''))
-                
-                # Skip entries with invalid timestamps
-                if timestamp == 0:
-                    continue
-                
-                evidence_data = (
-                    'CURRENT',  # case_id - Will be updated by caller
-                    row.get('hostname', '')[:255],  # Truncate to prevent DB errors
-                    row.get('username', '')[:255],
-                    timestamp,
-                    row.get('parser', 'unknown')[:100],
-                    str(source_file)[:500],
-                    self._build_plaso_summary(row)[:1000],
-                    json.dumps(dict(row))[:10000],  # Limit JSON size
-                    calculate_file_hash(source_file) if source_file.exists() else ''
-                )
-                
-                batch_data.append(evidence_data)
-                processed_count += 1
-                
-            except Exception as e:
-                LOGGER.warning(f"Error processing timeline row: {e}")
-                continue
-        
-        # Batch insert for better performance
-        if batch_data:
-            try:
-                conn.executemany("""
-                    INSERT INTO evidence (case_id, host, user, timestamp, artifact, source_file, summary, data_json, file_hash)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, batch_data)
-            except Exception as e:
-                LOGGER.error(f"Error inserting batch data: {e}")
-                # Fallback to individual inserts
-                for data in batch_data:
-                    try:
-                        conn.execute("""
-                            INSERT INTO evidence (case_id, host, user, timestamp, artifact, source_file, summary, data_json, file_hash)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """, data)
-                    except Exception as inner_e:
-                        LOGGER.warning(f"Error inserting individual row: {inner_e}")
-                        continue
-                
-        return processed_count
+    # Plaso chunk processing removed - using direct VHDX → SQLite via custom output module
     
-    def _parse_plaso_timestamp(self, datetime_str: str) -> int:
-        """Parse Plaso datetime string to Unix timestamp"""
-        if not datetime_str:
-            return 0
-            
-        try:
-            # Plaso typically uses ISO format: 2024-01-01T12:00:00.000000+00:00
-            dt = datetime.fromisoformat(datetime_str.replace('Z', '+00:00'))
-            return int(dt.timestamp())
-        except Exception:
-            try:
-                # Fallback parsing for different formats
-                dt = pd.to_datetime(datetime_str, errors='coerce')
-                if pd.isna(dt):
-                    return 0
-                return int(dt.timestamp())
-            except Exception:
-                return 0
-    
-    def _build_plaso_summary(self, row: pd.Series) -> str:
-        """Build a summary from Plaso timeline row"""
-        summary_parts = []
-        
-        # Include key fields in summary
-        if row.get('message'):
-            summary_parts.append(str(row['message'])[:200])
-        if row.get('filename'):
-            summary_parts.append(f"File: {row['filename']}")
-        if row.get('source_type'):
-            summary_parts.append(f"Source: {row['source_type']}")
-            
-        return ' | '.join(summary_parts) if summary_parts else 'Timeline entry'
+    # Plaso timestamp parsing removed - handled directly by custom output module
     
     def answer_forensic_question(self, question: str, case_id: str, date_from: str = None, date_to: str = None, days_back: int = None) -> str:
         """Answer forensic questions using the analyzer"""
@@ -2575,6 +2359,9 @@ manager.OutputManager.RegisterOutput(FAS5SQLiteOutputModule)
             # Database path for direct SQLite output
             database_path = self.parsed_dir / f"{self.case_id}_fas5.db"
             
+            # PERFORMANCE OPTIMIZATION: Pre-optimize database for bulk operations
+            self._pre_optimize_database(database_path)
+            
             # psort command with custom FAS5 SQLite output - DIRECT PROCESSING
             psort_exe = plaso_path / "psort.py"
             if not psort_exe.exists():
@@ -2582,7 +2369,13 @@ manager.OutputManager.RegisterOutput(FAS5SQLiteOutputModule)
             
             self.logger.info(f"Processing VHDX directly to FAS5 SQLite: {vhdx_path} -> {database_path}")
             
+            # PERFORMANCE MONITORING: Track processing metrics
+            start_time = time.time()
+            start_memory = psutil.Process().memory_info().rss / 1024 / 1024
+            vhdx_size = vhdx_path.stat().st_size / 1024 / 1024  # MB
+            
             # Single-step command: VHDX -> log2timeline -> custom SQLite output
+            # OPTIMIZED for maximum performance with VHDX processing
             psort_cmd = [
                 "python", str(psort_exe),
                 "--additional-modules-path", str(custom_module_path.parent),
@@ -2592,13 +2385,21 @@ manager.OutputManager.RegisterOutput(FAS5SQLiteOutputModule)
                 "--hashers", "md5,sha256",
                 "--process-archives",
                 "--vss-stores", "all",
-                "--workers", "4",
+                "--workers", "6",  # Increased workers for better performance
+                "--process-memory-limit", "4096",  # 4GB memory limit
                 "--partitions", "all",
                 str(vhdx_path)  # Process VHDX directly
             ]
             
-            self.logger.info(f"Executing direct VHDX to SQLite processing: {' '.join(psort_cmd)}")
+            self.logger.info(f"Executing optimized VHDX to SQLite processing (VHDX: {vhdx_size:.1f}MB): {' '.join(psort_cmd)}")
             result = subprocess.run(psort_cmd, capture_output=True, text=True, timeout=7200)  # Extended timeout for VHDX processing
+            
+            # PERFORMANCE METRICS
+            end_time = time.time()
+            end_memory = psutil.Process().memory_info().rss / 1024 / 1024
+            processing_time = end_time - start_time
+            memory_delta = end_memory - start_memory
+            throughput = vhdx_size / processing_time if processing_time > 0 else 0
             
             if result.returncode != 0:
                 self.logger.error(f"Direct SQLite processing failed: {result.stderr}")
@@ -2616,15 +2417,24 @@ manager.OutputManager.RegisterOutput(FAS5SQLiteOutputModule)
                 self.log_custody_event("PARSING_ERROR", "Database integrity validation failed")
                 return False
                 
+            # PERFORMANCE OPTIMIZATION: Post-optimize database for queries
+            self._post_optimize_database(database_path)
+            
             # Clean up temporary custom module
             try:
                 custom_module_path.unlink()
             except:
                 pass
                 
+            # Log performance metrics
+            db_size = database_path.stat().st_size / 1024 / 1024  # MB
             self.log_custody_event("PARSING_SUCCESS", 
-                                 f"Direct VHDX to FAS5 SQLite processing completed successfully. "
-                                 f"Database: {database_path}")
+                                 f"OPTIMIZED VHDX to FAS5 SQLite processing completed. "
+                                 f"Time: {processing_time:.2f}s, Memory: {memory_delta:+.1f}MB, "
+                                 f"Throughput: {throughput:.1f}MB/s, Database: {db_size:.1f}MB")
+            
+            self.logger.info(f"Performance metrics - Processing: {processing_time:.2f}s, "
+                           f"Memory delta: {memory_delta:+.1f}MB, Throughput: {throughput:.1f}MB/s")
             
             return True
                 
@@ -2632,6 +2442,45 @@ manager.OutputManager.RegisterOutput(FAS5SQLiteOutputModule)
             self.logger.error(f"Optimized VHDX parsing error: {e}")
             self.log_custody_event("PARSING_ERROR", f"Optimized VHDX parsing error: {str(e)}")
             return False
+    
+    def _pre_optimize_database(self, db_path: Path) -> None:
+        """Pre-optimize database for maximum performance during VHDX processing"""
+        try:
+            with sqlite3.connect(str(db_path)) as conn:
+                # Maximum performance settings for bulk inserts
+                conn.execute("PRAGMA journal_mode=WAL")
+                conn.execute("PRAGMA synchronous=OFF")  # Maximum speed during processing
+                conn.execute("PRAGMA cache_size=100000")  # Large cache for bulk operations
+                conn.execute("PRAGMA temp_store=MEMORY")
+                conn.execute("PRAGMA page_size=65536")  # Large pages for bulk data
+                conn.execute("PRAGMA wal_autocheckpoint=0")  # Disable auto-checkpoint during processing
+                conn.execute("PRAGMA busy_timeout=300000")  # 5 minute timeout
+                conn.commit()
+                
+            self.logger.debug("Database pre-optimized for maximum performance")
+        except Exception as e:
+            self.logger.warning(f"Database pre-optimization failed: {e}")
+    
+    def _post_optimize_database(self, db_path: Path) -> None:
+        """Post-optimize database after VHDX processing for query performance"""
+        try:
+            with sqlite3.connect(str(db_path)) as conn:
+                # Restore safe settings and optimize for queries
+                conn.execute("PRAGMA synchronous=NORMAL")
+                conn.execute("PRAGMA wal_autocheckpoint=1000")
+                conn.execute("PRAGMA optimize")
+                
+                # Analyze tables for query optimization
+                conn.execute("ANALYZE")
+                
+                # Vacuum to reclaim space and optimize layout
+                conn.execute("VACUUM")
+                
+                conn.commit()
+                
+            self.logger.debug("Database post-optimized for query performance")
+        except Exception as e:
+            self.logger.warning(f"Database post-optimization failed: {e}")
             
     def run_full_analysis(self, target: str, kape_path: Path, plaso_path: Path, 
                          questions: List[str] = None, date_from: str = None, date_to: str = None, days_back: int = None) -> bool:
@@ -2786,8 +2635,7 @@ def main():
     parser.add_argument('--plaso-path', type=Path, default=Path('D:/FORAI/tools/plaso'), help='Path to Plaso tools directory')
     
     # EXISTING OPTIONS
-    parser.add_argument('--csv-dir', type=Path, help='Directory containing CSV files to process')
-    parser.add_argument('--csv-file', type=Path, help='Single CSV file to process')
+    # CSV arguments removed - using direct VHDX → SQLite workflow only
     parser.add_argument('--search', help='Search query for evidence')
     parser.add_argument('--question', help='Forensic question to answer')
     parser.add_argument('--report', choices=['json', 'pdf'], help='Generate comprehensive report')
@@ -2874,26 +2722,7 @@ def main():
             initialize_database()
             return
         
-        # Process CSV files
-        if args.csv_dir:
-            csv_files = list(args.csv_dir.glob('*.csv'))
-            LOGGER.info(f"Found {len(csv_files)} CSV files to process")
-            
-            with ThreadPoolExecutor(max_workers=CONFIG.max_workers) as executor:
-                futures = [
-                    executor.submit(process_csv_file, csv_file, args.case_id)
-                    for csv_file in csv_files
-                ]
-                
-                total_rows = 0
-                for future in tqdm(as_completed(futures), total=len(futures), desc="Processing CSV files"):
-                    total_rows += future.result()
-            
-            LOGGER.info(f"Processed {total_rows} total rows")
-        
-        elif args.csv_file:
-            rows_processed = process_csv_file(args.csv_file, args.case_id)
-            LOGGER.info(f"Processed {rows_processed} rows from {args.csv_file}")
+        # CSV processing removed - using direct VHDX → SQLite workflow only
         
         # Search evidence
         if args.search:
