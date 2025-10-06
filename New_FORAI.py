@@ -2241,7 +2241,7 @@ def main():
     parser.add_argument('--collect-artifacts', action='store_true', help='Collect artifacts using KAPE')
     parser.add_argument('--parse-artifacts', action='store_true', help='Parse artifacts using Eric Zimmerman tools')
     parser.add_argument('--kape-path', type=Path, default=Path('D:/FORAI/tools/kape/kape.exe'), help='Path to KAPE executable')
-    parser.add_argument('--ez-tools-path', type=Path, default=Path('D:/FORAI/tools'), help='Path to Eric Zimmerman tools directory')
+    parser.add_argument('--ez-tools-path', type=Path, default=Path('D:/FORAI/tools/kape/Modules/EZTools'), help='Path to Eric Zimmerman tools directory')
     
     # EXISTING OPTIONS
     parser.add_argument('--csv-dir', type=Path, help='Directory containing CSV files to process')
@@ -2253,7 +2253,7 @@ def main():
     
     # CHAIN OF CUSTODY & OUTPUT
     parser.add_argument('--chain-of-custody', action='store_true', help='Generate chain of custody documentation')
-    parser.add_argument('--output-dir', type=Path, default=Path('D:/FORAI'), help='Output directory for all results')
+    parser.add_argument('--output-dir', type=Path, default=Path('D:/FORAI/forensic_output'), help='Output directory for all results')
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose logging')
     
     args = parser.parse_args()
