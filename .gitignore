@@ -74,3 +74,6 @@ test_results/
 coverage/
 .coverage
 .pytest_cache/
+
+# Exclude cloned repositories
+Audit/
