@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # SIPCompare v2.0: Advanced Forensic Code Similarity Analysis Tool
 
 ## Overview
