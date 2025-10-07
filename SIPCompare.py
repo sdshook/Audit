@@ -935,10 +935,18 @@ class CloneDetector:
         if features_a.semantic_embedding is not None and features_b.semantic_embedding is not None:
             semantic_sim = cosine_similarity(features_a.semantic_embedding, features_b.semantic_embedding)
             
-            # Check if functions have similar complexity and structure
-            complexity_sim = self._complexity_similarity(features_a, features_b)
+            # For cross-language detection, prioritize semantic similarity
+            # Check if different languages (cross-language transformation)
+            lang_a = features_a.language
+            lang_b = features_b.language
             
-            return semantic_sim > 0.7 and complexity_sim > 0.6
+            if lang_a != lang_b:
+                # Cross-language: High semantic similarity is primary indicator
+                return semantic_sim > 0.85
+            else:
+                # Same language: Use both semantic and complexity similarity
+                complexity_sim = self._complexity_similarity(features_a, features_b)
+                return semantic_sim > 0.7 and complexity_sim > 0.6
         
         return False
     
