@@ -1354,6 +1354,9 @@ class SimilarityEngine:
                 p_value, is_significant = self.statistical_analyzer.calculate_significance(overall_sim)
                 confidence_interval = self.statistical_analyzer.calculate_confidence_interval(overall_sim)
             
+            # Store semantic similarity for evidence classification
+            self._last_semantic_similarity = semantic_sim
+            
             # Determine evidence strength
             evidence_strength = self._determine_evidence_strength(
                 overall_sim, clone_type, is_significant, transformations
@@ -1507,11 +1510,17 @@ class SimilarityEngine:
     def _determine_evidence_strength(self, similarity: float, clone_type: int, 
                                    is_significant: bool, transformations: List[str]) -> str:
         """Determine forensic evidence strength with cross-language considerations"""
-        # Cross-language detection (Clone Type 4) requires different thresholds
+        # Cross-language detection (Clone Type 4) requires semantic-focused thresholds
         if clone_type == 4:  # Cross-language semantic clones
-            if similarity > 0.70:  # High semantic similarity across languages
+            # For cross-language, prioritize semantic similarity over overall similarity
+            # Use semantic similarity from the last computed match if available
+            semantic_sim = getattr(self, '_last_semantic_similarity', similarity)
+            
+            # Strong evidence: High semantic similarity (>90%) OR high overall similarity (>65%)
+            if semantic_sim > 0.90 or similarity > 0.65:
                 return "STRONG"
-            elif similarity > 0.60:  # Moderate semantic similarity
+            # Moderate evidence: Good semantic similarity (>85%) OR moderate overall (>55%)
+            elif semantic_sim > 0.85 or similarity > 0.55:
                 return "MODERATE"
             else:
                 return "WEAK"
