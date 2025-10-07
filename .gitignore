@@ -81,3 +81,11 @@ coverage/
 
 # Exclude cloned repositories
 Audit/
+
+# Test repositories and evaluation files
+test_repos/
+evidence_files/
+reports/
+chain_of_custody.txt
+*_Evaluation.md
+*_Improvement_Plan.md

@@ -28,6 +28,14 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from collections import defaultdict, Counter
 import numpy as np
 from tqdm import tqdm
+
+# Import torch for embedding models
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    torch = None
 import difflib
 import pickle
 import multiprocessing as mp
@@ -96,6 +104,7 @@ class SimilarityResult:
     token_similarity: float
     control_flow_similarity: float
     data_flow_similarity: float
+    functional_similarity: float
     
     # Statistical measures
     confidence_interval: Tuple[float, float]
@@ -145,6 +154,10 @@ class EmbeddingManager:
     
     def get_embedding(self, code: str, model_type: str = 'graphcodebert') -> np.ndarray:
         """Get semantic embedding for code"""
+        if not TORCH_AVAILABLE:
+            logger.warning("Torch not available, using fallback embeddings")
+            return np.random.normal(0, 0.1, 768)  # Fallback embedding
+            
         if model_type == 'mini' and 'mini' in self.models:
             return self.models['mini'].encode(code)
         
@@ -1054,23 +1067,68 @@ class StatisticalAnalyzer:
             logger.info(f"Baseline established (no SciPy): μ={mean_sim:.4f}, σ={std_sim:.4f}")
     
     def calculate_significance(self, similarity_score: float) -> Tuple[float, bool]:
-        """Calculate p-value and statistical significance"""
-        if not self.similarity_distribution or not SCIPY_AVAILABLE:
-            logger.warning("No baseline established or SciPy unavailable, cannot calculate significance")
+        """Calculate p-value and statistical significance with robust testing"""
+        if not self.baseline_similarities:
+            logger.warning("No baseline established, cannot calculate significance")
             return 1.0, False
         
-        mean, std = self.similarity_distribution
+        # Convert to numpy array for statistical operations
+        baseline_array = np.array(self.baseline_similarities)
         
-        # Calculate z-score
-        z_score = (similarity_score - mean) / std if std > 0 else 0
+        if SCIPY_AVAILABLE:
+            # Multiple statistical tests for robustness
+            
+            # 1. Z-test against baseline
+            if len(self.baseline_similarities) > 30:  # Large sample
+                mean, std = np.mean(baseline_array), np.std(baseline_array)
+                if std > 0:
+                    z_score = (similarity_score - mean) / std
+                    p_value_z = 1 - stats.norm.cdf(z_score)
+                else:
+                    p_value_z = 1.0
+            else:
+                p_value_z = 1.0
+            
+            # 2. Mann-Whitney U test (non-parametric)
+            # Compare single score against baseline distribution
+            test_sample = [similarity_score]
+            try:
+                u_statistic, p_value_mw = stats.mannwhitneyu(
+                    test_sample, baseline_array, alternative='greater'
+                )
+            except ValueError:
+                p_value_mw = 1.0
+            
+            # 3. Percentile-based significance
+            percentile = stats.percentileofscore(baseline_array, similarity_score)
+            p_value_percentile = (100 - percentile) / 100
+            
+            # Combine p-values using Fisher's method for robustness
+            p_values = [p for p in [p_value_z, p_value_mw, p_value_percentile] if p > 0]
+            if len(p_values) >= 2:
+                try:
+                    combined_statistic = -2 * np.sum(np.log(p_values))
+                    combined_p_value = 1 - stats.chi2.cdf(combined_statistic, 2 * len(p_values))
+                except:
+                    combined_p_value = min(p_values)
+            else:
+                combined_p_value = p_values[0] if p_values else 1.0
+            
+            # Conservative significance threshold for forensic quality
+            is_significant = combined_p_value < 0.01  # More stringent than typical 0.05
+            
+            return combined_p_value, is_significant
         
-        # Calculate p-value (one-tailed test)
-        p_value = 1 - stats.norm.cdf(z_score)
-        
-        # Significance at α = 0.05
-        is_significant = p_value < 0.05
-        
-        return p_value, is_significant
+        else:
+            # Fallback without scipy - use percentile-based approach
+            baseline_array = np.array(self.baseline_similarities)
+            percentile = np.sum(baseline_array < similarity_score) / len(baseline_array)
+            p_value = 1 - percentile
+            
+            # Conservative threshold
+            is_significant = p_value < 0.01
+            
+            return p_value, is_significant
     
     def calculate_confidence_interval(self, similarity_score: float, confidence_level: float = 0.95) -> Tuple[float, float]:
         """Calculate confidence interval for similarity score"""
@@ -1196,14 +1254,25 @@ def process_single_file(file_path: str, embedding_model: str) -> Optional[CodeFe
 class SimilarityEngine:
     """Advanced similarity analysis with multiple algorithms and statistical validation"""
     
-    def __init__(self, statistical_analysis: bool = True):
+    def __init__(self, statistical_analysis: bool = True, cross_language: bool = False):
         self.clone_detector = CloneDetector()
         self.statistical_analyzer = StatisticalAnalyzer() if statistical_analysis else None
+        self.cross_language = cross_language
+        
+        # Language-aware similarity weights for forensic accuracy
         self.similarity_weights = {
-            'token': 0.25,
-            'semantic': 0.30,
-            'structural': 0.25,
-            'control_flow': 0.20
+            'same_language': {
+                'token': 0.35,
+                'semantic': 0.30,
+                'structural': 0.25,
+                'control_flow': 0.10
+            },
+            'cross_language': {
+                'token': 0.05,        # Minimal weight for different languages
+                'semantic': 0.60,     # Primary indicator for cross-language
+                'functional': 0.25,   # Algorithm/logic similarity
+                'structural': 0.10    # Normalized structure patterns
+            }
         }
     
     def compare_repositories(self, repo_a_files: List[CodeFeatures], repo_b_files: List[CodeFeatures],
@@ -1218,9 +1287,16 @@ class SimilarityEngine:
         matches = []
         total_comparisons = len(repo_a_files) * len(repo_b_files)
         
+        # Filter out None values
+        valid_files_a = [f for f in repo_a_files if f is not None]
+        valid_files_b = [f for f in repo_b_files if f is not None]
+        
+        total_comparisons = len(valid_files_a) * len(valid_files_b)
+        logger.info(f"Comparing {len(valid_files_a)} valid files from Repo A with {len(valid_files_b)} valid files from Repo B")
+        
         with tqdm(total=total_comparisons, desc="Comparing files") as pbar:
-            for file_a in repo_a_files:
-                for file_b in repo_b_files:
+            for file_a in valid_files_a:
+                for file_b in valid_files_b:
                     similarity_result = self._compare_files(file_a, file_b, threshold)
                     if similarity_result and similarity_result.overall_similarity >= threshold:
                         matches.append(similarity_result)
@@ -1230,7 +1306,7 @@ class SimilarityEngine:
         return matches
     
     def _compare_files(self, file_a: CodeFeatures, file_b: CodeFeatures, threshold: float) -> Optional[SimilarityResult]:
-        """Compare two files comprehensively"""
+        """Compare two files comprehensively with language-aware scoring"""
         try:
             # Calculate component similarities
             token_sim = self._calculate_token_similarity(file_a, file_b)
@@ -1238,14 +1314,30 @@ class SimilarityEngine:
             structural_sim = self._calculate_structural_similarity(file_a, file_b)
             control_flow_sim = self._calculate_control_flow_similarity(file_a, file_b)
             data_flow_sim = self._calculate_data_flow_similarity(file_a, file_b)
+            functional_sim = self._calculate_functional_similarity(file_a, file_b)
             
-            # Calculate weighted overall similarity
-            overall_sim = (
-                self.similarity_weights['token'] * token_sim +
-                self.similarity_weights['semantic'] * semantic_sim +
-                self.similarity_weights['structural'] * structural_sim +
-                self.similarity_weights['control_flow'] * control_flow_sim
-            )
+            # Determine if this is cross-language comparison
+            is_cross_language = (file_a.language != file_b.language) or self.cross_language
+            
+            # Select appropriate weights based on language comparison type
+            if is_cross_language:
+                weights = self.similarity_weights['cross_language']
+                # Calculate weighted overall similarity for cross-language
+                overall_sim = (
+                    weights['token'] * token_sim +
+                    weights['semantic'] * semantic_sim +
+                    weights['functional'] * functional_sim +
+                    weights['structural'] * structural_sim
+                )
+            else:
+                weights = self.similarity_weights['same_language']
+                # Calculate weighted overall similarity for same language
+                overall_sim = (
+                    weights['token'] * token_sim +
+                    weights['semantic'] * semantic_sim +
+                    weights['structural'] * structural_sim +
+                    weights['control_flow'] * control_flow_sim
+                )
             
             # Only proceed if above threshold
             if overall_sim < threshold:
@@ -1280,6 +1372,7 @@ class SimilarityEngine:
                 token_similarity=token_sim,
                 control_flow_similarity=control_flow_sim,
                 data_flow_similarity=data_flow_sim,
+                functional_similarity=functional_sim,
                 confidence_interval=confidence_interval,
                 p_value=p_value,
                 statistical_significance=is_significant,
@@ -1338,12 +1431,70 @@ class SimilarityEngine:
         
         return len(set_a & set_b) / len(set_a | set_b)
     
+    def _calculate_functional_similarity(self, file_a: CodeFeatures, file_b: CodeFeatures) -> float:
+        """Calculate functional/algorithmic similarity independent of syntax"""
+        
+        # Combine multiple functional similarity measures
+        similarities = []
+        
+        # 1. Control flow + data flow combined score
+        cf_sim = self._calculate_control_flow_similarity(file_a, file_b)
+        df_sim = self._calculate_data_flow_similarity(file_a, file_b)
+        flow_similarity = (cf_sim + df_sim) / 2
+        similarities.append(flow_similarity)
+        
+        # 2. Call sequence similarity (API usage patterns)
+        if file_a.call_sequences and file_b.call_sequences:
+            call_sim = self._calculate_sequence_similarity(file_a.call_sequences, file_b.call_sequences)
+            similarities.append(call_sim)
+        
+        # 3. Complexity similarity (algorithmic complexity patterns)
+        if file_a.complexity > 0 and file_b.complexity > 0:
+            complexity_ratio = min(file_a.complexity, file_b.complexity) / max(file_a.complexity, file_b.complexity)
+            similarities.append(complexity_ratio)
+        
+        # 4. Structural pattern similarity (functions, classes, variables ratios)
+        structural_patterns = []
+        for attr in ['functions', 'classes', 'variables']:
+            val_a = getattr(file_a, attr, 0)
+            val_b = getattr(file_b, attr, 0)
+            if val_a > 0 and val_b > 0:
+                ratio = min(val_a, val_b) / max(val_a, val_b)
+                structural_patterns.append(ratio)
+        
+        if structural_patterns:
+            similarities.append(np.mean(structural_patterns))
+        
+        # Return average of all functional similarities
+        return np.mean(similarities) if similarities else 0.0
+    
+    def _calculate_sequence_similarity(self, seq_a: List[str], seq_b: List[str]) -> float:
+        """Calculate similarity between call sequences using longest common subsequence"""
+        if not seq_a or not seq_b:
+            return 0.0
+        
+        # Use difflib for sequence matching
+        matcher = difflib.SequenceMatcher(None, seq_a, seq_b)
+        return matcher.ratio()
+    
     def _establish_baseline(self, repo_a_files: List[CodeFeatures], repo_b_files: List[CodeFeatures]):
         """Establish statistical baseline from random file pairs"""
         import random
         
+        # Filter out None values
+        valid_files_a = [f for f in repo_a_files if f is not None]
+        valid_files_b = [f for f in repo_b_files if f is not None]
+        
+        if not valid_files_a or not valid_files_b:
+            logger.warning("No valid files for baseline establishment")
+            return
+        
         # Create random pairs for baseline (max 100 pairs to avoid excessive computation)
-        all_files = repo_a_files + repo_b_files
+        all_files = valid_files_a + valid_files_b
+        if len(all_files) < 2:
+            logger.warning("Insufficient files for baseline establishment")
+            return
+            
         num_samples = min(100, len(all_files) * (len(all_files) - 1) // 2)
         
         random_pairs = []
@@ -1355,7 +1506,17 @@ class SimilarityEngine:
     
     def _determine_evidence_strength(self, similarity: float, clone_type: int, 
                                    is_significant: bool, transformations: List[str]) -> str:
-        """Determine forensic evidence strength"""
+        """Determine forensic evidence strength with cross-language considerations"""
+        # Cross-language detection (Clone Type 4) requires different thresholds
+        if clone_type == 4:  # Cross-language semantic clones
+            if similarity > 0.70:  # High semantic similarity across languages
+                return "STRONG"
+            elif similarity > 0.60:  # Moderate semantic similarity
+                return "MODERATE"
+            else:
+                return "WEAK"
+        
+        # Traditional same-language detection
         if clone_type == 1 and similarity > 0.95:
             return "STRONG"
         elif clone_type <= 2 and similarity > 0.85 and is_significant:
@@ -1432,7 +1593,7 @@ class ForensicReporter:
         fieldnames = [
             'file_a', 'file_b', 'clone_type', 'overall_similarity',
             'structural_similarity', 'semantic_similarity', 'token_similarity',
-            'control_flow_similarity', 'data_flow_similarity',
+            'control_flow_similarity', 'data_flow_similarity', 'functional_similarity',
             'confidence_interval_lower', 'confidence_interval_upper',
             'p_value', 'statistical_significance', 'evidence_strength',
             'obfuscation_detected', 'transformation_patterns'
@@ -1449,6 +1610,7 @@ class ForensicReporter:
                 f"{match.token_similarity:.4f}",
                 f"{match.control_flow_similarity:.4f}",
                 f"{match.data_flow_similarity:.4f}",
+                f"{match.functional_similarity:.4f}",
                 f"{match.confidence_interval[0]:.4f}",
                 f"{match.confidence_interval[1]:.4f}",
                 f"{match.p_value:.6f}",
@@ -1539,6 +1701,7 @@ class ForensicReporter:
                 f"<div class='metric'><strong>Structural Similarity:</strong><br>{match.structural_similarity:.4f}</div>",
                 f"<div class='metric'><strong>Control Flow:</strong><br>{match.control_flow_similarity:.4f}</div>",
                 f"<div class='metric'><strong>Data Flow:</strong><br>{match.data_flow_similarity:.4f}</div>",
+                f"<div class='metric'><strong>Functional:</strong><br>{match.functional_similarity:.4f}</div>",
                 "</div>"
             ])
             
@@ -1807,6 +1970,7 @@ def analyze_repositories(repo_a_path: str, repo_b_path: str,
                         embedding_model: str = 'graphcodebert',
                         parallel_workers: int = 1,
                         enable_statistical: bool = True,
+                        cross_language: bool = False,
                         output_zip: str = 'evidence_package.zip') -> List[SimilarityResult]:
     """
     Main analysis function with enhanced capabilities
@@ -1848,7 +2012,7 @@ def analyze_repositories(repo_a_path: str, repo_b_path: str,
     
     # Perform similarity analysis
     logger.info("Phase 2: Performing similarity analysis...")
-    similarity_engine = SimilarityEngine(statistical_analysis=enable_statistical)
+    similarity_engine = SimilarityEngine(statistical_analysis=enable_statistical, cross_language=cross_language)
     matches = similarity_engine.compare_repositories(
         repo_a_files, repo_b_files, threshold, enable_statistical
     )
@@ -1921,8 +2085,8 @@ Examples:
                        help="Path to second repository")
     
     # Analysis parameters
-    parser.add_argument("--threshold", type=float, default=0.75,
-                       help="Similarity threshold (0-1), default: 0.75")
+    parser.add_argument("--threshold", type=float, default=0.50,
+                       help="Similarity threshold (0-1), default: 0.50 (lowered for better cross-language detection)")
     parser.add_argument("--embedding-model", type=str, default='graphcodebert',
                        choices=['mini', 'graphcodebert', 'codet5'],
                        help="Embedding model to use, default: graphcodebert")
@@ -1980,6 +2144,7 @@ Examples:
             embedding_model=args.embedding_model,
             parallel_workers=max_workers,
             enable_statistical=not args.no_statistical,
+            cross_language=args.cross_language,
             output_zip=args.output
         )
         
