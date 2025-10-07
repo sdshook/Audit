@@ -1599,23 +1599,43 @@ class ForensicReporter:
     def _generate_executive_summary(self, matches: List[SimilarityResult], 
                                   analysis_params: Dict[str, Any]) -> str:
         """Generate executive summary for non-technical stakeholders"""
+        
+        # Simple conclusion statement
         if not matches:
-            return "No significant code similarities detected between the repositories."
+            conclusion = "CONCLUSION: The analysis of the compared code indicates that files were NOT copied and/or transformed."
+        else:
+            strong_matches = sum(1 for m in matches if m.evidence_strength == "STRONG")
+            moderate_matches = sum(1 for m in matches if m.evidence_strength == "MODERATE")
+            obfuscation_count = sum(1 for m in matches if m.obfuscation_detected)
+            
+            if strong_matches > 0 or (moderate_matches > 0 and obfuscation_count > 0):
+                conclusion = "CONCLUSION: The analysis of the compared code indicates that files WERE copied and/or transformed."
+            elif moderate_matches > 0:
+                conclusion = "CONCLUSION: The analysis suggests files MAY HAVE BEEN copied and/or transformed (requires further investigation)."
+            else:
+                conclusion = "CONCLUSION: The analysis of the compared code indicates that files were NOT copied and/or transformed."
+        
+        if not matches:
+            return f"{conclusion}\n\nNo significant code similarities detected between the repositories."
         
         strong_matches = sum(1 for m in matches if m.evidence_strength == "STRONG")
         moderate_matches = sum(1 for m in matches if m.evidence_strength == "MODERATE")
+        weak_matches = sum(1 for m in matches if m.evidence_strength == "WEAK")
         obfuscation_count = sum(1 for m in matches if m.obfuscation_detected)
         
         summary_parts = [
             "EXECUTIVE SUMMARY",
             "=" * 50,
             "",
-            f"Analysis completed on {self.report_timestamp}",
-            f"Total file pairs analyzed: {len(matches)}",
+            conclusion,
             "",
-            "FINDINGS:",
-            f"• Strong evidence of code similarity: {strong_matches} cases",
-            f"• Moderate evidence of code similarity: {moderate_matches} cases",
+            f"Analysis completed on {self.report_timestamp}",
+            f"Total file pairs with similarities: {len(matches)}",
+            "",
+            "EVIDENCE SUMMARY:",
+            f"• Strong evidence (high confidence): {strong_matches} cases",
+            f"• Moderate evidence (medium confidence): {moderate_matches} cases", 
+            f"• Weak evidence (low confidence): {weak_matches} cases",
             f"• Potential obfuscation attempts detected: {obfuscation_count} cases",
             "",
             "RISK ASSESSMENT:",
@@ -1623,19 +1643,29 @@ class ForensicReporter:
         
         if strong_matches > 0:
             summary_parts.append("• HIGH RISK: Strong evidence suggests potential intellectual property theft")
+            summary_parts.append("• RECOMMENDATION: Legal consultation strongly recommended")
         elif moderate_matches > 0:
             summary_parts.append("• MEDIUM RISK: Moderate evidence requires further investigation")
+            summary_parts.append("• RECOMMENDATION: Detailed review and possible legal consultation")
         else:
             summary_parts.append("• LOW RISK: Only weak similarities detected")
+            summary_parts.append("• RECOMMENDATION: Monitor for patterns, no immediate action required")
         
         if obfuscation_count > 0:
-            summary_parts.append("• OBFUSCATION: Evidence of deliberate code modification to hide similarities")
+            summary_parts.extend([
+                "",
+                "OBFUSCATION DETECTED:",
+                "• Evidence of deliberate code modification to hide similarities",
+                "• This strengthens the case for intentional copying/transformation",
+                "• Suggests awareness of wrongdoing and attempt to conceal it"
+            ])
         
         summary_parts.extend([
             "",
-            "RECOMMENDATIONS:",
+            "NEXT STEPS:",
             "• Review detailed technical analysis for specific file comparisons",
-            "• Consider legal consultation for strong evidence cases",
+            "• Examine evidence files included in this package",
+            "• Consider forensic chain of custody documentation",
             "• Implement code review processes to prevent future incidents",
             ""
         ])
