@@ -65,6 +65,10 @@ my-languages.so
 .cache/
 models/
 
+# FORAI specific
+FORAI/
+New_FORAI_Legacy.py
+
 # Logs
 *.log
 logs/
