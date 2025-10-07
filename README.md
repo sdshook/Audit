@@ -63,26 +63,6 @@ Advanced forensic analysis and AI-assisted investigation tools:
 * **[GBCRA_Win.ps1](GBCRA_Win.ps1)** - Group-based cyber risk assessment for Windows
 * **[AdminCreds/](AdminCreds/)** - Administrative credentials management tools
 
-## SIPCompare v2.0 Quick Start
-
-### Installation
-```bash
-pip install numpy scipy tqdm sentence-transformers transformers torch tree-sitter
-```
-
-### Basic Usage
-```bash
-python SIPCompare.py --repoA /path/to/repo1 --repoB /path/to/repo2
-```
-
-### Advanced Analysis
-```bash
-python SIPCompare.py --repoA /path/to/repo1 --repoB /path/to/repo2 \
-                     --threshold 0.6 --parallel 4 --embedding-model graphcodebert
-```
-
-For detailed SIPCompare documentation, see the comprehensive guide in the tool's docstring and help output.
-
 ## Acknowledgments
 
 Special thanks to Brandon Pimentel for his valuable contributions to this project.
