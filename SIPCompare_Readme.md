@@ -285,13 +285,4 @@ This software is proprietary and confidential. Unauthorized use, distribution, o
 
 © 2025 Shane D. Shook, All Rights Reserved
 
-## Support
-
-For technical support, feature requests, or licensing inquiries, please contact:
-- Email: [support email]
-- Documentation: [documentation URL]
-- Issues: [GitHub issues URL]
-
----
-
 **Disclaimer**: This tool is designed for legitimate intellectual property protection and forensic analysis. Users are responsible for ensuring compliance with applicable laws and regulations. The authors assume no liability for misuse of this software.
