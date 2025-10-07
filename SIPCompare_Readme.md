@@ -285,39 +285,6 @@ python SIPCompare.py --repoA /path/to/suspected --repoB /path/to/original \
                      --parallel 4 --verbose --output comprehensive_forensic_evidence.zip
 ```
 
-#### Analysis Workflow Examples
-
-**Step 1: Standard Analysis**
-```bash
-python SIPCompare.py --repoA suspected_stolen --repoB original_source \
-                     --threshold 0.6 \
-                     --embedding-model graphcodebert \
-                     --parallel 4 \
-                     --verbose \
-                     --output forensic_evidence.zip
-```
-
-**Step 2: Cross-Language Analysis (if needed)**
-```bash
-python SIPCompare.py --repoA python_repo --repoB java_repo \
-                     --threshold 0.6 \
-                     --embedding-model graphcodebert \
-                     --cross-language \
-                     --parallel 4 \
-                     --verbose \
-                     --output cross_language_evidence.zip
-```
-
-**Step 3: High-Sensitivity Analysis (for subtle theft)**
-```bash
-python SIPCompare.py --repoA repo1 --repoB repo2 \
-                     --threshold 0.5 \
-                     --embedding-model graphcodebert \
-                     --parallel 4 \
-                     --verbose \
-                     --output high_sensitivity_evidence.zip
-```
-
 ## Usage
 
 ### Basic Analysis
