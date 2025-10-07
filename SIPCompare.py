@@ -208,30 +208,31 @@ embedding_manager = EmbeddingManager()
 # ----------------------------
 try:
     from tree_sitter import Language, Parser
+    import tree_sitter_languages
     TREE_SITTER_AVAILABLE = True
+    logger.info("Tree-sitter available with tree-sitter-languages package")
 except ImportError:
     TREE_SITTER_AVAILABLE = False
     logger.warning("Tree-sitter not available, falling back to regex-based analysis")
 
-# Extended language support
+# Extended language support - mapping file extensions to tree-sitter-languages names
 LANGUAGES = {
-    '.py': 'tree-sitter-python',
-    '.cpp': 'tree-sitter-cpp',
-    '.c': 'tree-sitter-cpp',
-    '.h': 'tree-sitter-cpp',
-    '.hpp': 'tree-sitter-cpp',
-    '.java': 'tree-sitter-java',
-    '.js': 'tree-sitter-javascript',
-    '.ts': 'tree-sitter-typescript',
-    '.go': 'tree-sitter-go',
-    '.rs': 'tree-sitter-rust',
-    '.cs': 'tree-sitter-c-sharp',
-    '.php': 'tree-sitter-php',
-    '.rb': 'tree-sitter-ruby',
-    '.swift': 'tree-sitter-swift',
-    '.kt': 'tree-sitter-kotlin',
-    '.scala': 'tree-sitter-scala',
-    '.vb': 'tree-sitter-vbnet',
+    '.py': 'python',
+    '.cpp': 'cpp',
+    '.c': 'c',
+    '.h': 'c',
+    '.hpp': 'cpp',
+    '.java': 'java',
+    '.js': 'javascript',
+    '.ts': 'typescript',
+    '.go': 'go',
+    '.rs': 'rust',
+    '.cs': 'c_sharp',
+    '.php': 'php',
+    '.rb': 'ruby',
+    '.swift': 'swift',
+    '.kt': 'kotlin',
+    '.scala': 'scala',
     # Scripts and markup
     '.sh': None,
     '.zsh': None,
@@ -256,26 +257,24 @@ class ASTAnalyzer:
             self._setup_parsers()
     
     def _setup_parsers(self):
-        """Setup Tree-sitter parsers for supported languages"""
+        """Setup Tree-sitter parsers for supported languages using tree-sitter-languages"""
         try:
-            # Build shared library if missing
-            if not os.path.exists('build/my-languages.so'):
-                available_langs = [v for v in LANGUAGES.values() if v]
-                if available_langs:
-                    Language.build_library('build/my-languages.so', available_langs)
-            
-            # Initialize parsers
-            for ext, lang in LANGUAGES.items():
-                if lang:
+            # Initialize parsers using tree-sitter-languages
+            for ext, lang_name in LANGUAGES.items():
+                if lang_name:
                     try:
+                        language = tree_sitter_languages.get_language(lang_name)
                         parser = Parser()
-                        parser.set_language(Language('build/my-languages.so', lang))
+                        parser.set_language(language)
                         self.parsers[ext] = parser
+                        logger.debug(f"Successfully loaded parser for {ext} ({lang_name})")
                     except Exception as e:
-                        logger.warning(f"Failed to load parser for {ext}: {e}")
+                        logger.warning(f"Failed to load parser for {ext} ({lang_name}): {e}")
                         self.parsers[ext] = None
                 else:
                     self.parsers[ext] = None
+            
+            logger.info(f"Successfully initialized {len([p for p in self.parsers.values() if p])} Tree-sitter parsers")
         except Exception as e:
             logger.error(f"Failed to setup parsers: {e}")
             self.parsers = {}
