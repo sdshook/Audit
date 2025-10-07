@@ -74,6 +74,20 @@ SIPCompare employs a sophisticated multi-stage analysis pipeline that combines t
   - Error-tolerant parsing
 - **Languages Supported**: Python, Java, C/C++, JavaScript, TypeScript, Go, Rust, C#, PHP, Ruby, Kotlin, Scala, and more
 
+### Model Comparison and Selection Guide
+
+| Model | Speed | Accuracy | Best For | Cross-Language | Memory Usage |
+|-------|-------|----------|----------|----------------|--------------|
+| **graphcodebert** | Medium | **Highest** | **Forensic Analysis** | **Excellent** | Medium |
+| **codet5** | Slow | High | Code Translation Detection | Very Good | High |
+| **mini** | **Fast** | Good | Large Repositories | Good | **Low** |
+
+**Recommendations:**
+- **Forensic Analysis**: Use `graphcodebert` for maximum accuracy and court-admissible evidence
+- **Large Repositories**: Use `mini` for faster processing of 1000+ files
+- **Cross-Language Detection**: Use `graphcodebert` or `codet5` for Python↔Java, C++↔Python cases
+- **Resource-Constrained**: Use `mini` for limited memory environments
+
 ### Advanced Detection Techniques
 
 #### Cross-Language Detection
@@ -255,10 +269,53 @@ pip install tree-sitter-languages==1.9.1
 - **Tree-sitter**: 0.20.4 (with tree-sitter-languages 1.9.1)
 
 ### Quick Start
+
+#### Basic Setup
 ```bash
 git clone <repository-url>
 cd SIPCompare
-python SIPCompare.py --repoA /path/to/repo1 --repoB /path/to/repo2
+pip install -r requirements.txt  # Install dependencies
+```
+
+#### Comprehensive Forensic Analysis (Recommended)
+```bash
+# Maximum accuracy analysis for forensic evidence
+python SIPCompare.py --repoA /path/to/suspected --repoB /path/to/original \
+                     --threshold 0.6 --embedding-model graphcodebert \
+                     --parallel 4 --verbose --output comprehensive_forensic_evidence.zip
+```
+
+#### Analysis Workflow Examples
+
+**Step 1: Standard Analysis**
+```bash
+python SIPCompare.py --repoA suspected_stolen --repoB original_source \
+                     --threshold 0.6 \
+                     --embedding-model graphcodebert \
+                     --parallel 4 \
+                     --verbose \
+                     --output forensic_evidence.zip
+```
+
+**Step 2: Cross-Language Analysis (if needed)**
+```bash
+python SIPCompare.py --repoA python_repo --repoB java_repo \
+                     --threshold 0.6 \
+                     --embedding-model graphcodebert \
+                     --cross-language \
+                     --parallel 4 \
+                     --verbose \
+                     --output cross_language_evidence.zip
+```
+
+**Step 3: High-Sensitivity Analysis (for subtle theft)**
+```bash
+python SIPCompare.py --repoA repo1 --repoB repo2 \
+                     --threshold 0.5 \
+                     --embedding-model graphcodebert \
+                     --parallel 4 \
+                     --verbose \
+                     --output high_sensitivity_evidence.zip
 ```
 
 ## Usage
