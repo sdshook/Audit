@@ -41,10 +41,7 @@ import re
 import time
 import subprocess
 import shutil
-import zipfile
 import logging
-import threading
-from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -60,15 +57,11 @@ from llama_cpp import Llama
 import psutil
 
 # =============================================================================
-# ENHANCED SEARCH SYSTEM FOR IMPROVED TINYLLAMA ACCURACY
-# =============================================================================
-
-# =============================================================================
-# ADVANCED TINYLLAMA ACCURACY ENHANCEMENT SYSTEM (85-95% TARGET)
+# ENHANCED FORENSIC SEARCH SYSTEM
 # =============================================================================
 
 class EnhancedForensicSearch:
-    """Advanced FTS5 search system optimized for TinyLLama forensic analysis"""
+    """Advanced FTS5 search system optimized for forensic analysis"""
     
     def __init__(self):
         self.artifact_weights = {
@@ -404,11 +397,11 @@ class EnhancedForensicSearch:
 enhanced_search = EnhancedForensicSearch()
 
 # =============================================================================
-# ADVANCED TINYLLAMA ACCURACY ENHANCEMENT SYSTEM
+# ADVANCED LLAMA ENHANCEMENT SYSTEM
 # =============================================================================
 
 class AdvancedTinyLlamaEnhancer:
-    """Advanced enhancement system to boost TinyLLama accuracy from 75% to 85-95%"""
+    """Advanced enhancement system to boost LLM accuracy for forensic analysis"""
     
     def __init__(self):
         self.forensic_examples = self._load_forensic_examples()
@@ -2100,6 +2093,178 @@ class ModernReportGenerator:
         pdf.output(str(output_path))
 
 # =============================================================================
+# CUSTOM PLASO OUTPUT MODULE
+# =============================================================================
+
+class FAS5SQLiteOutputModule:
+    """Custom Plaso output module for direct FAS5 SQLite database integration."""
+    
+    def __init__(self):
+        self.NAME = 'fas5_sqlite'
+        self.DESCRIPTION = 'Direct FAS5 SQLite database output module'
+        self._database_path = None
+        self._connection = None
+        self._case_id = None
+        self._batch_size = 1000
+        self._batch_events = []
+
+    def set_database_path(self, database_path, case_id):
+        """Set the database path and case ID."""
+        self._database_path = database_path
+        self._case_id = case_id
+
+    def open_connection(self):
+        """Open the SQLite database connection."""
+        if not self._database_path:
+            raise ValueError("Database path not set")
+            
+        import sqlite3
+        self._connection = sqlite3.connect(self._database_path)
+        self._connection.execute('PRAGMA journal_mode=WAL')
+        self._connection.execute('PRAGMA synchronous=NORMAL')
+        self._connection.execute('PRAGMA cache_size=10000')
+        
+        # Initialize FAS5 schema if needed
+        self._initialize_schema()
+
+    def close_connection(self):
+        """Close the database connection and flush remaining events."""
+        if self._batch_events:
+            self._flush_batch()
+        if self._connection:
+            self._connection.close()
+
+    def _initialize_schema(self):
+        """Initialize the FAS5 database schema."""
+        schema = """
+        CREATE TABLE IF NOT EXISTS evidence (
+            id          INTEGER PRIMARY KEY,
+            case_id     TEXT NOT NULL,
+            host        TEXT,
+            user        TEXT,
+            timestamp   INTEGER,
+            artifact    TEXT NOT NULL,
+            source_file TEXT NOT NULL,
+            summary     TEXT,
+            data_json   TEXT,
+            file_hash   TEXT,
+            created     INTEGER DEFAULT (unixepoch())
+        ) STRICT;
+
+        CREATE TABLE IF NOT EXISTS sources (
+            file_path   TEXT PRIMARY KEY,
+            file_hash   TEXT,
+            file_size   INTEGER,
+            processed   INTEGER DEFAULT (unixepoch()),
+            status      TEXT DEFAULT 'complete'
+        ) STRICT;
+
+        CREATE INDEX IF NOT EXISTS idx_evidence_timestamp ON evidence(timestamp);
+        CREATE INDEX IF NOT EXISTS idx_evidence_case_id ON evidence(case_id);
+        CREATE INDEX IF NOT EXISTS idx_evidence_artifact ON evidence(artifact);
+        """
+        self._connection.executescript(schema)
+        self._connection.commit()
+
+    def process_event(self, event_data):
+        """Process a single event and add to batch."""
+        try:
+            # Extract basic event information
+            timestamp = getattr(event_data, 'timestamp', 0)
+            if hasattr(timestamp, 'timestamp'):
+                timestamp = int(timestamp.timestamp())
+            elif isinstance(timestamp, (int, float)):
+                timestamp = int(timestamp)
+            else:
+                timestamp = 0
+
+            # Get event attributes
+            host = getattr(event_data, 'hostname', None) or getattr(event_data, 'computer_name', None) or 'Unknown'
+            user = getattr(event_data, 'username', None) or getattr(event_data, 'user_sid', None) or 'Unknown'
+            
+            # Determine artifact type from parser chain
+            parser_chain = getattr(event_data, 'parser', '') or ''
+            artifact = self._classify_artifact(parser_chain)
+            
+            # Get source file path
+            source_file = getattr(event_data, 'filename', 'Unknown')
+            
+            # Create summary from available data
+            summary = str(event_data)
+            
+            # Create JSON data with all event attributes
+            data_dict = {}
+            for attr_name in dir(event_data):
+                if not attr_name.startswith('_'):
+                    try:
+                        attr_value = getattr(event_data, attr_name)
+                        if not callable(attr_value):
+                            data_dict[attr_name] = str(attr_value)
+                    except:
+                        continue
+
+            data_json = json.dumps(data_dict, ensure_ascii=False)
+            
+            # Calculate hash of the data for integrity
+            file_hash = hashlib.sha256(data_json.encode('utf-8')).hexdigest()[:16]
+
+            # Add to batch
+            self._batch_events.append((
+                self._case_id,
+                host,
+                user,
+                timestamp,
+                artifact,
+                source_file,
+                summary,
+                data_json,
+                file_hash
+            ))
+
+            # Flush batch if full
+            if len(self._batch_events) >= self._batch_size:
+                self._flush_batch()
+
+        except Exception as e:
+            print(f"Error processing event: {e}")
+
+    def _classify_artifact(self, parser_chain):
+        """Classify artifact type from parser chain."""
+        parser_chain = parser_chain.lower()
+        if 'chrome' in parser_chain:
+            return 'Chrome Browser'
+        elif 'firefox' in parser_chain:
+            return 'Firefox Browser'
+        elif 'mft' in parser_chain:
+            return 'NTFS MFT'
+        elif 'prefetch' in parser_chain:
+            return 'Windows Prefetch'
+        elif 'registry' in parser_chain:
+            return 'Windows Registry'
+        elif 'evtx' in parser_chain:
+            return 'Windows Event Log'
+        else:
+            return parser_chain or 'Unknown'
+
+    def _flush_batch(self):
+        """Flush the current batch of events to the database."""
+        if not self._batch_events:
+            return
+
+        try:
+            self._connection.executemany(
+                """INSERT INTO evidence 
+                   (case_id, host, user, timestamp, artifact, source_file, summary, data_json, file_hash)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                self._batch_events
+            )
+            self._connection.commit()
+            self._batch_events.clear()
+        except Exception as e:
+            print(f"Error flushing batch: {e}")
+            self._batch_events.clear()
+
+# =============================================================================
 # END-TO-END FORENSIC WORKFLOW SYSTEM
 # =============================================================================
 
@@ -2317,208 +2482,14 @@ class ForensicWorkflowManager:
             self.log_custody_event("COLLECTION_ERROR", f"KAPE collection error: {str(e)}")
             return False
             
-    def create_custom_plaso_output_module(self) -> Path:
+    def create_custom_plaso_output_module(self) -> FAS5SQLiteOutputModule:
         """Create custom Plaso output module for direct FAS5 SQLite integration"""
-        module_content = '''#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""Custom Plaso output module for direct FAS5 SQLite database integration."""
-
-import sqlite3
-import json
-import hashlib
-from datetime import datetime, timezone
-from pathlib import Path
-
-from plaso.output import interface
-from plaso.output import manager
-
-
-class FAS5SQLiteOutputModule(interface.LinearOutputModule):
-    """Output module for direct FAS5 SQLite database integration."""
-
-    NAME = 'fas5_sqlite'
-    DESCRIPTION = 'Direct FAS5 SQLite database output module'
-
-    def __init__(self, output_mediator):
-        """Initialize the FAS5 SQLite output module."""
-        super(FAS5SQLiteOutputModule, self).__init__(output_mediator)
-        self._database_path = None
-        self._connection = None
-        self._case_id = None
-        self._batch_size = 1000
-        self._batch_events = []
-
-    def SetDatabasePath(self, database_path, case_id):
-        """Set the database path and case ID."""
-        self._database_path = database_path
-        self._case_id = case_id
-
-    def Open(self):
-        """Open the SQLite database connection."""
-        if not self._database_path:
-            raise ValueError("Database path not set")
-            
-        self._connection = sqlite3.connect(self._database_path)
-        self._connection.execute('PRAGMA journal_mode=WAL')
-        self._connection.execute('PRAGMA synchronous=NORMAL')
-        self._connection.execute('PRAGMA cache_size=10000')
+        module = FAS5SQLiteOutputModule()
+        database_path = self.parsed_dir / f"{self.case_id}_fas5.db"
+        module.set_database_path(str(database_path), self.case_id)
         
-        # Initialize FAS5 schema if needed
-        self._InitializeSchema()
-
-    def Close(self):
-        """Close the database connection and flush remaining events."""
-        if self._batch_events:
-            self._FlushBatch()
-        if self._connection:
-            self._connection.close()
-
-    def _InitializeSchema(self):
-        """Initialize the FAS5 database schema."""
-        schema = """
-        CREATE TABLE IF NOT EXISTS evidence (
-            id          INTEGER PRIMARY KEY,
-            case_id     TEXT NOT NULL,
-            host        TEXT,
-            user        TEXT,
-            timestamp   INTEGER,
-            artifact    TEXT NOT NULL,
-            source_file TEXT NOT NULL,
-            summary     TEXT,
-            data_json   TEXT,
-            file_hash   TEXT,
-            created     INTEGER DEFAULT (unixepoch())
-        ) STRICT;
-
-        CREATE TABLE IF NOT EXISTS sources (
-            file_path   TEXT PRIMARY KEY,
-            file_hash   TEXT,
-            file_size   INTEGER,
-            processed   INTEGER DEFAULT (unixepoch()),
-            status      TEXT DEFAULT 'complete'
-        ) STRICT;
-
-        CREATE INDEX IF NOT EXISTS idx_evidence_timestamp ON evidence(timestamp);
-        CREATE INDEX IF NOT EXISTS idx_evidence_case_id ON evidence(case_id);
-        CREATE INDEX IF NOT EXISTS idx_evidence_artifact ON evidence(artifact);
-        """
-        self._connection.executescript(schema)
-        self._connection.commit()
-
-    def WriteEventBody(self, event, event_data, event_data_stream):
-        """Write event to SQLite database in batches."""
-        try:
-            # Extract event information
-            timestamp = getattr(event, 'timestamp', 0)
-            if hasattr(timestamp, 'timestamp'):
-                timestamp = int(timestamp.timestamp())
-            elif isinstance(timestamp, (int, float)):
-                timestamp = int(timestamp)
-            else:
-                timestamp = 0
-
-            # Get event attributes
-            host = getattr(event_data, 'hostname', None) or getattr(event_data, 'computer_name', None) or 'Unknown'
-            user = getattr(event_data, 'username', None) or getattr(event_data, 'user_sid', None) or 'Unknown'
-            
-            # Determine artifact type from parser chain
-            parser_chain = getattr(event_data, 'parser', '') or ''
-            if 'chrome' in parser_chain.lower():
-                artifact = 'Chrome Browser'
-            elif 'firefox' in parser_chain.lower():
-                artifact = 'Firefox Browser'
-            elif 'mft' in parser_chain.lower():
-                artifact = 'NTFS MFT'
-            elif 'prefetch' in parser_chain.lower():
-                artifact = 'Windows Prefetch'
-            elif 'registry' in parser_chain.lower():
-                artifact = 'Windows Registry'
-            elif 'evtx' in parser_chain.lower():
-                artifact = 'Windows Event Log'
-            else:
-                artifact = parser_chain or 'Unknown'
-
-            # Get source file path
-            pathspec = getattr(event_data_stream, 'path_spec', None)
-            if pathspec:
-                source_file = getattr(pathspec, 'location', 'Unknown')
-            else:
-                source_file = getattr(event_data, 'filename', 'Unknown')
-
-            # Create summary from message
-            message_formatter = self._output_mediator.GetMessageFormatter()
-            if message_formatter:
-                summary = message_formatter.GetFormattedMessage(event_data)
-            else:
-                summary = str(event_data)
-
-            # Create JSON data with all event attributes
-            data_dict = {}
-            for attr_name in dir(event_data):
-                if not attr_name.startswith('_'):
-                    try:
-                        attr_value = getattr(event_data, attr_name)
-                        if not callable(attr_value):
-                            data_dict[attr_name] = str(attr_value)
-                    except:
-                        continue
-
-            data_json = json.dumps(data_dict, ensure_ascii=False)
-            
-            # Calculate hash of the data for integrity
-            file_hash = hashlib.sha256(data_json.encode('utf-8')).hexdigest()[:16]
-
-            # Add to batch
-            self._batch_events.append((
-                self._case_id,
-                host,
-                user,
-                timestamp,
-                artifact,
-                source_file,
-                summary,
-                data_json,
-                file_hash
-            ))
-
-            # Flush batch if full
-            if len(self._batch_events) >= self._batch_size:
-                self._FlushBatch()
-
-        except Exception as e:
-            # Log error but continue processing
-            print(f"Error processing event: {e}")
-
-    def _FlushBatch(self):
-        """Flush the current batch of events to the database."""
-        if not self._batch_events:
-            return
-
-        try:
-            self._connection.executemany(
-                """INSERT INTO evidence 
-                   (case_id, host, user, timestamp, artifact, source_file, summary, data_json, file_hash)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                self._batch_events
-            )
-            self._connection.commit()
-            self._batch_events.clear()
-        except Exception as e:
-            print(f"Error flushing batch: {e}")
-            self._batch_events.clear()
-
-
-# Register the output module
-manager.OutputManager.RegisterOutput(FAS5SQLiteOutputModule)
-'''
-        
-        # Write the custom module to a temporary file
-        module_path = self.parsed_dir / "fas5_sqlite_output.py"
-        with open(module_path, 'w', encoding='utf-8') as f:
-            f.write(module_content)
-        
-        self.logger.info(f"Created custom FAS5 SQLite output module: {module_path}")
-        return module_path
+        self.logger.info(f"Created custom FAS5 SQLite output module for database: {database_path}")
+        return module
 
     def parse_artifacts_plaso(self, plaso_path: Path) -> bool:
         """Parse VHDX using proper Plaso two-step workflow: log2timeline -> psort -> SQLite"""
@@ -2538,7 +2509,7 @@ manager.OutputManager.RegisterOutput(FAS5SQLiteOutputModule)
                 raise ValueError("VHDX integrity validation failed")
                 
             # Create custom FAS5 SQLite output module
-            custom_module_path = self.create_custom_plaso_output_module()
+            custom_module = self.create_custom_plaso_output_module()
             
             # File paths for two-step process
             plaso_storage_path = self.parsed_dir / f"{self.case_id}_timeline.plaso"
@@ -2587,11 +2558,12 @@ manager.OutputManager.RegisterOutput(FAS5SQLiteOutputModule)
             # Step 2: Process timeline to SQLite
             self.logger.info(f"Step 2: Processing timeline to SQLite: {plaso_storage_path} -> {database_path}")
             
+            # Use standard JSON output and process with our custom module
+            json_output_path = self.parsed_dir / f"{self.case_id}_timeline.json"
             psort_cmd = [
-                "psort",  # Use the command that should work in PATH
-                "--additional-modules-path", str(custom_module_path.parent),
-                "-o", "fas5_sqlite",  # Our custom output module
-                "--output-options", f"database_path={database_path},case_id={self.case_id}",
+                "psort",
+                "-o", "json",
+                "--output-file", str(json_output_path),
                 str(plaso_storage_path)
             ]
             
@@ -2603,8 +2575,31 @@ manager.OutputManager.RegisterOutput(FAS5SQLiteOutputModule)
                 self.log_custody_event("PARSING_ERROR", f"psort processing failed: {result.stderr}")
                 return False
                 
+            # Process JSON output with our custom module
+            if not json_output_path.exists():
+                self.logger.error("JSON timeline was not created by psort")
+                self.log_custody_event("PARSING_ERROR", "JSON timeline was not created")
+                return False
+                
+            # Initialize custom module and process JSON data
+            custom_module.open_connection()
+            try:
+                with open(json_output_path, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        if line.strip():
+                            try:
+                                event_data = json.loads(line)
+                                custom_module.process_event(event_data)
+                            except json.JSONDecodeError:
+                                continue
+                            except Exception as e:
+                                self.logger.warning(f"Error processing event: {e}")
+                                continue
+            finally:
+                custom_module.close_connection()
+                
             if not database_path.exists():
-                self.logger.error("FAS5 SQLite database was not created by psort")
+                self.logger.error("FAS5 SQLite database was not created")
                 self.log_custody_event("PARSING_ERROR", "FAS5 SQLite database was not created")
                 return False
                 
@@ -2626,7 +2621,7 @@ manager.OutputManager.RegisterOutput(FAS5SQLiteOutputModule)
             
             # Clean up temporary files
             try:
-                custom_module_path.unlink()
+                json_output_path.unlink()
                 # Optionally clean up intermediate .plaso file to save space
                 # plaso_storage_path.unlink()  # Uncomment if storage space is critical
             except:
