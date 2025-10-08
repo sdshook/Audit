@@ -5,12 +5,12 @@ New_FORAI.py (c) 2025 All Rights Reserved Shane D. Shook
 Modern forensic analysis tool - Maximum efficiency and accuracy
 Zero backward compatibility - Modern Python only
 
-OPTIMIZED WORKFLOW (v2.0):
-Target Drive → KAPE (VHDX-only) → log2timeline (direct SQLite) → FAS5 Database
+OPTIMIZED WORKFLOW (v2.1):
+Target Drive → KAPE (VHDX-only) → log2timeline (.plaso) → psort (SQLite) → FAS5 Database
 
 PERFORMANCE OPTIMIZATIONS:
 ✅ VHDX-only collection (maintains forensic integrity, eliminates file extraction)
-✅ Direct VHDX processing with log2timeline (no intermediate files)
+✅ Proper two-step Plaso workflow: log2timeline → psort
 ✅ Custom Plaso output module for direct SQLite integration
 ✅ Eliminates CSV/JSON intermediary files (massive performance gain)
 ✅ Comprehensive integrity validation with SHA256 hashing
@@ -20,7 +20,7 @@ PERFORMANCE OPTIMIZATIONS:
 WORKFLOW EFFICIENCY GAINS:
 - Eliminates 2-step file extraction + VHDX creation
 - Eliminates CSV export + import processing
-- Direct VHDX → SQLite processing (single step)
+- Proper Plaso workflow: VHDX → .plaso → SQLite (two optimized steps)
 - Maintains complete forensic metadata integrity
 - Reduces storage requirements by ~50%
 - Improves processing speed by ~60-80%
@@ -2583,9 +2583,9 @@ manager.OutputManager.RegisterOutput(FAS5SQLiteOutputModule)
         return module_path
 
     def parse_artifacts_plaso(self, plaso_path: Path) -> bool:
-        """Parse VHDX directly using Plaso with custom FAS5 SQLite output for maximum efficiency"""
+        """Parse VHDX using proper Plaso two-step workflow: log2timeline -> psort -> SQLite"""
         try:
-            self.log_custody_event("PARSING_START", "Starting optimized VHDX parsing with direct SQLite output")
+            self.log_custody_event("PARSING_START", "Starting Plaso two-step processing: log2timeline -> psort -> SQLite")
             
             if not plaso_path.exists():
                 raise FileNotFoundError(f"Plaso not found at {plaso_path}")
@@ -2602,31 +2602,24 @@ manager.OutputManager.RegisterOutput(FAS5SQLiteOutputModule)
             # Create custom FAS5 SQLite output module
             custom_module_path = self.create_custom_plaso_output_module()
             
-            # Database path for direct SQLite output
+            # File paths for two-step process
+            plaso_storage_path = self.parsed_dir / f"{self.case_id}_timeline.plaso"
             database_path = self.parsed_dir / f"{self.case_id}_fas5.db"
             
             # PERFORMANCE OPTIMIZATION: Pre-optimize database for bulk operations
             self._pre_optimize_database(database_path)
-            
-            # psort command with custom FAS5 SQLite output - DIRECT PROCESSING
-            psort_exe = plaso_path / "psort.py"
-            if not psort_exe.exists():
-                raise FileNotFoundError(f"psort.py not found at {psort_exe}")
-            
-            self.logger.info(f"Processing VHDX directly to FAS5 SQLite: {vhdx_path} -> {database_path}")
             
             # PERFORMANCE MONITORING: Track processing metrics
             start_time = time.time()
             start_memory = psutil.Process().memory_info().rss / 1024 / 1024
             vhdx_size = vhdx_path.stat().st_size / 1024 / 1024  # MB
             
-            # Single-step command: VHDX -> log2timeline -> custom SQLite output
-            # OPTIMIZED for maximum performance with VHDX processing
-            psort_cmd = [
-                "python", str(psort_exe),
-                "--additional-modules-path", str(custom_module_path.parent),
-                "-o", "fas5_sqlite",  # Our custom output module
-                "--output-options", f"database_path={database_path},case_id={self.case_id}",
+            self.logger.info(f"Step 1: Creating timeline from VHDX (Size: {vhdx_size:.1f}MB): {vhdx_path} -> {plaso_storage_path}")
+            
+            # STEP 1: log2timeline - Create timeline from VHDX
+            log2timeline_cmd = [
+                "log2timeline",  # Use the command that works in user's PATH
+                "--storage-file", str(plaso_storage_path),
                 "--parsers", "chrome_history,firefox_history,safari_history,edge_history,mft,prefetch,registry,lnk,jumplist,recycle_bin,shellbags,usnjrnl,evtx,filestat",
                 "--hashers", "md5,sha256",
                 "--process-archives",
@@ -2634,12 +2627,49 @@ manager.OutputManager.RegisterOutput(FAS5SQLiteOutputModule)
                 "--workers", "6",  # Increased workers for better performance
                 "--process-memory-limit", "4096",  # 4GB memory limit
                 "--partitions", "all",
-                str(vhdx_path)  # Process VHDX directly
+                str(vhdx_path)
             ]
             
-            self.logger.info(f"Executing optimized VHDX to SQLite processing (VHDX: {vhdx_size:.1f}MB): {' '.join(psort_cmd)}")
-            result = subprocess.run(psort_cmd, capture_output=True, text=True, timeout=7200)  # Extended timeout for VHDX processing
+            self.logger.info(f"Executing log2timeline: {' '.join(log2timeline_cmd)}")
+            log2timeline_result = subprocess.run(log2timeline_cmd, capture_output=True, text=True, timeout=7200)
             
+            if log2timeline_result.returncode != 0:
+                self.logger.error(f"log2timeline failed: {log2timeline_result.stderr}")
+                self.log_custody_event("PARSING_ERROR", f"log2timeline failed: {log2timeline_result.stderr}")
+                return False
+                
+            if not plaso_storage_path.exists():
+                self.logger.error("Plaso storage file was not created by log2timeline")
+                self.log_custody_event("PARSING_ERROR", "Plaso storage file was not created")
+                return False
+                
+            plaso_size = plaso_storage_path.stat().st_size / 1024 / 1024  # MB
+            self.logger.info(f"Step 1 completed: Timeline created (Size: {plaso_size:.1f}MB)")
+            
+            # STEP 2: psort - Process timeline to SQLite with custom output
+            self.logger.info(f"Step 2: Processing timeline to SQLite: {plaso_storage_path} -> {database_path}")
+            
+            psort_cmd = [
+                "psort",  # Use the command that should work in PATH
+                "--additional-modules-path", str(custom_module_path.parent),
+                "-o", "fas5_sqlite",  # Our custom output module
+                "--output-options", f"database_path={database_path},case_id={self.case_id}",
+                str(plaso_storage_path)
+            ]
+            
+            self.logger.info(f"Executing psort: {' '.join(psort_cmd)}")
+            result = subprocess.run(psort_cmd, capture_output=True, text=True, timeout=3600)
+            
+            if result.returncode != 0:
+                self.logger.error(f"psort processing failed: {result.stderr}")
+                self.log_custody_event("PARSING_ERROR", f"psort processing failed: {result.stderr}")
+                return False
+                
+            if not database_path.exists():
+                self.logger.error("FAS5 SQLite database was not created by psort")
+                self.log_custody_event("PARSING_ERROR", "FAS5 SQLite database was not created")
+                return False
+                
             # PERFORMANCE METRICS
             end_time = time.time()
             end_memory = psutil.Process().memory_info().rss / 1024 / 1024
@@ -2647,16 +2677,6 @@ manager.OutputManager.RegisterOutput(FAS5SQLiteOutputModule)
             memory_delta = end_memory - start_memory
             throughput = vhdx_size / processing_time if processing_time > 0 else 0
             
-            if result.returncode != 0:
-                self.logger.error(f"Direct SQLite processing failed: {result.stderr}")
-                self.log_custody_event("PARSING_ERROR", f"Direct SQLite processing failed: {result.stderr}")
-                return False
-                
-            if not database_path.exists():
-                self.logger.error("FAS5 SQLite database was not created")
-                self.log_custody_event("PARSING_ERROR", "FAS5 SQLite database was not created")
-                return False
-                
             # Validate database integrity and content
             if not self._validate_database_integrity(database_path):
                 self.logger.error("Database integrity validation failed")
@@ -2666,27 +2686,30 @@ manager.OutputManager.RegisterOutput(FAS5SQLiteOutputModule)
             # PERFORMANCE OPTIMIZATION: Post-optimize database for queries
             self._post_optimize_database(database_path)
             
-            # Clean up temporary custom module
+            # Clean up temporary files
             try:
                 custom_module_path.unlink()
+                # Optionally clean up intermediate .plaso file to save space
+                # plaso_storage_path.unlink()  # Uncomment if storage space is critical
             except:
                 pass
                 
             # Log performance metrics
             db_size = database_path.stat().st_size / 1024 / 1024  # MB
             self.log_custody_event("PARSING_SUCCESS", 
-                                 f"OPTIMIZED VHDX to FAS5 SQLite processing completed. "
+                                 f"Two-step Plaso processing completed successfully. "
                                  f"Time: {processing_time:.2f}s, Memory: {memory_delta:+.1f}MB, "
-                                 f"Throughput: {throughput:.1f}MB/s, Database: {db_size:.1f}MB")
+                                 f"Throughput: {throughput:.1f}MB/s, Database: {db_size:.1f}MB, "
+                                 f"Timeline: {plaso_size:.1f}MB")
             
-            self.logger.info(f"Performance metrics - Processing: {processing_time:.2f}s, "
+            self.logger.info(f"Performance metrics - Total processing: {processing_time:.2f}s, "
                            f"Memory delta: {memory_delta:+.1f}MB, Throughput: {throughput:.1f}MB/s")
             
             return True
                 
         except Exception as e:
-            self.logger.error(f"Optimized VHDX parsing error: {e}")
-            self.log_custody_event("PARSING_ERROR", f"Optimized VHDX parsing error: {str(e)}")
+            self.logger.error(f"Plaso two-step processing error: {e}")
+            self.log_custody_event("PARSING_ERROR", f"Plaso two-step processing error: {str(e)}")
             return False
     
     def _pre_optimize_database(self, db_path: Path) -> None:
