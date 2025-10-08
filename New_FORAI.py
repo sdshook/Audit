@@ -19,16 +19,56 @@ Automated collection and processing for forensic Q&A
 Supported by TinyLLaMA 1.1b
 Requirements: pip install fpdf2 llama-cpp-python psutil plaso tqdm
 
-USAGE EXAMPLES:
-    # Full analysis
-    python New_FORAI.py --case-id CASE001 --full-analysis --target-drive C:
+CLI USAGE EXAMPLES:
+
+🚀 COMPLETE END-TO-END FORENSIC ANALYSIS (ONE COMMAND DOES EVERYTHING):
+    # Use YOUR 12 standard forensic questions (no --question flag)
+    python New_FORAI.py --case-id CASE001 --full-analysis --target-drive C: --chain-of-custody --verbose
     
-    # Individual components
+    # Use custom question (with --question flag)
+    python New_FORAI.py --case-id CASE001 --full-analysis --target-drive C: --question "Your specific custom question here" --chain-of-custody --verbose
+    
+    # With time filtering - last 30 days only
+    python New_FORAI.py --case-id CASE001 --full-analysis --target-drive C: --days-back 30 --chain-of-custody --verbose
+    
+    # With specific date range (YYYYMMDD format)
+    python New_FORAI.py --case-id CASE001 --full-analysis --target-drive C: --date-from 20241201 --date-to 20241215 --chain-of-custody --verbose
+
+🔧 INDIVIDUAL WORKFLOW COMPONENTS:
+    # Collect artifacts only
     python New_FORAI.py --case-id CASE001 --collect-artifacts --target-drive C:
+    
+    # Parse artifacts only
     python New_FORAI.py --case-id CASE001 --parse-artifacts
+    
+    # Initialize database for a new case
+    python New_FORAI.py --case-id CASE001 --init-db
+    
+    # OPTIMIZED: Direct VHDX processing only (no CSV intermediary files)
+    
+    # Search for evidence
     python New_FORAI.py --case-id CASE001 --search "usb device activity"
-    python New_FORAI.py --case-id CASE001 --question "What suspicious activity occurred?"
+    
+    # Search with time filtering
+    python New_FORAI.py --case-id CASE001 --search "usb device activity" --days-back 7
+    python New_FORAI.py --case-id CASE001 --search "malware execution" --date-from 20241201 --date-to 20241215
+    
+    # Ask forensic questions with enhanced TinyLLama analysis
+    python New_FORAI.py --case-id CASE001 --question "What suspicious file transfers occurred?"
+    
+    # Ask questions with time filtering
+    python New_FORAI.py --case-id CASE001 --question "What USB devices were connected?" --days-back 30
+    python New_FORAI.py --case-id CASE001 --question "What network activity occurred?" --date-from 20241201 --date-to 20241215
+    
+    # Generate comprehensive forensic report
+    python New_FORAI.py --case-id CASE001 --report json
     python New_FORAI.py --case-id CASE001 --report pdf
+    
+    # Generate chain of custody documentation
+    python New_FORAI.py --case-id CASE001 --chain-of-custody
+    
+    # Verbose mode for detailed logging
+    python New_FORAI.py --case-id CASE001 --search "malware" --verbose
 """
 
 import os
@@ -50,15 +90,11 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from collections import defaultdict
 from functools import lru_cache, wraps
 
-# Required imports - fail fast if not available
+
 from tqdm import tqdm
 from fpdf import FPDF
 from llama_cpp import Llama
 import psutil
-
-# =============================================================================
-# ENHANCED FORENSIC SEARCH SYSTEM
-# =============================================================================
 
 class EnhancedForensicSearch:
     """Advanced FTS5 search system optimized for forensic analysis"""
@@ -393,12 +429,7 @@ class EnhancedForensicSearch:
         
         return "\n".join(context_parts)
 
-# Global instance for enhanced search
 enhanced_search = EnhancedForensicSearch()
-
-# =============================================================================
-# ADVANCED LLAMA ENHANCEMENT SYSTEM
-# =============================================================================
 
 class AdvancedTinyLlamaEnhancer:
     """Advanced enhancement system to boost LLM accuracy for forensic analysis"""
@@ -979,12 +1010,8 @@ WINDOW ANALYSIS:"""
         
         return synthesis
 
-# Global instance for advanced TinyLLama enhancement
-advanced_enhancer = AdvancedTinyLlamaEnhancer()
 
-# =============================================================================
-# CONFIGURATION
-# =============================================================================
+advanced_enhancer = AdvancedTinyLlamaEnhancer()
 
 @dataclass
 class ForaiConfig:
@@ -1019,10 +1046,6 @@ class ForaiConfig:
 
 CONFIG = ForaiConfig()
 
-# =============================================================================
-# LOGGING
-# =============================================================================
-
 def setup_logging() -> logging.Logger:
     """Setup structured logging"""
     logger = logging.getLogger("FORAI")
@@ -1042,10 +1065,6 @@ def setup_logging() -> logging.Logger:
 
 LOGGER = setup_logging()
 
-# =============================================================================
-# CONSTANTS
-# =============================================================================
-
 SYSTEM_PROMPT = """You are an expert digital forensics analyst. Follow these rules for maximum accuracy:
 
 1. EVIDENCE-ONLY: Base ALL statements strictly on provided evidence. Never invent or assume facts.
@@ -1054,10 +1073,6 @@ SYSTEM_PROMPT = """You are an expert digital forensics analyst. Follow these rul
 4. STRUCTURED OUTPUT: Use clear bullets with timestamps, filenames, and user accounts when available.
 5. LIMITATIONS: Always note evidence limitations and distinguish correlation from causation.
 """
-
-
-
-
 
 FORENSIC_QUESTIONS = [
     "What is the computer name, make, model, and serial number?",
@@ -1073,10 +1088,6 @@ FORENSIC_QUESTIONS = [
     "What software was installed, uninstalled, or modified?",
     "What network connections and communications occurred?"
 ]
-
-# =============================================================================
-# DATABASE SCHEMA
-# =============================================================================
 
 DATABASE_SCHEMA = """
 -- MAXIMUM EFFICIENCY SCHEMA FOR VHDX-ONLY WORKFLOW
@@ -1140,10 +1151,6 @@ CREATE TRIGGER IF NOT EXISTS sync_fts_update AFTER UPDATE ON evidence BEGIN
     VALUES (new.id, new.summary, new.data_json);
 END;
 """
-
-# =============================================================================
-# CORE FUNCTIONS
-# =============================================================================
 
 def performance_monitor(func):
     """Performance monitoring decorator"""
@@ -1277,10 +1284,6 @@ def sanitize_query_string(query: str) -> str:
     # Limit length
     return sanitized[:500]
 
-
-
-
-
 @performance_monitor
 def initialize_database() -> None:
     """Initialize database with optimized schema"""
@@ -1289,10 +1292,6 @@ def initialize_database() -> None:
         conn.commit()
     
     LOGGER.info("Database initialized with optimized schema")
-
-
-
-
 
 @performance_monitor
 def search_evidence(query: str, limit: int = 100, date_from: str = None, date_to: str = None, days_back: int = None) -> List[Dict[str, Any]]:
@@ -1396,10 +1395,6 @@ def search_evidence(query: str, limit: int = 100, date_from: str = None, date_to
         LOGGER.error(f"Unexpected search error: {e}")
         return []
 
-# =============================================================================
-# LLM INTEGRATION
-# =============================================================================
-
 class ModernLLM:
     """Modern LLM integration with advanced guardrails"""
     
@@ -1498,10 +1493,6 @@ class ModernLLM:
             return False
         
         return True
-
-# =============================================================================
-# FORENSIC ANALYSIS
-# =============================================================================
 
 class ForensicAnalyzer:
     """Modern forensic analysis engine"""
@@ -1865,10 +1856,6 @@ class ForensicAnalyzer:
         
         return analysis
 
-# =============================================================================
-# FORENSIC PROCESSOR
-# =============================================================================
-
 class ForensicProcessor:
     """Modern forensic data processor for Plaso timeline integration"""
     
@@ -1892,10 +1879,6 @@ class ForensicProcessor:
     def answer_forensic_question(self, question: str, case_id: str, date_from: str = None, date_to: str = None, days_back: int = None) -> str:
         """Answer forensic questions using the analyzer"""
         return self.analyzer.answer_forensic_question(question, case_id, date_from, date_to, days_back)
-
-# =============================================================================
-# REPORT GENERATION
-# =============================================================================
 
 class ModernReportGenerator:
     """Modern report generation with multiple formats"""
@@ -2025,10 +2008,6 @@ class ModernReportGenerator:
             pdf.ln(3)
         
         pdf.output(str(output_path))
-
-# =============================================================================
-# CUSTOM PLASO OUTPUT MODULE
-# =============================================================================
 
 class FAS5SQLiteOutputModule:
     """Custom Plaso output module for direct FAS5 SQLite database integration."""
@@ -2198,9 +2177,7 @@ class FAS5SQLiteOutputModule:
             print(f"Error flushing batch: {e}")
             self._batch_events.clear()
 
-# =============================================================================
 # END-TO-END FORENSIC WORKFLOW SYSTEM
-# =============================================================================
 
 class ForensicWorkflowManager:
     """Complete end-to-end forensic analysis workflow manager"""
@@ -2738,10 +2715,6 @@ class ForensicWorkflowManager:
         except Exception as e:
             self.logger.error(f"Chain of custody report error: {e}")
             return None
-
-# =============================================================================
-# MAIN WORKFLOW
-# =============================================================================
 
 def main():
     """Modern main workflow"""
