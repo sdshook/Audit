@@ -16,7 +16,7 @@ Complete step-by-step instructions for configuring your Windows 11 to run SIPCom
 1. **Download Python**:
    - Visit: [https://www.python.org/downloads/](https://www.python.org/downloads/)
    - Click "Download Python 3.12.x" (latest stable version)
-   - Select "Windows installer (64-bit)" for your ThinkPad
+   - Select "Windows installer (64-bit)" 
 
 2. **Install Python**:
    - Run the downloaded installer (`python-3.12.x-amd64.exe`)
