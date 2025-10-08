@@ -21,15 +21,14 @@ SIPCompare (Software Intellectual Property Compare) detects software intellectua
 | **codet5** | Slow | High | Cross-Language Detection | High |
 | **mini** | **Fast** | Good | Large Repositories (1000+ files) | **Low** |
 
-**Recommendation**: Use `graphcodebert` for forensic analysis requiring maximum accuracy and court-admissible evidence.
+**Recommendation**: Use `graphcodebert` for forensic analysis requiring high accuracy.
 
 ## Performance Metrics
 
-- **Accuracy**: 90-100% strong evidence rate for cross-language detection
-- **Obfuscation Resistance**: 94-96% similarity detection despite code modifications
-- **Statistical Rigor**: p < 0.05 significance threshold, < 5% false positive rate
-- **Speed**: < 60 seconds for comprehensive analysis, linear scaling with parallel processing
-- **Languages**: 15+ programming languages with full AST support
+- **Accuracy**: 90-100% detection rate for cross-language analysis
+- **Obfuscation Resistance**: 94-96% detection despite code modifications
+- **Statistical Rigor**: p < 0.05 significance, < 5% false positive rate
+- **Languages**: 15+ programming languages with AST support
 
 ## Installation & Usage
 
@@ -78,10 +77,10 @@ python SIPCompare.py --repoA /path/to/python_repo --repoB /path/to/java_repo \
 
 **Contents**: Interactive HTML report, CSV/JSON data, executive summary, source code snapshots, chain of custody documentation
 
-**Interpretation**:
-- **STRONG**: High confidence IP theft (legal action recommended)
-- **MODERATE**: Significant similarity (further investigation needed)  
-- **WEAK**: Low similarity (likely coincidental)
+**Evidence Levels**:
+- **STRONG**: High confidence similarity (>0.85)
+- **MODERATE**: Significant similarity (>0.65)  
+- **WEAK**: Low similarity (<0.65)
 
 ## Troubleshooting
 
@@ -93,7 +92,7 @@ python SIPCompare.py --repoA /path/to/python_repo --repoB /path/to/java_repo \
 
 **Performance Tuning**:
 - Large repositories: Use `--parallel 8 --embedding-model mini`
-- Maximum accuracy: Use `--threshold 0.6 --embedding-model graphcodebert`
+- High accuracy: Use `--threshold 0.6 --embedding-model graphcodebert`
 - Cross-language: Use `--embedding-model codet5 --cross-language`
 
 ## Forensic Considerations
