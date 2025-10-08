@@ -1,6 +1,6 @@
 # SIPCompare Windows 11 Setup Guide
 
-Complete step-by-step instructions for configuring your Windows 11 IBM ThinkPad to run SIPCompare.py successfully.
+Complete step-by-step instructions for configuring your Windows 11 to run SIPCompare.py successfully.
 
 ## Prerequisites
 
@@ -410,6 +410,3 @@ deactivate
 - **CPU**: Intel i7 or AMD Ryzen 7 (or better)
 - **GPU**: NVIDIA GPU with 4GB+ VRAM (optional, for better performance)
 
----
-
-**Setup Complete!** Your Windows 11 ThinkPad is now configured to run SIPCompare.py successfully. For additional support or advanced configuration, refer to the main SIPCompare documentation.
