@@ -376,43 +376,89 @@ class EnhancedForensicSearch:
         return sorted(results, key=lambda x: x.get('final_ranking_score', 0), reverse=True)
     
     def build_optimized_context(self, results: List[Dict], max_tokens: int = 1800) -> str:
-        """Build optimized context for TinyLLama within token limits"""
+        """Build optimized context for TinyLLama with streaming and memory efficiency"""
+        
+        if not results:
+            return ""
         
         context_parts = []
         current_tokens = 0
         seen_types = set()
+        priority_types = {'registry', 'filesystem', 'network', 'usb', 'process'}
         
-        for result in results:
-            artifact_type = result.get('artifact_type', '')
-            
-            # Prefer diverse evidence types for better context
-            type_penalty = 0.1 if artifact_type in seen_types else 0
-            adjusted_score = result.get('final_ranking_score', 0) - type_penalty
-            
-            if adjusted_score > 0.2:  # Quality threshold
-                # Build concise evidence summary
-                timestamp_str = ""
-                if result.get('timestamp'):
-                    dt = datetime.fromtimestamp(result['timestamp'])
-                    timestamp_str = f"[{dt.strftime('%m/%d %H:%M')}] "
+        # Sort results by score and prioritize important artifact types
+        def sort_key(result):
+            artifact_type = result.get('artifact_type', '').lower()
+            base_score = result.get('final_ranking_score', 0)
+            priority_boost = 0.2 if artifact_type in priority_types else 0
+            diversity_penalty = 0.1 if artifact_type in seen_types else 0
+            return base_score + priority_boost - diversity_penalty
+        
+        # Process results in streaming fashion to avoid loading all into memory
+        sorted_results = sorted(results, key=sort_key, reverse=True)
+        
+        for result in sorted_results:
+            if current_tokens >= max_tokens:
+                break
                 
-                # Create concise but informative summary
-                summary = result.get('summary', '')[:90]
+            artifact_type = result.get('artifact_type', '').lower()
+            adjusted_score = sort_key(result)
+            
+            if adjusted_score > 0.15:  # Lower threshold for better coverage
+                # Build concise evidence summary with error handling
+                timestamp_str = ""
+                try:
+                    if result.get('timestamp'):
+                        if isinstance(result['timestamp'], (int, float)):
+                            dt = datetime.fromtimestamp(result['timestamp'])
+                            timestamp_str = f"[{dt.strftime('%m/%d %H:%M')}] "
+                        elif isinstance(result['timestamp'], str):
+                            # Handle string timestamps
+                            parsed_ts = parse_timestamp(result['timestamp'])
+                            if parsed_ts:
+                                dt = datetime.fromtimestamp(parsed_ts)
+                                timestamp_str = f"[{dt.strftime('%m/%d %H:%M')}] "
+                except (ValueError, OSError) as e:
+                    LOGGER.debug(f"Timestamp parsing error: {e}")
+                    timestamp_str = ""
+                
+                # Create concise but informative summary with safe string handling
+                summary = str(result.get('summary', ''))[:90]
+                if not summary.strip():
+                    summary = str(result.get('details', ''))[:90]
+                
                 evidence_text = f"{timestamp_str}{artifact_type.upper()}: {summary}"
                 
                 # Add correlation info if significant
-                if result.get('correlation_count', 1) > 2:
-                    evidence_text += f" (correlated with {result['correlation_count']} events)"
+                correlation_count = result.get('correlation_count', 1)
+                if correlation_count > 2:
+                    evidence_text += f" (correlated with {correlation_count} events)"
                 
-                # Estimate tokens (rough: 4 chars per token)
-                estimated_tokens = len(evidence_text) // 4
+                # More accurate token estimation (GPT-style: ~3.5 chars per token)
+                estimated_tokens = len(evidence_text) // 3.5
                 
-                if current_tokens + estimated_tokens < max_tokens:
+                if current_tokens + estimated_tokens <= max_tokens:
                     context_parts.append(evidence_text)
                     current_tokens += estimated_tokens
                     seen_types.add(artifact_type)
                 else:
-                    break
+                    # Try to fit a shorter version
+                    short_summary = summary[:50]
+                    short_text = f"{timestamp_str}{artifact_type.upper()}: {short_summary}..."
+                    short_tokens = len(short_text) // 3.5
+                    
+                    if current_tokens + short_tokens <= max_tokens:
+                        context_parts.append(short_text)
+                        current_tokens += short_tokens
+                        seen_types.add(artifact_type)
+                    else:
+                        break
+        
+        # Add context summary if we have diverse evidence types
+        if len(seen_types) > 3:
+            summary_line = f"\n[EVIDENCE SUMMARY: {len(context_parts)} items across {len(seen_types)} artifact types]"
+            if current_tokens + len(summary_line) // 3.5 <= max_tokens:
+                context_parts.append(summary_line)
         
         return "\n".join(context_parts)
 
@@ -570,30 +616,101 @@ Evidence:
         return results
     
     def _calculate_confidence_score(self, analysis: str, evidence: str) -> float:
-        """Calculate confidence score based on analysis quality and evidence support"""
+        """Enhanced confidence scoring with multiple accuracy factors"""
         
-        confidence = 0.5  # Base confidence
+        if not analysis or len(analysis.strip()) < 20:
+            return 0.0
         
-        # Length and detail bonus
-        if len(analysis) > 100:
-            confidence += 0.1
-        if len(analysis) > 200:
-            confidence += 0.1
+        confidence = 0.4  # Lower base confidence, earn through quality
+        
+        # Length and detail scoring (more nuanced)
+        analysis_len = len(analysis)
+        if 50 <= analysis_len <= 100:
+            confidence += 0.05  # Concise but informative
+        elif 100 < analysis_len <= 300:
+            confidence += 0.15  # Good detail level
+        elif 300 < analysis_len <= 800:
+            confidence += 0.10  # Comprehensive but manageable
+        elif analysis_len > 1000:
+            confidence -= 0.05  # May indicate hallucination
             
-        # Specific evidence references
-        evidence_refs = len(re.findall(r'\d{4}-\d{2}-\d{2}|\d{2}:\d{2}|registry|file|process|user|IP|port', analysis, re.I))
-        confidence += min(evidence_refs * 0.05, 0.2)
+        # Specific evidence references with better patterns
+        evidence_patterns = [
+            r'\d{4}-\d{2}-\d{2}',  # Dates
+            r'\d{2}:\d{2}:\d{2}',  # Times
+            r'registry.*hkey',     # Registry references
+            r'file.*\.exe|\.dll|\.sys',  # Executable files
+            r'process.*pid|process.*id',  # Process references
+            r'user.*account|user.*login',  # User references
+            r'ip.*address|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}',  # IP addresses
+            r'port.*\d+|:\d{2,5}',  # Port numbers
+            r'usb.*device|removable.*storage',  # USB references
+            r'network.*connection|tcp|udp'  # Network references
+        ]
         
-        # Forensic terminology usage
-        forensic_terms = ['artifact', 'timeline', 'correlation', 'anomaly', 'pattern', 'suspicious', 'evidence']
-        term_count = sum(1 for term in forensic_terms if term.lower() in analysis.lower())
-        confidence += min(term_count * 0.03, 0.15)
+        evidence_refs = sum(1 for pattern in evidence_patterns 
+                          if re.search(pattern, analysis, re.I))
+        confidence += min(evidence_refs * 0.04, 0.25)
         
-        # Avoid hallucination indicators
-        hallucination_patterns = ['I believe', 'I think', 'probably', 'maybe', 'might be']
-        for pattern in hallucination_patterns:
-            if pattern.lower() in analysis.lower():
-                confidence -= 0.1
+        # Enhanced forensic terminology scoring
+        forensic_terms = {
+            'high_value': ['artifact', 'timeline', 'correlation', 'forensic', 'evidence'],
+            'medium_value': ['anomaly', 'pattern', 'suspicious', 'analysis', 'investigation'],
+            'technical': ['registry', 'filesystem', 'network', 'process', 'metadata']
+        }
+        
+        high_count = sum(1 for term in forensic_terms['high_value'] 
+                        if term.lower() in analysis.lower())
+        medium_count = sum(1 for term in forensic_terms['medium_value'] 
+                          if term.lower() in analysis.lower())
+        tech_count = sum(1 for term in forensic_terms['technical'] 
+                        if term.lower() in analysis.lower())
+        
+        confidence += min(high_count * 0.06, 0.18)
+        confidence += min(medium_count * 0.03, 0.12)
+        confidence += min(tech_count * 0.02, 0.08)
+        
+        # Enhanced hallucination detection
+        hallucination_patterns = [
+            r'\bi believe\b', r'\bi think\b', r'\bin my opinion\b', 
+            r'\bi assume\b', r'\bi guess\b', r'\bi suppose\b', 
+            r'\bi imagine\b', r'\bprobably\b', r'\bmaybe\b', 
+            r'\bmight be\b', r'\bseems like\b', r'\bappears to be\b'
+        ]
+        
+        hallucination_count = sum(1 for pattern in hallucination_patterns 
+                                if re.search(pattern, analysis, re.I))
+        confidence -= min(hallucination_count * 0.08, 0.3)
+        
+        # Evidence support validation
+        if evidence and len(evidence) > 100:
+            # Check if analysis references actual evidence content
+            evidence_words = set(re.findall(r'\w+', evidence.lower()))
+            analysis_words = set(re.findall(r'\w+', analysis.lower()))
+            
+            # Calculate overlap (excluding common words)
+            common_words = {'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'was', 'are', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'this', 'that', 'these', 'those'}
+            
+            evidence_specific = evidence_words - common_words
+            analysis_specific = analysis_words - common_words
+            
+            if evidence_specific and analysis_specific:
+                overlap = len(evidence_specific.intersection(analysis_specific))
+                overlap_ratio = overlap / min(len(evidence_specific), len(analysis_specific))
+                confidence += min(overlap_ratio * 0.15, 0.15)
+        
+        # Specificity bonus (concrete details vs vague statements)
+        specific_indicators = [
+            r'\d+\s*(bytes?|kb|mb|gb)',  # File sizes
+            r'\d+\s*(files?|entries?|records?)',  # Counts
+            r'serial.*number.*\w+',  # Serial numbers
+            r'version.*\d+\.\d+',  # Version numbers
+            r'between.*\d{2}:\d{2}.*and.*\d{2}:\d{2}'  # Time ranges
+        ]
+        
+        specificity_count = sum(1 for pattern in specific_indicators 
+                              if re.search(pattern, analysis, re.I))
+        confidence += min(specificity_count * 0.05, 0.15)
         
         return max(0.0, min(1.0, confidence))
     
@@ -1146,55 +1263,116 @@ def performance_monitor(func):
 
 @performance_monitor
 def get_database_connection() -> sqlite3.Connection:
-    """Get maximum performance database connection for VHDX workflow"""
-    conn = sqlite3.connect(
-        CONFIG.db_path,
-        timeout=60.0,  # Increased for large VHDX processing
-        check_same_thread=False
-    )
+    """Get maximum performance database connection for VHDX workflow with enhanced error handling"""
+    max_retries = 3
+    retry_delay = 0.1
     
-    # MAXIMUM PERFORMANCE SQLite optimizations for VHDX processing
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute(f"PRAGMA cache_size={CONFIG.db_cache_size}")
-    conn.execute(f"PRAGMA mmap_size={CONFIG.db_mmap_size}")
-    conn.execute("PRAGMA synchronous=NORMAL")
-    conn.execute("PRAGMA temp_store=MEMORY")
-    conn.execute("PRAGMA page_size=65536")  # Larger page size for bulk operations
-    conn.execute("PRAGMA wal_autocheckpoint=10000")  # Less frequent checkpoints
-    conn.execute("PRAGMA busy_timeout=60000")  # Handle concurrent access
-    conn.execute("PRAGMA threads=4")  # Multi-threaded operations
-    conn.execute("PRAGMA optimize")
-    
-    return conn
+    for attempt in range(max_retries):
+        try:
+            conn = sqlite3.connect(
+                CONFIG.db_path,
+                timeout=60.0,  # Increased for large VHDX processing
+                check_same_thread=False
+            )
+            
+            # MAXIMUM PERFORMANCE SQLite optimizations for VHDX processing
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute(f"PRAGMA cache_size={CONFIG.db_cache_size}")
+            conn.execute(f"PRAGMA mmap_size={CONFIG.db_mmap_size}")
+            conn.execute("PRAGMA synchronous=NORMAL")
+            conn.execute("PRAGMA temp_store=MEMORY")
+            conn.execute("PRAGMA page_size=65536")  # Larger page size for bulk operations
+            conn.execute("PRAGMA wal_autocheckpoint=10000")  # Less frequent checkpoints
+            conn.execute("PRAGMA busy_timeout=60000")  # Handle concurrent access
+            conn.execute("PRAGMA threads=4")  # Multi-threaded operations
+            conn.execute("PRAGMA optimize")
+            
+            return conn
+            
+        except sqlite3.OperationalError as e:
+            if "database is locked" in str(e).lower() and attempt < max_retries - 1:
+                LOGGER.warning(f"Database locked, retrying in {retry_delay}s (attempt {attempt + 1}/{max_retries})")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+                continue
+            else:
+                LOGGER.error(f"Database connection failed: {e}")
+                raise
+        except Exception as e:
+            LOGGER.error(f"Unexpected database connection error: {e}")
+            raise
 
-@lru_cache(maxsize=1000)
+# Pre-compiled regex patterns for faster timestamp detection
+TIMESTAMP_PATTERNS = [
+    (re.compile(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$'), "%Y-%m-%d %H:%M:%S"),
+    (re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'), "%Y-%m-%dT%H:%M:%S"),
+    (re.compile(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+$'), "%Y-%m-%d %H:%M:%S.%f"),
+    (re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+$'), "%Y-%m-%dT%H:%M:%S.%f"),
+    (re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$'), "%Y-%m-%dT%H:%M:%SZ"),
+    (re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z$'), "%Y-%m-%dT%H:%M:%S.%fZ"),
+    (re.compile(r'^\d{1,2}/\d{1,2}/\d{4} \d{2}:\d{2}:\d{2}$'), "%m/%d/%Y %H:%M:%S"),
+    (re.compile(r'^\d{1,2}/\d{1,2}/\d{4} \d{2}:\d{2}:\d{2}$'), "%d/%m/%Y %H:%M:%S"),
+]
+
+@lru_cache(maxsize=2000)
 def parse_timestamp(timestamp_str: str) -> Optional[int]:
-    """High-performance timestamp parsing with caching"""
+    """Optimized timestamp parsing with pre-compiled regex patterns"""
     if not timestamp_str or timestamp_str.lower() in ('null', 'none', ''):
         return None
     
-    # Modern timestamp formats (most common first)
-    formats = [
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%dT%H:%M:%S",
-        "%Y-%m-%d %H:%M:%S.%f",
-        "%Y-%m-%dT%H:%M:%S.%f",
-        "%Y-%m-%dT%H:%M:%SZ",
-        "%Y-%m-%dT%H:%M:%S.%fZ",
-        "%m/%d/%Y %H:%M:%S",
-        "%d/%m/%Y %H:%M:%S",
-    ]
+    clean_str = timestamp_str.strip()
     
-    for fmt in formats:
-        try:
-            dt = datetime.strptime(timestamp_str.strip(), fmt)
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
-            return int(dt.timestamp())
-        except ValueError:
-            continue
+    # Fast pattern matching before expensive strptime calls
+    for pattern, fmt in TIMESTAMP_PATTERNS:
+        if pattern.match(clean_str):
+            try:
+                dt = datetime.strptime(clean_str, fmt)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                return int(dt.timestamp())
+            except ValueError:
+                continue
     
     return None
+
+# Input validation functions for security and accuracy
+def validate_case_id(case_id: str) -> bool:
+    """Validate case ID format to prevent injection attacks"""
+    if not case_id or len(case_id) > 50:
+        return False
+    
+    # Allow only alphanumeric, hyphens, and underscores
+    pattern = re.compile(r'^[a-zA-Z0-9_-]+$')
+    return bool(pattern.match(case_id))
+
+def validate_date_format(date_str: str) -> bool:
+    """Validate YYYYMMDD date format"""
+    if not date_str or len(date_str) != 8:
+        return False
+    
+    pattern = re.compile(r'^\d{8}$')
+    if not pattern.match(date_str):
+        return False
+    
+    # Validate actual date
+    try:
+        year = int(date_str[:4])
+        month = int(date_str[4:6])
+        day = int(date_str[6:8])
+        datetime(year, month, day)
+        return True
+    except ValueError:
+        return False
+
+def sanitize_query_string(query: str) -> str:
+    """Sanitize search query to prevent SQL injection"""
+    if not query:
+        return ""
+    
+    # Remove potentially dangerous characters
+    sanitized = re.sub(r'[;\'\"\\]', '', query)
+    # Limit length
+    return sanitized[:500]
 
 @lru_cache(maxsize=500)
 def detect_artifact_type(filename: str) -> str:
@@ -1253,64 +1431,105 @@ def calculate_file_hash(file_path: Path) -> str:
 
 @performance_monitor
 def search_evidence(query: str, limit: int = 100, date_from: str = None, date_to: str = None, days_back: int = None) -> List[Dict[str, Any]]:
-    """Advanced full-text search with modern FTS5 and time filtering"""
-    with get_database_connection() as conn:
-        # Build time filter conditions
-        time_conditions = []
-        params = [query]
-        
-        if days_back:
-            from datetime import datetime, timedelta
-            cutoff_date = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
-            time_conditions.append("e.timestamp >= ?")
-            params.append(cutoff_date)
-        
-        if date_from:
-            # Convert YYYYMMDD to YYYY-MM-DD
-            formatted_date = f"{date_from[:4]}-{date_from[4:6]}-{date_from[6:8]}"
-            time_conditions.append("e.timestamp >= ?")
-            params.append(formatted_date)
+    """Advanced full-text search with modern FTS5, time filtering, and enhanced error handling"""
+    
+    # Input validation
+    if not query or not query.strip():
+        LOGGER.warning("Empty search query provided")
+        return []
+    
+    # Sanitize query
+    sanitized_query = sanitize_query_string(query)
+    if not sanitized_query:
+        LOGGER.warning("Query sanitization resulted in empty string")
+        return []
+    
+    # Validate date formats
+    if date_from and not validate_date_format(date_from):
+        LOGGER.error(f"Invalid date_from format: {date_from}")
+        return []
+    
+    if date_to and not validate_date_format(date_to):
+        LOGGER.error(f"Invalid date_to format: {date_to}")
+        return []
+    
+    # Validate limit
+    limit = max(1, min(limit, 10000))  # Reasonable bounds
+    
+    try:
+        with get_database_connection() as conn:
+            # Build time filter conditions
+            time_conditions = []
+            params = [sanitized_query]
             
-        if date_to:
-            # Convert YYYYMMDD to YYYY-MM-DD
-            formatted_date = f"{date_to[:4]}-{date_to[4:6]}-{date_to[6:8]}"
-            time_conditions.append("e.timestamp <= ?")
-            params.append(formatted_date)
-        
-        # Build query with time filters
-        base_query = """
-            SELECT e.id, e.case_id, e.host, e.user, e.timestamp, e.artifact,
-                   e.source_file, e.summary, e.data_json,
-                   rank
-            FROM evidence_search 
-            JOIN evidence e ON evidence_search.rowid = e.id
-            WHERE evidence_search MATCH ?
-        """
-        
-        if time_conditions:
-            base_query += " AND " + " AND ".join(time_conditions)
-        
-        base_query += " ORDER BY rank LIMIT ?"
-        params.append(limit)
-        
-        cursor = conn.execute(base_query, params)
-        
-        results = []
-        for row in cursor.fetchall():
-            results.append({
-                'id': row[0],
-                'case_id': row[1],
-                'host': row[2],
-                'user': row[3],
-                'timestamp': row[4],
-                'artifact': row[5],
-                'source_file': row[6],
-                'summary': row[7],
-                'data_json': json.loads(row[8]) if row[8] else {},
-                'rank': row[9]
-            })
-        
-        return results
+            if days_back and days_back > 0:
+                cutoff_date = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
+                time_conditions.append("e.timestamp >= ?")
+                params.append(cutoff_date)
+            
+            if date_from:
+                # Convert YYYYMMDD to YYYY-MM-DD
+                formatted_date = f"{date_from[:4]}-{date_from[4:6]}-{date_from[6:8]}"
+                time_conditions.append("e.timestamp >= ?")
+                params.append(formatted_date)
+                
+            if date_to:
+                # Convert YYYYMMDD to YYYY-MM-DD
+                formatted_date = f"{date_to[:4]}-{date_to[4:6]}-{date_to[6:8]}"
+                time_conditions.append("e.timestamp <= ?")
+                params.append(formatted_date)
+            
+            # Build query with time filters
+            base_query = """
+                SELECT e.id, e.case_id, e.host, e.user, e.timestamp, e.artifact,
+                       e.source_file, e.summary, e.data_json,
+                       rank
+                FROM evidence_search 
+                JOIN evidence e ON evidence_search.rowid = e.id
+                WHERE evidence_search MATCH ?
+            """
+            
+            if time_conditions:
+                base_query += " AND " + " AND ".join(time_conditions)
+            
+            base_query += " ORDER BY rank LIMIT ?"
+            params.append(limit)
+            
+            cursor = conn.execute(base_query, params)
+            
+            results = []
+            for row in cursor.fetchall():
+                try:
+                    data_json = json.loads(row[8]) if row[8] else {}
+                except json.JSONDecodeError as e:
+                    LOGGER.warning(f"Invalid JSON in evidence record {row[0]}: {e}")
+                    data_json = {}
+                
+                results.append({
+                    'id': row[0],
+                    'case_id': row[1],
+                    'host': row[2],
+                    'user': row[3],
+                    'timestamp': row[4],
+                    'artifact': row[5],
+                    'source_file': row[6],
+                    'summary': row[7],
+                    'data_json': data_json,
+                    'rank': row[9]
+                })
+            
+            return results
+            
+    except sqlite3.OperationalError as e:
+        if "no such table: evidence_search" in str(e):
+            LOGGER.error("FTS5 search table not initialized. Run --init-db first.")
+            return []
+        else:
+            LOGGER.error(f"Database search error: {e}")
+            return []
+    except Exception as e:
+        LOGGER.error(f"Unexpected search error: {e}")
+        return []
 
 # =============================================================================
 # LLM INTEGRATION
@@ -1371,20 +1590,47 @@ class ModernLLM:
             return "Error generating response"
     
     def _validate_response(self, response: str) -> bool:
-        """Advanced response validation - less restrictive for forensic analysis"""
+        """Enhanced response validation with forensic accuracy scoring"""
         if not response or len(response) < 10:
             return False
         
-        # Check for clear hallucination indicators (more permissive for forensic language)
+        # Check for clear hallucination indicators
         hallucination_patterns = [
             r"I believe", r"I think", r"in my opinion", r"I assume",
-            r"I guess", r"I suppose", r"I imagine"
+            r"I guess", r"I suppose", r"I imagine", r"I feel",
+            r"it seems to me", r"I would say", r"I suspect"
         ]
         
+        hallucination_count = 0
         for pattern in hallucination_patterns:
             if re.search(pattern, response, re.I):
+                hallucination_count += 1
                 LOGGER.warning(f"Potential hallucination detected: {pattern}")
-                return False
+        
+        # Allow up to 1 minor hallucination indicator for forensic context
+        if hallucination_count > 1:
+            return False
+        
+        # Check for forensic evidence indicators (positive signals)
+        evidence_indicators = [
+            r"\d{4}-\d{2}-\d{2}",  # Dates
+            r"\d{2}:\d{2}:\d{2}",  # Times
+            r"registry", r"file", r"process", r"user", r"event",
+            r"artifact", r"evidence", r"timeline", r"correlation"
+        ]
+        
+        evidence_count = sum(1 for pattern in evidence_indicators 
+                           if re.search(pattern, response, re.I))
+        
+        # Require at least some forensic terminology for validation
+        if evidence_count < 2:
+            LOGGER.warning("Response lacks sufficient forensic evidence indicators")
+            return False
+        
+        # Check for reasonable length (not too short or excessively long)
+        if len(response) > 5000:
+            LOGGER.warning("Response excessively long, may indicate hallucination")
+            return False
         
         return True
 
@@ -2647,6 +2893,35 @@ def main():
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose logging')
     
     args = parser.parse_args()
+    
+    # Input validation for security and accuracy
+    if not validate_case_id(args.case_id):
+        LOGGER.error(f"Invalid case ID format: {args.case_id}")
+        LOGGER.error("Case ID must contain only alphanumeric characters, hyphens, and underscores (max 50 chars)")
+        sys.exit(1)
+    
+    if args.date_from and not validate_date_format(args.date_from):
+        LOGGER.error(f"Invalid date_from format: {args.date_from}")
+        LOGGER.error("Date format must be YYYYMMDD (e.g., 20241201)")
+        sys.exit(1)
+    
+    if args.date_to and not validate_date_format(args.date_to):
+        LOGGER.error(f"Invalid date_to format: {args.date_to}")
+        LOGGER.error("Date format must be YYYYMMDD (e.g., 20241215)")
+        sys.exit(1)
+    
+    if args.days_back and (args.days_back < 1 or args.days_back > 3650):
+        LOGGER.error(f"Invalid days_back value: {args.days_back}")
+        LOGGER.error("Days back must be between 1 and 3650 (10 years)")
+        sys.exit(1)
+    
+    if args.search and len(args.search.strip()) == 0:
+        LOGGER.error("Search query cannot be empty")
+        sys.exit(1)
+    
+    if args.question and len(args.question.strip()) == 0:
+        LOGGER.error("Question cannot be empty")
+        sys.exit(1)
     
     if args.verbose:
         LOGGER.setLevel(logging.DEBUG)
