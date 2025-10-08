@@ -270,7 +270,7 @@ class EnhancedForensicSearch:
         
         results = conn.execute("""
             SELECT * FROM evidence 
-            WHERE summary LIKE ? OR details LIKE ?
+            WHERE summary LIKE ? OR data_json LIKE ?
             ORDER BY timestamp DESC
             LIMIT ?
         """, (f'%{query}%', f'%{query}%', limit)).fetchall()
@@ -357,7 +357,7 @@ class EnhancedForensicSearch:
         
         for result in results:
             # Calculate term relevance score
-            content = f"{result.get('summary', '')} {result.get('details', '')}".lower()
+            content = f"{result.get('summary', '')} {result.get('data_json', '')}".lower()
             content_terms = set(re.findall(r'\w+', content))
             
             term_overlap = len(query_terms.intersection(content_terms))
@@ -425,7 +425,7 @@ class EnhancedForensicSearch:
                 # Create concise but informative summary with safe string handling
                 summary = str(result.get('summary', ''))[:90]
                 if not summary.strip():
-                    summary = str(result.get('details', ''))[:90]
+                    summary = str(result.get('data_json', ''))[:90]
                 
                 evidence_text = f"{timestamp_str}{artifact_type.upper()}: {summary}"
                 
