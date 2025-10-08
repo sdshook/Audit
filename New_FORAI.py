@@ -1055,37 +1055,9 @@ SYSTEM_PROMPT = """You are an expert digital forensics analyst. Follow these rul
 5. LIMITATIONS: Always note evidence limitations and distinguish correlation from causation.
 """
 
-ARTIFACT_PATTERNS = {
-    re.compile(r"systeminfo|system_info", re.I): "SystemInfo",
-    re.compile(r"setupapi|setup_api", re.I): "SetupAPI", 
-    re.compile(r"storage|disk|physicaldrive", re.I): "Storage",
-    re.compile(r"sam_|sam\.", re.I): "SAM",
-    re.compile(r"ntuser|nt_user", re.I): "NTUSER",
-    re.compile(r"event.*logon|logon.*event|4624|4647|4634", re.I): "EventLogon",
-    re.compile(r"usbstor|usb_stor", re.I): "USBStorage",
-    re.compile(r"mountpoints|mount_points", re.I): "MountPoints",
-    re.compile(r"mft|master_file_table|\$mft", re.I): "MFT",
-    re.compile(r"usnjrnl|usn_journal|\$j", re.I): "USNJournal",
-    re.compile(r"jumplist|jump_list|lecmd", re.I): "JumpList",
-    re.compile(r"browser|history|chrome|firefox|edge", re.I): "BrowserHistory",
-    re.compile(r"dns|domain_name", re.I): "DNS",
-    re.compile(r"process|task|proc", re.I): "Process",
-    re.compile(r"filesystem|file_system|shellbag", re.I): "FileSystem",
-    re.compile(r"print|spool", re.I): "Print",
-    re.compile(r"amcache|am_cache", re.I): "AmCache",
-    re.compile(r"service|svc", re.I): "Services",
-    re.compile(r"prefetch|pf", re.I): "Prefetch",
-    re.compile(r"registry|reg", re.I): "Registry",
-    re.compile(r"network|net|tcp|udp", re.I): "Network",
-}
 
-TIME_COLUMNS = {
-    "TimeCreated", "EventCreatedTime", "Timestamp", "TimeStamp", "Created", 
-    "CreationTime", "LastAccess", "LastWrite", "LastWriteTime", "FirstRun", 
-    "LastRun", "RecordCreateTime", "FileCreated", "FileModified", "Modified", 
-    "WriteTime", "Accessed", "AccessedTime", "ModifiedTime", "ExecutionTime", 
-    "InstallTime", "UninstallTime", "StartTime", "EndTime", "LogonTime", "LogoffTime"
-}
+
+
 
 FORENSIC_QUESTIONS = [
     "What is the computer name, make, model, and serial number?",
@@ -1305,40 +1277,9 @@ def sanitize_query_string(query: str) -> str:
     # Limit length
     return sanitized[:500]
 
-@lru_cache(maxsize=500)
-def detect_artifact_type(filename: str) -> str:
-    """Fast artifact type detection"""
-    filename_lower = filename.lower()
-    
-    for pattern, artifact_type in ARTIFACT_PATTERNS.items():
-        if pattern.search(filename_lower):
-            return artifact_type
-    
-    return "Unknown"
 
-def extract_json_fields(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Extract and normalize important forensic fields"""
-    normalized = {}
-    
-    # User identification
-    for key in ['User', 'UserName', 'Username', 'AccountName', 'SubjectUserName']:
-        if key in data and data[key]:
-            normalized['user'] = str(data[key])
-            break
-    
-    # System identification  
-    for key in ['ComputerName', 'Computer_Name', 'Hostname', 'Host']:
-        if key in data and data[key]:
-            normalized['host'] = str(data[key])
-            break
-    
-    # File paths
-    for key in ['FilePath', 'File_Path', 'Path', 'FullPath']:
-        if key in data and data[key]:
-            normalized['file_path'] = str(data[key])
-            break
-    
-    return normalized
+
+
 
 @performance_monitor
 def initialize_database() -> None:
@@ -1349,16 +1290,9 @@ def initialize_database() -> None:
     
     LOGGER.info("Database initialized with optimized schema")
 
-def calculate_file_hash(file_path: Path) -> str:
-    """Calculate file hash using streaming to handle large files"""
-    hash_obj = hashlib.sha256()
-    with open(file_path, 'rb') as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            hash_obj.update(chunk)
-    return hash_obj.hexdigest()
 
-@performance_monitor
-# CSV processing removed - using direct VHDX → SQLite workflow only for maximum efficiency
+
+
 
 @performance_monitor
 def search_evidence(query: str, limit: int = 100, date_from: str = None, date_to: str = None, days_back: int = None) -> List[Dict[str, Any]]:
