@@ -8,40 +8,16 @@ Zero backward compatibility - Modern Python only
 OPTIMIZED WORKFLOW (v2.1):
 Target Drive → KAPE (VHDX-only) → log2timeline (.plaso) → psort (SQLite) → FAS5 Database
 
-PERFORMANCE OPTIMIZATIONS:
-✅ VHDX-only collection (maintains forensic integrity, eliminates file extraction)
-✅ Proper two-step Plaso workflow: log2timeline → psort
-✅ Custom Plaso output module for direct SQLite integration
-✅ Eliminates CSV/JSON intermediary files (massive performance gain)
-✅ Comprehensive integrity validation with SHA256 hashing
-✅ Enhanced chain of custody logging
-✅ Optimized database schema for timeline analysis
-
-WORKFLOW EFFICIENCY GAINS:
-- Eliminates 2-step file extraction + VHDX creation
-- Eliminates CSV export + import processing
-- Proper Plaso workflow: VHDX → .plaso → SQLite (two optimized steps)
-- Maintains complete forensic metadata integrity
-- Reduces storage requirements by ~50%
-- Improves processing speed by ~60-80%
-
 Automated collection and processing for essential forensic Q&A
 Supported by TinyLLaMA 1.1b
 Note: prototype utilizing KAPE and Plaso timeline analysis
 requirements (pip install pandas wmi pywin32 fpdf llama-cpp-python psutil plaso)
 dotNet 9 performs better than 6 also.
 
-DESIGN PRINCIPLES:
-- Maximum efficiency through VHDX-only workflow
-- Zero backward compatibility - optimized for new method only
-- Direct VHDX → SQLite processing (no intermediate files)
-- Streamlined codebase with no legacy fallbacks
-- Peak performance via modern Python patterns
-
 CLI USAGE EXAMPLES:
 
-🚀 COMPLETE END-TO-END FORENSIC ANALYSIS (ONE COMMAND DOES EVERYTHING):
-    # Use YOUR 12 standard forensic questions (no --question flag)
+    COMPLETE END-TO-END FORENSIC ANALYSIS (ONE COMMAND DOES EVERYTHING):
+    # Use 12 standard forensic questions (no --question flag)
     python New_FORAI.py --case-id CASE001 --full-analysis --target-drive C: --chain-of-custody --verbose
     
     # Use custom question (with --question flag)
@@ -53,7 +29,7 @@ CLI USAGE EXAMPLES:
     # With specific date range (YYYYMMDD format)
     python New_FORAI.py --case-id CASE001 --full-analysis --target-drive C: --date-from 20241201 --date-to 20241215 --chain-of-custody --verbose
 
-🔧 INDIVIDUAL WORKFLOW COMPONENTS:
+    INDIVIDUAL WORKFLOW COMPONENTS:
     # Collect artifacts only
     python New_FORAI.py --case-id CASE001 --collect-artifacts --target-drive C:
     
@@ -62,8 +38,6 @@ CLI USAGE EXAMPLES:
     
     # Initialize database for a new case
     python New_FORAI.py --case-id CASE001 --init-db
-    
-    # OPTIMIZED: Direct VHDX processing only (no CSV intermediary files)
     
     # Search for evidence
     python New_FORAI.py --case-id CASE001 --search "usb device activity"
