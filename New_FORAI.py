@@ -2485,26 +2485,29 @@ def check_external_dependencies(kape_path: Path = None, plaso_path: Path = None)
             LOGGER.warning("KAPE not found in common locations")
     
     # Check Plaso
-    if plaso_path:
-        if plaso_path.exists() and plaso_path.is_dir():
-            # Check for key Plaso tools
-            plaso_tools = ['log2timeline.py', 'psort.py', 'psteal.py']
-            found_tools = []
-            
-            for tool in plaso_tools:
-                tool_path = plaso_path / tool
-                if tool_path.exists():
-                    found_tools.append(tool)
-            
-            if len(found_tools) >= 2:  # At least 2 tools found
-                dependencies['plaso'] = True
-                LOGGER.info(f"Plaso tools found: {found_tools}")
-            else:
-                LOGGER.warning(f"Plaso directory found but missing tools: {plaso_path}")
+    plaso_found = False
+    
+    if plaso_path and plaso_path.exists() and plaso_path.is_dir():
+        # Check for key Plaso tools in specified directory
+        plaso_tools = ['log2timeline.py', 'psort.py', 'psteal.py']
+        found_tools = []
+        
+        for tool in plaso_tools:
+            tool_path = plaso_path / tool
+            if tool_path.exists():
+                found_tools.append(tool)
+        
+        if len(found_tools) >= 2:  # At least 2 tools found
+            dependencies['plaso'] = True
+            plaso_found = True
+            LOGGER.info(f"Plaso tools found in directory: {found_tools}")
         else:
-            LOGGER.warning(f"Plaso directory not found at {plaso_path}")
-    else:
-        # Try to find Plaso tools in PATH
+            LOGGER.warning(f"Plaso directory found but missing tools: {plaso_path}")
+    elif plaso_path:
+        LOGGER.warning(f"Plaso directory not found at {plaso_path}")
+    
+    # If not found in directory, try to find Plaso tools in PATH
+    if not plaso_found:
         try:
             import shutil
             if shutil.which('log2timeline.py') or shutil.which('log2timeline'):
