@@ -2729,8 +2729,7 @@ class ForensicWorkflowManager:
                 "--tdest", str(temp_dest),
                 "--target", "!SANS_Triage,Chrome,Firefox,Edge,InternetExplorer,BrowserArtifacts",  # Enhanced browser collection
                 "--vhdx", str(vhdx_path),
-                "--zip", "false",  # Disable auto-zipping
-                "--scs", "0"       # Disable timestamping (scs = source control system)
+                "--zip", "false"   # Disable auto-zipping
             ]
             
             self.logger.info(f"Executing KAPE: {' '.join(kape_cmd)}")
