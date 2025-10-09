@@ -3059,6 +3059,171 @@ class ForensicWorkflowManager:
             self.logger.error(f"Chain of custody report error: {e}")
             return None
 
+def load_custom_intelligence(args) -> Dict[str, List[str]]:
+    """Load custom intelligence data from CLI arguments and files"""
+    intelligence = {
+        'domains': [],
+        'tools': [],
+        'iocs': []
+    }
+    
+    # Load domains from command line
+    if args.domains:
+        intelligence['domains'].extend(args.domains)
+    
+    # Load domains from file
+    if args.domains_file and args.domains_file.exists():
+        try:
+            with open(args.domains_file, 'r', encoding='utf-8') as f:
+                domains = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+                intelligence['domains'].extend(domains)
+            LOGGER.info(f"Loaded {len(domains)} domains from {args.domains_file}")
+        except Exception as e:
+            LOGGER.error(f"Error loading domains file: {e}")
+    
+    # Load tools from command line
+    if args.tools:
+        intelligence['tools'].extend(args.tools)
+    
+    # Load tools from file
+    if args.tools_file and args.tools_file.exists():
+        try:
+            with open(args.tools_file, 'r', encoding='utf-8') as f:
+                tools_data = json.load(f)
+                if isinstance(tools_data, list):
+                    intelligence['tools'].extend(tools_data)
+                elif isinstance(tools_data, dict):
+                    # Support different formats
+                    if 'tools' in tools_data:
+                        intelligence['tools'].extend(tools_data['tools'])
+                    if 'executables' in tools_data:
+                        intelligence['tools'].extend(tools_data['executables'])
+                    if 'processes' in tools_data:
+                        intelligence['tools'].extend(tools_data['processes'])
+            LOGGER.info(f"Loaded {len(intelligence['tools'])} tools from {args.tools_file}")
+        except Exception as e:
+            LOGGER.error(f"Error loading tools file: {e}")
+    
+    # Load IOCs from file
+    if args.iocs_file and args.iocs_file.exists():
+        try:
+            with open(args.iocs_file, 'r', encoding='utf-8') as f:
+                iocs_data = json.load(f)
+                if isinstance(iocs_data, list):
+                    intelligence['iocs'].extend(iocs_data)
+                elif isinstance(iocs_data, dict):
+                    # Support STIX/TAXII format or custom format
+                    if 'indicators' in iocs_data:
+                        intelligence['iocs'].extend(iocs_data['indicators'])
+                    if 'domains' in iocs_data:
+                        intelligence['domains'].extend(iocs_data['domains'])
+                    if 'files' in iocs_data:
+                        intelligence['tools'].extend(iocs_data['files'])
+            LOGGER.info(f"Loaded {len(intelligence['iocs'])} IOCs from {args.iocs_file}")
+        except Exception as e:
+            LOGGER.error(f"Error loading IOCs file: {e}")
+    
+    # Remove duplicates
+    intelligence['domains'] = list(set(intelligence['domains']))
+    intelligence['tools'] = list(set(intelligence['tools']))
+    intelligence['iocs'] = list(set(intelligence['iocs']))
+    
+    total_indicators = len(intelligence['domains']) + len(intelligence['tools']) + len(intelligence['iocs'])
+    if total_indicators > 0:
+        LOGGER.info(f"Loaded custom intelligence: {len(intelligence['domains'])} domains, "
+                   f"{len(intelligence['tools'])} tools, {len(intelligence['iocs'])} IOCs")
+    
+    return intelligence
+
+def inject_custom_intelligence(case_id: str, intelligence: Dict[str, List[str]]) -> None:
+    """Inject custom intelligence data into the evidence database for enhanced analysis"""
+    if not any(intelligence.values()):
+        return
+    
+    try:
+        with get_database_connection() as conn:
+            timestamp = int(time.time())
+            
+            # Inject suspicious domains as network evidence
+            for domain in intelligence['domains']:
+                evidence_data = {
+                    'Domain': domain,
+                    'Type': 'Suspicious Domain',
+                    'Source': 'Custom Intelligence',
+                    'ThreatLevel': 'High',
+                    'Category': 'Network IOC'
+                }
+                
+                conn.execute("""
+                    INSERT INTO evidence (case_id, timestamp, artifact, summary, data_json, source_file, host, user)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    case_id,
+                    timestamp,
+                    'Custom Intelligence - Suspicious Domain',
+                    f'Suspicious domain flagged: {domain}',
+                    json.dumps(evidence_data),
+                    'custom_intelligence',
+                    'INTELLIGENCE',
+                    'SYSTEM'
+                ))
+            
+            # Inject suspicious tools as application evidence
+            for tool in intelligence['tools']:
+                evidence_data = {
+                    'ToolName': tool,
+                    'Type': 'Suspicious Tool',
+                    'Source': 'Custom Intelligence',
+                    'ThreatLevel': 'High',
+                    'Category': 'Application IOC'
+                }
+                
+                conn.execute("""
+                    INSERT INTO evidence (case_id, timestamp, artifact, summary, data_json, source_file, host, user)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    case_id,
+                    timestamp,
+                    'Custom Intelligence - Suspicious Tool',
+                    f'Suspicious tool flagged: {tool}',
+                    json.dumps(evidence_data),
+                    'custom_intelligence',
+                    'INTELLIGENCE',
+                    'SYSTEM'
+                ))
+            
+            # Inject generic IOCs
+            for ioc in intelligence['iocs']:
+                evidence_data = {
+                    'IOC': ioc,
+                    'Type': 'Indicator of Compromise',
+                    'Source': 'Custom Intelligence',
+                    'ThreatLevel': 'High',
+                    'Category': 'Generic IOC'
+                }
+                
+                conn.execute("""
+                    INSERT INTO evidence (case_id, timestamp, artifact, summary, data_json, source_file, host, user)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    case_id,
+                    timestamp,
+                    'Custom Intelligence - IOC',
+                    f'IOC flagged: {ioc}',
+                    json.dumps(evidence_data),
+                    'custom_intelligence',
+                    'INTELLIGENCE',
+                    'SYSTEM'
+                ))
+            
+            conn.commit()
+            
+            total_injected = len(intelligence['domains']) + len(intelligence['tools']) + len(intelligence['iocs'])
+            LOGGER.info(f"Injected {total_injected} custom intelligence indicators into evidence database")
+            
+    except Exception as e:
+        LOGGER.error(f"Error injecting custom intelligence: {e}")
+
 def main():
     """Modern main workflow"""
     parser = argparse.ArgumentParser(
@@ -3091,6 +3256,13 @@ def main():
     parser.add_argument('--question', help='Forensic question to answer')
     parser.add_argument('--report', choices=['json', 'pdf'], help='Generate comprehensive report')
     parser.add_argument('--init-db', action='store_true', help='Initialize database')
+    
+    # CUSTOM INTELLIGENCE & CONTEXT
+    parser.add_argument('--domains-file', type=Path, help='File containing suspicious domain names (one per line)')
+    parser.add_argument('--domains', nargs='+', help='Suspicious domain names to flag (space-separated)')
+    parser.add_argument('--tools-file', type=Path, help='File containing tools history/IOCs (JSON format)')
+    parser.add_argument('--tools', nargs='+', help='Suspicious tools/executables to flag (space-separated)')
+    parser.add_argument('--iocs-file', type=Path, help='File containing IOCs in JSON format')
     
     # CHAIN OF CUSTODY & OUTPUT
     parser.add_argument('--chain-of-custody', action='store_true', help='Generate chain of custody documentation')
@@ -3150,6 +3322,14 @@ def main():
             # Initialize workflow manager
             workflow = ForensicWorkflowManager(args.case_id, args.output_dir, args.verbose)
             
+            # Load and inject custom intelligence data
+            custom_intelligence = load_custom_intelligence(args)
+            if any(custom_intelligence.values()):
+                workflow.log_custody_event("INTELLIGENCE_LOADING", 
+                                         f"Loading custom intelligence: {len(custom_intelligence['domains'])} domains, "
+                                         f"{len(custom_intelligence['tools'])} tools, {len(custom_intelligence['iocs'])} IOCs")
+                inject_custom_intelligence(args.case_id, custom_intelligence)
+            
             # Prepare questions list - YOUR 12 STANDARD FORENSIC QUESTIONS
             questions = [args.question] if args.question else [
                 "What is the computer name, make, model, and serial number?",
@@ -3195,12 +3375,30 @@ def main():
             target = args.target_drive
                 
             workflow = ForensicWorkflowManager(args.case_id, args.output_dir, args.verbose)
+            
+            # Load and inject custom intelligence data
+            custom_intelligence = load_custom_intelligence(args)
+            if any(custom_intelligence.values()):
+                workflow.log_custody_event("INTELLIGENCE_LOADING", 
+                                         f"Loading custom intelligence: {len(custom_intelligence['domains'])} domains, "
+                                         f"{len(custom_intelligence['tools'])} tools, {len(custom_intelligence['iocs'])} IOCs")
+                inject_custom_intelligence(args.case_id, custom_intelligence)
+            
             success = workflow.collect_artifacts_kape(target, args.kape_path)
             print(f"Artifact collection {'completed' if success else 'failed'}")
             return
             
         if args.parse_artifacts:
             workflow = ForensicWorkflowManager(args.case_id, args.output_dir, args.verbose)
+            
+            # Load and inject custom intelligence data
+            custom_intelligence = load_custom_intelligence(args)
+            if any(custom_intelligence.values()):
+                workflow.log_custody_event("INTELLIGENCE_LOADING", 
+                                         f"Loading custom intelligence: {len(custom_intelligence['domains'])} domains, "
+                                         f"{len(custom_intelligence['tools'])} tools, {len(custom_intelligence['iocs'])} IOCs")
+                inject_custom_intelligence(args.case_id, custom_intelligence)
+            
             success = workflow.parse_artifacts_plaso(args.plaso_path)
             print(f"Artifact parsing {'completed' if success else 'failed'}")
             return
@@ -3209,6 +3407,11 @@ def main():
         if args.init_db:
             initialize_database()
             return
+
+        # Load and inject custom intelligence data for standalone operations
+        custom_intelligence = load_custom_intelligence(args)
+        if any(custom_intelligence.values()):
+            inject_custom_intelligence(args.case_id, custom_intelligence)
         
         # CSV processing removed - using direct VHDX → SQLite workflow only
         

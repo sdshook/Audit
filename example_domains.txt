@@ -1,0 +1,10 @@
+# Suspicious domains related to compromise
+# Lines starting with # are comments and will be ignored
+malicious-site.com
+evil-domain.net
+phishing-site.org
+c2-server.info
+data-exfil.biz
+suspicious-download.com
+fake-update.net
+trojan-host.org

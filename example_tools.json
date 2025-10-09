@@ -1,0 +1,21 @@
+{
+  "tools": [
+    "mimikatz.exe",
+    "psexec.exe",
+    "netcat.exe",
+    "nmap.exe",
+    "wireshark.exe"
+  ],
+  "executables": [
+    "powershell_empire.exe",
+    "cobalt_strike.exe",
+    "metasploit.exe"
+  ],
+  "processes": [
+    "cmd.exe",
+    "powershell.exe",
+    "wmic.exe",
+    "net.exe",
+    "tasklist.exe"
+  ]
+}
