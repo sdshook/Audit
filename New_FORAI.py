@@ -2736,13 +2736,61 @@ class ForensicWorkflowManager:
             result = subprocess.run(kape_cmd, capture_output=True, text=True, timeout=3600)
             
             if result.returncode == 0:
-                # Verify VHDX was created and log its hash for chain of custody
+                # KAPE often creates timestamped and zipped VHDX files in temp directory
+                # Look for VHDX files in temp directory (may be zipped)
+                actual_vhdx_path = None
+                
                 if vhdx_path.exists():
-                    vhdx_hash = self._calculate_file_hash(vhdx_path)
+                    # Direct VHDX file exists
+                    actual_vhdx_path = vhdx_path
+                else:
+                    # Look for timestamped/zipped VHDX in temp directory
+                    import glob
+                    import zipfile
+                    
+                    # Search for VHDX files (zipped or unzipped) in temp directory
+                    vhdx_patterns = [
+                        str(temp_dest / "*.vhdx"),
+                        str(temp_dest / "*.vhdx.zip"),
+                        str(temp_dest / "*artifacts*.vhdx"),
+                        str(temp_dest / "*artifacts*.vhdx.zip")
+                    ]
+                    
+                    found_files = []
+                    for pattern in vhdx_patterns:
+                        found_files.extend(glob.glob(pattern))
+                    
+                    if found_files:
+                        source_file = Path(found_files[0])  # Use first match
+                        self.logger.info(f"Found KAPE output: {source_file}")
+                        
+                        if source_file.suffix == '.zip':
+                            # Extract VHDX from zip
+                            try:
+                                with zipfile.ZipFile(source_file, 'r') as zip_ref:
+                                    # Find VHDX file in zip
+                                    vhdx_files = [f for f in zip_ref.namelist() if f.endswith('.vhdx')]
+                                    if vhdx_files:
+                                        zip_ref.extract(vhdx_files[0], temp_dest)
+                                        extracted_vhdx = temp_dest / vhdx_files[0]
+                                        # Move to expected location
+                                        extracted_vhdx.rename(vhdx_path)
+                                        actual_vhdx_path = vhdx_path
+                                        self.logger.info(f"Extracted and moved VHDX: {vhdx_path}")
+                            except Exception as extract_error:
+                                self.logger.error(f"Failed to extract VHDX from zip: {extract_error}")
+                        else:
+                            # Move unzipped VHDX to expected location
+                            source_file.rename(vhdx_path)
+                            actual_vhdx_path = vhdx_path
+                            self.logger.info(f"Moved VHDX to expected location: {vhdx_path}")
+                
+                if actual_vhdx_path and actual_vhdx_path.exists():
+                    vhdx_hash = self._calculate_file_hash(actual_vhdx_path)
                     self.log_custody_event("COLLECTION_SUCCESS", 
                                          f"KAPE VHDX collection completed successfully", 
-                                         str(vhdx_path))
-                    self.logger.info(f"VHDX created: {vhdx_path} (Hash: {vhdx_hash})")
+                                         str(actual_vhdx_path))
+                    self.logger.info(f"VHDX created: {actual_vhdx_path} (Hash: {vhdx_hash})")
                     
                     # Clean up temporary directory to save space
                     try:
@@ -2755,8 +2803,8 @@ class ForensicWorkflowManager:
                     
                     return True
                 else:
-                    self.logger.error("KAPE completed but VHDX file was not created")
-                    self.log_custody_event("COLLECTION_ERROR", "VHDX file was not created")
+                    self.logger.error("KAPE completed but VHDX file was not found or could not be processed")
+                    self.log_custody_event("COLLECTION_ERROR", "VHDX file was not found or could not be processed")
                     return False
             else:
                 self.logger.error(f"KAPE failed: {result.stderr}")
