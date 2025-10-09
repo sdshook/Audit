@@ -2957,7 +2957,7 @@ class ForensicWorkflowManager:
             self.logger.warning(f"Database post-optimization failed: {e}")
             
     def run_full_analysis(self, target: str, kape_path: Path, plaso_path: Path, 
-                         questions: List[str] = None, date_from: str = None, date_to: str = None, days_back: int = None) -> bool:
+                         questions: List[str] = None, date_from: str = None, date_to: str = None, days_back: int = None, keywords: List[str] = None) -> bool:
         """Execute complete end-to-end forensic analysis with performance monitoring"""
         start_time = time.time()
         try:
@@ -2986,6 +2986,12 @@ class ForensicWorkflowManager:
             self.logger.info(f"Using validated FAS5 database: {db_path}")
             processor = ForensicProcessor(str(db_path))
             # Database already created with data by custom Plaso module
+            
+            # Step 3.5: Inject custom keywords now that database exists
+            if keywords:
+                self.logger.info(f"Injecting {len(keywords)} custom keywords into database")
+                self.log_custody_event("KEYWORDS_INJECTION", f"Injecting {len(keywords)} custom keywords after database creation")
+                inject_keywords(self.case_id, keywords)
                 
             # Step 4: Answer forensic questions if provided
             if questions:
@@ -3230,12 +3236,11 @@ def main():
             # Initialize workflow manager
             workflow = ForensicWorkflowManager(args.case_id, args.output_dir, args.verbose)
             
-            # Load and inject custom keywords
+            # Load custom keywords (will be injected after database creation)
             keywords = load_keywords(args)
             if keywords:
                 workflow.log_custody_event("KEYWORDS_LOADING", 
                                          f"Loading {len(keywords)} custom keywords for case-insensitive flagging")
-                inject_keywords(args.case_id, keywords)
             
             # Prepare questions list - YOUR 12 STANDARD FORENSIC QUESTIONS
             questions = [args.question] if args.question else [
@@ -3255,7 +3260,7 @@ def main():
             
             # Run complete analysis with time filtering
             success = workflow.run_full_analysis(target, args.kape_path, args.plaso_path, questions, 
-                                                args.date_from, args.date_to, args.days_back)
+                                                args.date_from, args.date_to, args.days_back, keywords)
             
             if success:
                 print(f"\n🎉 FULL FORENSIC ANALYSIS COMPLETED SUCCESSFULLY!")
