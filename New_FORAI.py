@@ -2727,70 +2727,23 @@ class ForensicWorkflowManager:
                 str(kape_path),
                 "--tsource", target,
                 "--tdest", str(temp_dest),
-                "--tflush",
                 "--target", "!SANS_Triage,Chrome,Firefox,Edge,InternetExplorer,BrowserArtifacts",  # Enhanced browser collection
-                "--vhdx", str(vhdx_path)
+                "--vhdx", str(vhdx_path),
+                "--zip", "false",  # Disable auto-zipping
+                "--scs", "0"       # Disable timestamping (scs = source control system)
             ]
             
             self.logger.info(f"Executing KAPE: {' '.join(kape_cmd)}")
             result = subprocess.run(kape_cmd, capture_output=True, text=True, timeout=3600)
             
             if result.returncode == 0:
-                # KAPE often creates timestamped and zipped VHDX files in temp directory
-                # Look for VHDX files in temp directory (may be zipped)
-                actual_vhdx_path = None
-                
+                # Verify VHDX was created and log its hash for chain of custody
                 if vhdx_path.exists():
-                    # Direct VHDX file exists
-                    actual_vhdx_path = vhdx_path
-                else:
-                    # Look for timestamped/zipped VHDX in temp directory
-                    import glob
-                    import zipfile
-                    
-                    # Search for VHDX files (zipped or unzipped) in temp directory
-                    vhdx_patterns = [
-                        str(temp_dest / "*.vhdx"),
-                        str(temp_dest / "*.vhdx.zip"),
-                        str(temp_dest / "*artifacts*.vhdx"),
-                        str(temp_dest / "*artifacts*.vhdx.zip")
-                    ]
-                    
-                    found_files = []
-                    for pattern in vhdx_patterns:
-                        found_files.extend(glob.glob(pattern))
-                    
-                    if found_files:
-                        source_file = Path(found_files[0])  # Use first match
-                        self.logger.info(f"Found KAPE output: {source_file}")
-                        
-                        if source_file.suffix == '.zip':
-                            # Extract VHDX from zip
-                            try:
-                                with zipfile.ZipFile(source_file, 'r') as zip_ref:
-                                    # Find VHDX file in zip
-                                    vhdx_files = [f for f in zip_ref.namelist() if f.endswith('.vhdx')]
-                                    if vhdx_files:
-                                        zip_ref.extract(vhdx_files[0], temp_dest)
-                                        extracted_vhdx = temp_dest / vhdx_files[0]
-                                        # Move to expected location
-                                        extracted_vhdx.rename(vhdx_path)
-                                        actual_vhdx_path = vhdx_path
-                                        self.logger.info(f"Extracted and moved VHDX: {vhdx_path}")
-                            except Exception as extract_error:
-                                self.logger.error(f"Failed to extract VHDX from zip: {extract_error}")
-                        else:
-                            # Move unzipped VHDX to expected location
-                            source_file.rename(vhdx_path)
-                            actual_vhdx_path = vhdx_path
-                            self.logger.info(f"Moved VHDX to expected location: {vhdx_path}")
-                
-                if actual_vhdx_path and actual_vhdx_path.exists():
-                    vhdx_hash = self._calculate_file_hash(actual_vhdx_path)
+                    vhdx_hash = self._calculate_file_hash(vhdx_path)
                     self.log_custody_event("COLLECTION_SUCCESS", 
                                          f"KAPE VHDX collection completed successfully", 
-                                         str(actual_vhdx_path))
-                    self.logger.info(f"VHDX created: {actual_vhdx_path} (Hash: {vhdx_hash})")
+                                         str(vhdx_path))
+                    self.logger.info(f"VHDX created: {vhdx_path} (Hash: {vhdx_hash})")
                     
                     # Clean up temporary directory to save space
                     try:
@@ -2803,8 +2756,8 @@ class ForensicWorkflowManager:
                     
                     return True
                 else:
-                    self.logger.error("KAPE completed but VHDX file was not found or could not be processed")
-                    self.log_custody_event("COLLECTION_ERROR", "VHDX file was not found or could not be processed")
+                    self.logger.error("KAPE completed but VHDX file was not created")
+                    self.log_custody_event("COLLECTION_ERROR", "VHDX file was not created")
                     return False
             else:
                 self.logger.error(f"KAPE failed: {result.stderr}")
@@ -2815,6 +2768,75 @@ class ForensicWorkflowManager:
             self.logger.error(f"KAPE collection error: {e}")
             self.log_custody_event("COLLECTION_ERROR", f"KAPE collection error: {str(e)}")
             return False
+    
+    def create_final_archive(self) -> Path:
+        """Create final archive containing artifacts, extracts, and reports"""
+        try:
+            import zipfile
+            import shutil
+            from datetime import datetime
+            
+            # Create archive directory if it doesn't exist
+            archive_dir = self.output_dir / "archive"
+            archive_dir.mkdir(exist_ok=True)
+            
+            # Create timestamped archive filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            archive_name = f"{self.case_id}_complete_analysis_{timestamp}.zip"
+            archive_path = archive_dir / archive_name
+            
+            self.logger.info(f"Creating final archive: {archive_path}")
+            self.log_custody_event("ARCHIVE_START", f"Creating final case archive: {archive_name}")
+            
+            with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                # Add artifacts directory (VHDX files)
+                if self.artifacts_dir.exists():
+                    for file_path in self.artifacts_dir.rglob('*'):
+                        if file_path.is_file():
+                            arcname = f"artifacts/{file_path.relative_to(self.artifacts_dir)}"
+                            zipf.write(file_path, arcname)
+                            self.logger.debug(f"Added to archive: {arcname}")
+                
+                # Add parsed data directory (databases, extracts)
+                if self.parsed_dir.exists():
+                    for file_path in self.parsed_dir.rglob('*'):
+                        if file_path.is_file():
+                            arcname = f"parsed/{file_path.relative_to(self.parsed_dir)}"
+                            zipf.write(file_path, arcname)
+                            self.logger.debug(f"Added to archive: {arcname}")
+                
+                # Add reports directory
+                if self.reports_dir.exists():
+                    for file_path in self.reports_dir.rglob('*'):
+                        if file_path.is_file():
+                            arcname = f"reports/{file_path.relative_to(self.reports_dir)}"
+                            zipf.write(file_path, arcname)
+                            self.logger.debug(f"Added to archive: {arcname}")
+                
+                # Add chain of custody directory
+                if self.custody_dir.exists():
+                    for file_path in self.custody_dir.rglob('*'):
+                        if file_path.is_file():
+                            arcname = f"custody/{file_path.relative_to(self.custody_dir)}"
+                            zipf.write(file_path, arcname)
+                            self.logger.debug(f"Added to archive: {arcname}")
+            
+            # Calculate archive hash for integrity
+            archive_hash = self._calculate_file_hash(archive_path)
+            archive_size = archive_path.stat().st_size
+            
+            self.log_custody_event("ARCHIVE_SUCCESS", 
+                                 f"Final archive created successfully - Size: {archive_size:,} bytes, Hash: {archive_hash}")
+            self.logger.info(f"Final archive created: {archive_path}")
+            self.logger.info(f"Archive size: {archive_size:,} bytes")
+            self.logger.info(f"Archive hash: {archive_hash}")
+            
+            return archive_path
+            
+        except Exception as e:
+            self.logger.error(f"Failed to create final archive: {e}")
+            self.log_custody_event("ARCHIVE_ERROR", f"Failed to create final archive: {str(e)}")
+            return None
             
     def create_custom_plaso_output_module(self) -> FAS5SQLiteOutputModule:
         """Create custom Plaso output module for direct FAS5 SQLite integration"""
@@ -3075,6 +3097,13 @@ class ForensicWorkflowManager:
             report_file = self.reports_dir / f"{self.case_id}_comprehensive_report.json"
             self._generate_comprehensive_report(processor, report_file)
             
+            # Step 6: Create final archive with all artifacts, extracts, and reports
+            archive_path = self.create_final_archive()
+            if archive_path:
+                self.logger.info(f"Final case archive created: {archive_path}")
+            else:
+                self.logger.warning("Failed to create final archive, but analysis completed successfully")
+            
             # Performance logging
             total_time = time.time() - start_time
             self.log_custody_event("ANALYSIS_COMPLETE", f"Full forensic analysis completed successfully in {total_time:.2f} seconds")
@@ -3330,6 +3359,7 @@ def main():
                 print(f"📋 Parsed Data: {workflow.parsed_dir}")
                 print(f"📄 Reports: {workflow.reports_dir}")
                 print(f"🔗 Chain of Custody: {workflow.custody_dir}")
+                print(f"📦 Final Archive: {workflow.output_dir}/archive")
                 
                 # Generate chain of custody if requested
                 if args.chain_of_custody:
