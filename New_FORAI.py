@@ -2728,71 +2728,20 @@ class ForensicWorkflowManager:
                 "--tsource", target,
                 "--tdest", str(temp_dest),
                 "--target", "!SANS_Triage,Chrome,Firefox,Edge,InternetExplorer,BrowserArtifacts",  # Enhanced browser collection
-                "--vhdx", str(vhdx_path),
-                "--zip", "false"   # Disable auto-zipping
+                "--vhdx", str(vhdx_path)
             ]
             
             self.logger.info(f"Executing KAPE: {' '.join(kape_cmd)}")
             result = subprocess.run(kape_cmd, capture_output=True, text=True, timeout=3600)
             
             if result.returncode == 0:
-                # KAPE sometimes ignores --zip false and creates zip files anyway
-                # Check for direct VHDX first, then look for zip files to extract
-                actual_vhdx_path = None
-                
+                # Verify VHDX was created and log its hash for chain of custody
                 if vhdx_path.exists():
-                    # Direct VHDX file exists
-                    actual_vhdx_path = vhdx_path
-                    self.logger.info(f"Found direct VHDX file: {vhdx_path}")
-                else:
-                    # Look for zip files containing VHDX in artifacts directory
-                    import glob
-                    import zipfile
-                    
-                    self.logger.info("Direct VHDX not found, searching for zip files...")
-                    
-                    # Search for zip files in both artifacts and temp directories
-                    search_dirs = [self.artifacts_dir, temp_dest]
-                    zip_files = []
-                    
-                    for search_dir in search_dirs:
-                        if search_dir.exists():
-                            zip_files.extend(glob.glob(str(search_dir / "*.zip")))
-                    
-                    self.logger.info(f"Found {len(zip_files)} zip files: {zip_files}")
-                    
-                    for zip_file in zip_files:
-                        try:
-                            self.logger.info(f"Examining zip file: {zip_file}")
-                            with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-                                # List contents
-                                contents = zip_ref.namelist()
-                                self.logger.info(f"Zip contents: {contents}")
-                                
-                                # Find VHDX file in zip
-                                vhdx_files = [f for f in contents if f.endswith('.vhdx')]
-                                if vhdx_files:
-                                    self.logger.info(f"Found VHDX in zip: {vhdx_files[0]}")
-                                    # Extract VHDX to expected location
-                                    zip_ref.extract(vhdx_files[0], temp_dest)
-                                    extracted_vhdx = temp_dest / vhdx_files[0]
-                                    
-                                    # Move to expected location
-                                    if extracted_vhdx.exists():
-                                        extracted_vhdx.rename(vhdx_path)
-                                        actual_vhdx_path = vhdx_path
-                                        self.logger.info(f"Extracted and moved VHDX: {vhdx_path}")
-                                        break
-                        except Exception as extract_error:
-                            self.logger.warning(f"Failed to extract from {zip_file}: {extract_error}")
-                            continue
-                
-                if actual_vhdx_path and actual_vhdx_path.exists():
-                    vhdx_hash = self._calculate_file_hash(actual_vhdx_path)
+                    vhdx_hash = self._calculate_file_hash(vhdx_path)
                     self.log_custody_event("COLLECTION_SUCCESS", 
                                          f"KAPE VHDX collection completed successfully", 
-                                         str(actual_vhdx_path))
-                    self.logger.info(f"VHDX ready for processing: {actual_vhdx_path} (Hash: {vhdx_hash})")
+                                         str(vhdx_path))
+                    self.logger.info(f"VHDX created: {vhdx_path} (Hash: {vhdx_hash})")
                     
                     # Clean up temporary directory to save space
                     try:
@@ -2805,8 +2754,8 @@ class ForensicWorkflowManager:
                     
                     return True
                 else:
-                    self.logger.error("KAPE completed but no usable VHDX file was found or could be extracted")
-                    self.log_custody_event("COLLECTION_ERROR", "No usable VHDX file was found or could be extracted")
+                    self.logger.error("KAPE completed but VHDX file was not created")
+                    self.log_custody_event("COLLECTION_ERROR", "VHDX file was not created")
                     return False
             else:
                 self.logger.error(f"KAPE failed: {result.stderr}")
