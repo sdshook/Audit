@@ -28,18 +28,21 @@ CLI USAGE EXAMPLES:
     # Use custom question (with --question flag)
     python New_FORAI.py --case-id CASE001 --full-analysis --target-drive C: --question "Your specific custom question here" --chain-of-custody --verbose
     
+    # With custom keywords for enhanced threat detection
+    python New_FORAI.py --case-id CASE001 --full-analysis --target-drive C: --keywords-file threat_indicators.txt --chain-of-custody --verbose
+    
     # With time filtering - last 30 days only
     python New_FORAI.py --case-id CASE001 --full-analysis --target-drive C: --days-back 30 --chain-of-custody --verbose
     
-    # With specific date range (YYYYMMDD format)
-    python New_FORAI.py --case-id CASE001 --full-analysis --target-drive C: --date-from 20241201 --date-to 20241215 --chain-of-custody --verbose
+    # With specific date range and keyword flagging (YYYYMMDD format)
+    python New_FORAI.py --case-id CASE001 --full-analysis --target-drive C: --date-from 20241201 --date-to 20241215 --keywords-file malware_iocs.txt --chain-of-custody --verbose
 
 🔧 INDIVIDUAL WORKFLOW COMPONENTS:
     # Collect artifacts only
     python New_FORAI.py --case-id CASE001 --collect-artifacts --target-drive C:
     
-    # Parse artifacts only
-    python New_FORAI.py --case-id CASE001 --parse-artifacts
+    # Parse artifacts only (with custom keywords for flagging)
+    python New_FORAI.py --case-id CASE001 --parse-artifacts --keywords-file suspicious_terms.txt
     
     # Initialize database for a new case
     python New_FORAI.py --case-id CASE001 --init-db
@@ -53,22 +56,35 @@ CLI USAGE EXAMPLES:
     python New_FORAI.py --case-id CASE001 --search "usb device activity" --days-back 7
     python New_FORAI.py --case-id CASE001 --search "malware execution" --date-from 20241201 --date-to 20241215
     
+    # Search with custom keywords loaded for enhanced flagging
+    python New_FORAI.py --case-id CASE001 --search "powershell" --keywords-file malware_indicators.txt
+    
     # Ask forensic questions with enhanced TinyLLama analysis
     python New_FORAI.py --case-id CASE001 --question "What suspicious file transfers occurred?"
     
-    # Ask questions with time filtering
+    # Ask questions with time filtering and keyword flagging
     python New_FORAI.py --case-id CASE001 --question "What USB devices were connected?" --days-back 30
-    python New_FORAI.py --case-id CASE001 --question "What network activity occurred?" --date-from 20241201 --date-to 20241215
+    python New_FORAI.py --case-id CASE001 --question "What network activity occurred?" --date-from 20241201 --date-to 20241215 --keywords-file network_iocs.txt
     
-    # Generate comprehensive forensic report
-    python New_FORAI.py --case-id CASE001 --report json
-    python New_FORAI.py --case-id CASE001 --report pdf
+    # Generate comprehensive forensic report with keyword analysis
+    python New_FORAI.py --case-id CASE001 --report json --keywords-file investigation_terms.txt
+    python New_FORAI.py --case-id CASE001 --report pdf --keywords-file investigation_terms.txt
     
     # Generate chain of custody documentation
     python New_FORAI.py --case-id CASE001 --chain-of-custody
     
     # Verbose mode for detailed logging
     python New_FORAI.py --case-id CASE001 --search "malware" --verbose
+
+📋 KEYWORD FILE EXAMPLES:
+    # Create a keywords file (one keyword per line, case-insensitive)
+    echo -e "mimikatz\npowershell\nnetcat\nmalicious.com\nbackdoor\ntrojan" > suspicious_terms.txt
+    
+    # Use keywords with full analysis workflow
+    python New_FORAI.py --case-id CASE001 --full-analysis --target-drive C: --keywords-file suspicious_terms.txt --verbose
+    
+    # Process existing evidence with new keyword list
+    python New_FORAI.py --case-id CASE001 --keywords-file new_indicators.txt --search "mimikatz" --verbose
 """
 
 import os
