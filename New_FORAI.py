@@ -2718,15 +2718,18 @@ class ForensicWorkflowManager:
             if not kape_path.exists():
                 raise FileNotFoundError(f"KAPE not found at {kape_path}")
                 
-            # KAPE command optimized for VHDX-only collection (maintains forensic integrity)
+            # KAPE command optimized for VHDX collection (maintains forensic integrity)
             vhdx_path = self.artifacts_dir / f"{self.case_id}_artifacts.vhdx"
+            temp_dest = self.artifacts_dir / f"{self.case_id}_temp"
+            temp_dest.mkdir(exist_ok=True)
+            
             kape_cmd = [
                 str(kape_path),
                 "--tsource", target,
+                "--tdest", str(temp_dest),
                 "--tflush",
                 "--target", "!SANS_Triage,Chrome,Firefox,Edge,InternetExplorer,BrowserArtifacts",  # Enhanced browser collection
                 "--vhdx", str(vhdx_path)
-                # Removed --tdest to avoid file extraction - VHDX maintains all metadata integrity
             ]
             
             self.logger.info(f"Executing KAPE: {' '.join(kape_cmd)}")
@@ -2740,6 +2743,16 @@ class ForensicWorkflowManager:
                                          f"KAPE VHDX collection completed successfully", 
                                          str(vhdx_path))
                     self.logger.info(f"VHDX created: {vhdx_path} (Hash: {vhdx_hash})")
+                    
+                    # Clean up temporary directory to save space
+                    try:
+                        import shutil
+                        if temp_dest.exists():
+                            shutil.rmtree(temp_dest)
+                            self.logger.debug(f"Cleaned up temporary directory: {temp_dest}")
+                    except Exception as cleanup_error:
+                        self.logger.warning(f"Failed to cleanup temp directory: {cleanup_error}")
+                    
                     return True
                 else:
                     self.logger.error("KAPE completed but VHDX file was not created")
