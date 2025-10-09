@@ -3059,99 +3059,42 @@ class ForensicWorkflowManager:
             self.logger.error(f"Chain of custody report error: {e}")
             return None
 
-def load_custom_intelligence(args) -> Dict[str, List[str]]:
-    """Load custom intelligence data from CLI arguments and files"""
-    intelligence = {
-        'domains': [],
-        'tools': [],
-        'iocs': []
-    }
+def load_keywords(args) -> List[str]:
+    """Load keywords from file for case-insensitive flagging"""
+    keywords = []
     
-    # Load domains from command line
-    if args.domains:
-        intelligence['domains'].extend(args.domains)
-    
-    # Load domains from file
-    if args.domains_file and args.domains_file.exists():
+    # Load keywords from file
+    if args.keywords_file and args.keywords_file.exists():
         try:
-            with open(args.domains_file, 'r', encoding='utf-8') as f:
-                domains = [line.strip() for line in f if line.strip() and not line.startswith('#')]
-                intelligence['domains'].extend(domains)
-            LOGGER.info(f"Loaded {len(domains)} domains from {args.domains_file}")
+            with open(args.keywords_file, 'r', encoding='utf-8') as f:
+                keywords = [line.strip().lower() for line in f if line.strip() and not line.startswith('#')]
+            LOGGER.info(f"Loaded {len(keywords)} keywords from {args.keywords_file}")
         except Exception as e:
-            LOGGER.error(f"Error loading domains file: {e}")
+            LOGGER.error(f"Error loading keywords file: {e}")
     
-    # Load tools from command line
-    if args.tools:
-        intelligence['tools'].extend(args.tools)
+    # Remove duplicates while preserving order
+    seen = set()
+    keywords = [k for k in keywords if not (k in seen or seen.add(k))]
     
-    # Load tools from file
-    if args.tools_file and args.tools_file.exists():
-        try:
-            with open(args.tools_file, 'r', encoding='utf-8') as f:
-                tools_data = json.load(f)
-                if isinstance(tools_data, list):
-                    intelligence['tools'].extend(tools_data)
-                elif isinstance(tools_data, dict):
-                    # Support different formats
-                    if 'tools' in tools_data:
-                        intelligence['tools'].extend(tools_data['tools'])
-                    if 'executables' in tools_data:
-                        intelligence['tools'].extend(tools_data['executables'])
-                    if 'processes' in tools_data:
-                        intelligence['tools'].extend(tools_data['processes'])
-            LOGGER.info(f"Loaded {len(intelligence['tools'])} tools from {args.tools_file}")
-        except Exception as e:
-            LOGGER.error(f"Error loading tools file: {e}")
-    
-    # Load IOCs from file
-    if args.iocs_file and args.iocs_file.exists():
-        try:
-            with open(args.iocs_file, 'r', encoding='utf-8') as f:
-                iocs_data = json.load(f)
-                if isinstance(iocs_data, list):
-                    intelligence['iocs'].extend(iocs_data)
-                elif isinstance(iocs_data, dict):
-                    # Support STIX/TAXII format or custom format
-                    if 'indicators' in iocs_data:
-                        intelligence['iocs'].extend(iocs_data['indicators'])
-                    if 'domains' in iocs_data:
-                        intelligence['domains'].extend(iocs_data['domains'])
-                    if 'files' in iocs_data:
-                        intelligence['tools'].extend(iocs_data['files'])
-            LOGGER.info(f"Loaded {len(intelligence['iocs'])} IOCs from {args.iocs_file}")
-        except Exception as e:
-            LOGGER.error(f"Error loading IOCs file: {e}")
-    
-    # Remove duplicates
-    intelligence['domains'] = list(set(intelligence['domains']))
-    intelligence['tools'] = list(set(intelligence['tools']))
-    intelligence['iocs'] = list(set(intelligence['iocs']))
-    
-    total_indicators = len(intelligence['domains']) + len(intelligence['tools']) + len(intelligence['iocs'])
-    if total_indicators > 0:
-        LOGGER.info(f"Loaded custom intelligence: {len(intelligence['domains'])} domains, "
-                   f"{len(intelligence['tools'])} tools, {len(intelligence['iocs'])} IOCs")
-    
-    return intelligence
+    return keywords
 
-def inject_custom_intelligence(case_id: str, intelligence: Dict[str, List[str]]) -> None:
-    """Inject custom intelligence data into the evidence database for enhanced analysis"""
-    if not any(intelligence.values()):
+def inject_keywords(case_id: str, keywords: List[str]) -> None:
+    """Inject keywords into the evidence database for enhanced search and analysis"""
+    if not keywords:
         return
     
     try:
         with get_database_connection() as conn:
             timestamp = int(time.time())
             
-            # Inject suspicious domains as network evidence
-            for domain in intelligence['domains']:
+            # Inject keywords as flagged indicators
+            for keyword in keywords:
                 evidence_data = {
-                    'Domain': domain,
-                    'Type': 'Suspicious Domain',
-                    'Source': 'Custom Intelligence',
-                    'ThreatLevel': 'High',
-                    'Category': 'Network IOC'
+                    'Keyword': keyword,
+                    'Type': 'Flagged Keyword',
+                    'Source': 'Custom Keywords',
+                    'SearchTerm': keyword.lower(),
+                    'Category': 'Intelligence Keyword'
                 }
                 
                 conn.execute("""
@@ -3160,69 +3103,19 @@ def inject_custom_intelligence(case_id: str, intelligence: Dict[str, List[str]])
                 """, (
                     case_id,
                     timestamp,
-                    'Custom Intelligence - Suspicious Domain',
-                    f'Suspicious domain flagged: {domain}',
+                    'Custom Keywords - Flagged Term',
+                    f'Keyword flagged for monitoring: {keyword}',
                     json.dumps(evidence_data),
-                    'custom_intelligence',
-                    'INTELLIGENCE',
-                    'SYSTEM'
-                ))
-            
-            # Inject suspicious tools as application evidence
-            for tool in intelligence['tools']:
-                evidence_data = {
-                    'ToolName': tool,
-                    'Type': 'Suspicious Tool',
-                    'Source': 'Custom Intelligence',
-                    'ThreatLevel': 'High',
-                    'Category': 'Application IOC'
-                }
-                
-                conn.execute("""
-                    INSERT INTO evidence (case_id, timestamp, artifact, summary, data_json, source_file, host, user)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    case_id,
-                    timestamp,
-                    'Custom Intelligence - Suspicious Tool',
-                    f'Suspicious tool flagged: {tool}',
-                    json.dumps(evidence_data),
-                    'custom_intelligence',
-                    'INTELLIGENCE',
-                    'SYSTEM'
-                ))
-            
-            # Inject generic IOCs
-            for ioc in intelligence['iocs']:
-                evidence_data = {
-                    'IOC': ioc,
-                    'Type': 'Indicator of Compromise',
-                    'Source': 'Custom Intelligence',
-                    'ThreatLevel': 'High',
-                    'Category': 'Generic IOC'
-                }
-                
-                conn.execute("""
-                    INSERT INTO evidence (case_id, timestamp, artifact, summary, data_json, source_file, host, user)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    case_id,
-                    timestamp,
-                    'Custom Intelligence - IOC',
-                    f'IOC flagged: {ioc}',
-                    json.dumps(evidence_data),
-                    'custom_intelligence',
+                    'custom_keywords',
                     'INTELLIGENCE',
                     'SYSTEM'
                 ))
             
             conn.commit()
-            
-            total_injected = len(intelligence['domains']) + len(intelligence['tools']) + len(intelligence['iocs'])
-            LOGGER.info(f"Injected {total_injected} custom intelligence indicators into evidence database")
+            LOGGER.info(f"Injected {len(keywords)} custom keywords into evidence database")
             
     except Exception as e:
-        LOGGER.error(f"Error injecting custom intelligence: {e}")
+        LOGGER.error(f"Error injecting keywords: {e}")
 
 def main():
     """Modern main workflow"""
@@ -3258,11 +3151,7 @@ def main():
     parser.add_argument('--init-db', action='store_true', help='Initialize database')
     
     # CUSTOM INTELLIGENCE & CONTEXT
-    parser.add_argument('--domains-file', type=Path, help='File containing suspicious domain names (one per line)')
-    parser.add_argument('--domains', nargs='+', help='Suspicious domain names to flag (space-separated)')
-    parser.add_argument('--tools-file', type=Path, help='File containing tools history/IOCs (JSON format)')
-    parser.add_argument('--tools', nargs='+', help='Suspicious tools/executables to flag (space-separated)')
-    parser.add_argument('--iocs-file', type=Path, help='File containing IOCs in JSON format')
+    parser.add_argument('--keywords-file', type=Path, help='File containing keywords to flag (one per line, case-insensitive)')
     
     # CHAIN OF CUSTODY & OUTPUT
     parser.add_argument('--chain-of-custody', action='store_true', help='Generate chain of custody documentation')
@@ -3322,13 +3211,12 @@ def main():
             # Initialize workflow manager
             workflow = ForensicWorkflowManager(args.case_id, args.output_dir, args.verbose)
             
-            # Load and inject custom intelligence data
-            custom_intelligence = load_custom_intelligence(args)
-            if any(custom_intelligence.values()):
-                workflow.log_custody_event("INTELLIGENCE_LOADING", 
-                                         f"Loading custom intelligence: {len(custom_intelligence['domains'])} domains, "
-                                         f"{len(custom_intelligence['tools'])} tools, {len(custom_intelligence['iocs'])} IOCs")
-                inject_custom_intelligence(args.case_id, custom_intelligence)
+            # Load and inject custom keywords
+            keywords = load_keywords(args)
+            if keywords:
+                workflow.log_custody_event("KEYWORDS_LOADING", 
+                                         f"Loading {len(keywords)} custom keywords for case-insensitive flagging")
+                inject_keywords(args.case_id, keywords)
             
             # Prepare questions list - YOUR 12 STANDARD FORENSIC QUESTIONS
             questions = [args.question] if args.question else [
@@ -3376,13 +3264,12 @@ def main():
                 
             workflow = ForensicWorkflowManager(args.case_id, args.output_dir, args.verbose)
             
-            # Load and inject custom intelligence data
-            custom_intelligence = load_custom_intelligence(args)
-            if any(custom_intelligence.values()):
-                workflow.log_custody_event("INTELLIGENCE_LOADING", 
-                                         f"Loading custom intelligence: {len(custom_intelligence['domains'])} domains, "
-                                         f"{len(custom_intelligence['tools'])} tools, {len(custom_intelligence['iocs'])} IOCs")
-                inject_custom_intelligence(args.case_id, custom_intelligence)
+            # Load and inject custom keywords
+            keywords = load_keywords(args)
+            if keywords:
+                workflow.log_custody_event("KEYWORDS_LOADING", 
+                                         f"Loading {len(keywords)} custom keywords for case-insensitive flagging")
+                inject_keywords(args.case_id, keywords)
             
             success = workflow.collect_artifacts_kape(target, args.kape_path)
             print(f"Artifact collection {'completed' if success else 'failed'}")
@@ -3391,13 +3278,12 @@ def main():
         if args.parse_artifacts:
             workflow = ForensicWorkflowManager(args.case_id, args.output_dir, args.verbose)
             
-            # Load and inject custom intelligence data
-            custom_intelligence = load_custom_intelligence(args)
-            if any(custom_intelligence.values()):
-                workflow.log_custody_event("INTELLIGENCE_LOADING", 
-                                         f"Loading custom intelligence: {len(custom_intelligence['domains'])} domains, "
-                                         f"{len(custom_intelligence['tools'])} tools, {len(custom_intelligence['iocs'])} IOCs")
-                inject_custom_intelligence(args.case_id, custom_intelligence)
+            # Load and inject custom keywords
+            keywords = load_keywords(args)
+            if keywords:
+                workflow.log_custody_event("KEYWORDS_LOADING", 
+                                         f"Loading {len(keywords)} custom keywords for case-insensitive flagging")
+                inject_keywords(args.case_id, keywords)
             
             success = workflow.parse_artifacts_plaso(args.plaso_path)
             print(f"Artifact parsing {'completed' if success else 'failed'}")
@@ -3408,10 +3294,10 @@ def main():
             initialize_database()
             return
 
-        # Load and inject custom intelligence data for standalone operations
-        custom_intelligence = load_custom_intelligence(args)
-        if any(custom_intelligence.values()):
-            inject_custom_intelligence(args.case_id, custom_intelligence)
+        # Load and inject custom keywords for standalone operations
+        keywords = load_keywords(args)
+        if keywords:
+            inject_keywords(args.case_id, keywords)
         
         # CSV processing removed - using direct VHDX → SQLite workflow only
         

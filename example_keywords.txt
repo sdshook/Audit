@@ -1,0 +1,64 @@
+# Example keywords file for New_FORAI.py
+# Lines starting with # are comments and will be ignored
+# Keywords are case-insensitive
+
+# Suspicious domains
+malicious.com
+evil.net
+phishing.org
+c2-server.info
+data-exfil.biz
+suspicious-download.com
+malware-host.net
+evil-domain.net
+
+# Suspicious tools and executables
+mimikatz
+netcat
+psexec
+powershell
+cmd
+wmic
+nmap
+wireshark
+backdoor
+keylogger
+trojan
+ransomware
+
+# Suspicious processes and services
+svchost
+rundll32
+regsvr32
+mshta
+cscript
+wscript
+
+# Suspicious file extensions
+.exe
+.dll
+.bat
+.ps1
+.vbs
+.scr
+
+# Suspicious registry keys
+currentversion
+run
+runonce
+startup
+
+# Network indicators
+192.168
+10.0
+172.16
+localhost
+127.0.0.1
+
+# Suspicious file names
+temp
+tmp
+cache
+system32
+windows
+program files
