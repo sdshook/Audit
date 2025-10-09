@@ -133,6 +133,8 @@ class EnhancedForensicSearch:
         all_results = []
         
         with get_database_connection() as conn:
+            # Ensure row factory is set for dictionary access
+            conn.row_factory = sqlite3.Row
             for expanded_query, weight in expanded_queries:
                 results = self._weighted_fts_search(conn, expanded_query, weight, limit * 2, date_from, date_to, days_back)
                 all_results.extend(results)
@@ -199,17 +201,17 @@ class EnhancedForensicSearch:
             base_query = """
                 SELECT 
                     e.*,
-                    bm25(evidence_fts, 1.0, 1.0, 1.0) as base_score,
+                    bm25(evidence_search, 1.0, 1.0, 1.0) as base_score,
                     ? as query_weight
                 FROM evidence e
-                JOIN evidence_fts ON evidence_fts.rowid = e.id
-                WHERE evidence_fts MATCH ?
+                JOIN evidence_search ON evidence_search.rowid = e.id
+                WHERE evidence_search MATCH ?
             """
             
             if time_conditions:
                 base_query += " AND " + " AND ".join(time_conditions)
             
-            base_query += " ORDER BY bm25(evidence_fts) DESC LIMIT ?"
+            base_query += " ORDER BY bm25(evidence_search) DESC LIMIT ?"
             params.append(limit)
             
             results = conn.execute(base_query, params).fetchall()
@@ -234,6 +236,9 @@ class EnhancedForensicSearch:
     
     def _basic_search_fallback(self, conn: sqlite3.Connection, query: str, limit: int) -> List[Dict]:
         """Fallback search when FTS5 is not available"""
+        
+        # Set row factory to enable dict conversion
+        conn.row_factory = sqlite3.Row
         
         results = conn.execute("""
             SELECT * FROM evidence 
@@ -1150,6 +1155,48 @@ CREATE TRIGGER IF NOT EXISTS sync_fts_update AFTER UPDATE ON evidence BEGIN
     INSERT INTO evidence_search(rowid, summary, data_json) 
     VALUES (new.id, new.summary, new.data_json);
 END;
+
+-- OPTIONAL EXTENDED TABLES (for advanced features)
+-- Cases table for multi-case management
+CREATE TABLE IF NOT EXISTS cases (
+    case_id     TEXT PRIMARY KEY,
+    case_name   TEXT,
+    investigator TEXT,
+    created     INTEGER DEFAULT (unixepoch()),
+    status      TEXT DEFAULT 'active',
+    description TEXT,
+    metadata    TEXT  -- JSON for additional case info
+) STRICT;
+
+-- Analysis results cache (for performance)
+CREATE TABLE IF NOT EXISTS analysis_results (
+    id          INTEGER PRIMARY KEY,
+    case_id     TEXT NOT NULL,
+    question    TEXT NOT NULL,
+    answer      TEXT,
+    confidence  REAL,
+    evidence_count INTEGER,
+    created     INTEGER DEFAULT (unixepoch()),
+    FOREIGN KEY (case_id) REFERENCES cases(case_id)
+) STRICT;
+
+-- Chain of custody events (optional database storage)
+CREATE TABLE IF NOT EXISTS chain_of_custody (
+    id          INTEGER PRIMARY KEY,
+    case_id     TEXT NOT NULL,
+    timestamp   INTEGER DEFAULT (unixepoch()),
+    event_type  TEXT NOT NULL,
+    description TEXT,
+    file_path   TEXT,
+    hash_md5    TEXT,
+    hash_sha256 TEXT,
+    metadata    TEXT,  -- JSON for additional event info
+    FOREIGN KEY (case_id) REFERENCES cases(case_id)
+) STRICT;
+
+-- Indexes for extended tables
+CREATE INDEX IF NOT EXISTS idx_analysis_results_case ON analysis_results(case_id, created);
+CREATE INDEX IF NOT EXISTS idx_chain_of_custody_case ON chain_of_custody(case_id, timestamp);
 """
 
 def performance_monitor(func):
@@ -1607,7 +1654,8 @@ class ForensicAnalyzer:
         evidence_results = enhanced_search.enhanced_search_evidence(question, limit=25, date_from=date_from, date_to=date_to, days_back=days_back)
         
         if not evidence_results:
-            return "Insufficient evidence in scope."
+            # Fallback: Try to answer using direct database analysis
+            return self._fallback_forensic_answer(question, case_id)
         
         # TECHNIQUE 7: Advanced Context Windowing for large evidence sets
         if len(evidence_results) > 15:
@@ -1855,6 +1903,191 @@ class ForensicAnalyzer:
             analysis += f"• Multiple user accounts involved ({len(users)} users) - potential privilege escalation\n"
         
         return analysis
+    
+    def _fallback_forensic_answer(self, question: str, case_id: str) -> str:
+        """Fallback forensic answer using direct database analysis when LLM is unavailable"""
+        
+        question_lower = question.lower()
+        
+        # Computer identity questions
+        if "computer" in question_lower and ("name" in question_lower or "make" in question_lower or "model" in question_lower or "serial" in question_lower):
+            identity = self.analyze_computer_identity(case_id)
+            if identity and any(identity.values()):
+                parts = []
+                if identity.get('computer_name'):
+                    parts.append(f"Computer Name: {identity['computer_name']}")
+                if identity.get('make'):
+                    parts.append(f"Make: {identity['make']}")
+                if identity.get('model'):
+                    parts.append(f"Model: {identity['model']}")
+                if identity.get('serial'):
+                    parts.append(f"Serial: {identity['serial']}")
+                return "; ".join(parts) if parts else "No computer identity information found."
+            return "No computer identity information found."
+        
+        # User account questions
+        elif "user" in question_lower and "account" in question_lower:
+            accounts = self.analyze_user_accounts(case_id)
+            if accounts:
+                account_info = []
+                for account in accounts[:5]:  # Top 5 accounts
+                    info = f"User: {account.get('username', 'Unknown')}"
+                    if account.get('activity_count'):
+                        info += f" (Activity: {account['activity_count']})"
+                    if account.get('last_activity'):
+                        info += f" (Last: {account['last_activity']})"
+                    account_info.append(info)
+                return "; ".join(account_info)
+            return "No user account information found."
+        
+        # USB device questions
+        elif "usb" in question_lower or ("removable" in question_lower and "storage" in question_lower):
+            devices = self.analyze_usb_devices(case_id)
+            if devices:
+                device_info = []
+                for device in devices[:3]:  # Top 3 devices
+                    info = f"Device: {device.get('device_name', 'Unknown')}"
+                    if device.get('serial_number'):
+                        info += f" (Serial: {device['serial_number']})"
+                    if device.get('first_connected'):
+                        info += f" (First: {device['first_connected']})"
+                    device_info.append(info)
+                return "; ".join(device_info)
+            return "No USB device information found."
+        
+        # Network/Internet questions
+        elif "network" in question_lower or "internet" in question_lower or "connection" in question_lower:
+            with get_database_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                results = conn.execute("""
+                    SELECT summary, data_json FROM evidence 
+                    WHERE case_id = ? AND (artifact LIKE '%Network%' OR summary LIKE '%network%' OR summary LIKE '%connection%')
+                    ORDER BY timestamp DESC LIMIT 5
+                """, (case_id,)).fetchall()
+                
+                if results:
+                    network_info = []
+                    for row in results:
+                        try:
+                            data = json.loads(row['data_json']) if row['data_json'] else {}
+                            if data.get('RemoteAddress'):
+                                info = f"Connection to {data['RemoteAddress']}"
+                                if data.get('RemotePort'):
+                                    info += f":{data['RemotePort']}"
+                                if data.get('ProcessName'):
+                                    info += f" via {data['ProcessName']}"
+                                network_info.append(info)
+                        except:
+                            network_info.append(row['summary'])
+                    return "; ".join(network_info[:3]) if network_info else "Network activity found but details unavailable."
+            return "No network activity information found."
+        
+        # File-related questions
+        elif "file" in question_lower and ("transfer" in question_lower or "copy" in question_lower or "move" in question_lower):
+            with get_database_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                results = conn.execute("""
+                    SELECT summary, data_json FROM evidence 
+                    WHERE case_id = ? AND (artifact LIKE '%File%' OR summary LIKE '%file%')
+                    ORDER BY timestamp DESC LIMIT 5
+                """, (case_id,)).fetchall()
+                
+                if results:
+                    file_info = []
+                    for row in results:
+                        try:
+                            data = json.loads(row['data_json']) if row['data_json'] else {}
+                            if data.get('FileName'):
+                                info = f"File: {data['FileName']}"
+                                if data.get('FileSize'):
+                                    info += f" ({data['FileSize']} bytes)"
+                                file_info.append(info)
+                        except:
+                            file_info.append(row['summary'])
+                    return "; ".join(file_info[:3]) if file_info else "File activity found but details unavailable."
+            return "No file transfer information found."
+        
+        # Email questions
+        elif "email" in question_lower:
+            with get_database_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                results = conn.execute("""
+                    SELECT summary, data_json FROM evidence 
+                    WHERE case_id = ? AND (artifact LIKE '%Email%' OR summary LIKE '%email%')
+                    ORDER BY timestamp DESC LIMIT 3
+                """, (case_id,)).fetchall()
+                
+                if results:
+                    email_info = []
+                    for row in results:
+                        try:
+                            data = json.loads(row['data_json']) if row['data_json'] else {}
+                            if data.get('Subject'):
+                                info = f"Email: {data['Subject']}"
+                                if data.get('To'):
+                                    info += f" to {data['To']}"
+                                if data.get('HasAttachment'):
+                                    info += " (with attachment)"
+                                email_info.append(info)
+                        except:
+                            email_info.append(row['summary'])
+                    return "; ".join(email_info) if email_info else "Email activity found but details unavailable."
+            return "No email information found."
+        
+        # Application/software questions
+        elif "application" in question_lower or "software" in question_lower or "program" in question_lower:
+            with get_database_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                results = conn.execute("""
+                    SELECT summary, data_json FROM evidence 
+                    WHERE case_id = ? AND (artifact LIKE '%Application%' OR summary LIKE '%application%' OR summary LIKE '%exe%')
+                    ORDER BY timestamp DESC LIMIT 5
+                """, (case_id,)).fetchall()
+                
+                if results:
+                    app_info = []
+                    for row in results:
+                        try:
+                            data = json.loads(row['data_json']) if row['data_json'] else {}
+                            if data.get('ApplicationName'):
+                                info = f"App: {data['ApplicationName']}"
+                                if data.get('ExecutionCount'):
+                                    info += f" (executed {data['ExecutionCount']} times)"
+                                app_info.append(info)
+                        except:
+                            app_info.append(row['summary'])
+                    return "; ".join(app_info[:3]) if app_info else "Application activity found but details unavailable."
+            return "No application information found."
+        
+        # Security/event questions
+        elif "security" in question_lower or "event" in question_lower or "login" in question_lower:
+            with get_database_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                results = conn.execute("""
+                    SELECT summary, data_json FROM evidence 
+                    WHERE case_id = ? AND (artifact LIKE '%Event%' OR summary LIKE '%login%' OR summary LIKE '%security%')
+                    ORDER BY timestamp DESC LIMIT 5
+                """, (case_id,)).fetchall()
+                
+                if results:
+                    event_info = []
+                    for row in results:
+                        try:
+                            data = json.loads(row['data_json']) if row['data_json'] else {}
+                            if data.get('EventID'):
+                                info = f"Event {data['EventID']}"
+                                if data.get('FailureReason'):
+                                    info += f": {data['FailureReason']}"
+                                elif data.get('TargetUser'):
+                                    info += f" for user {data['TargetUser']}"
+                                event_info.append(info)
+                        except:
+                            event_info.append(row['summary'])
+                    return "; ".join(event_info[:3]) if event_info else "Security events found but details unavailable."
+            return "No security event information found."
+        
+        # Generic fallback
+        return "Unable to answer this question with available evidence. Consider running with LLM model for enhanced analysis."
 
 class ForensicProcessor:
     """Modern forensic data processor for Plaso timeline integration"""
@@ -1933,6 +2166,10 @@ class ModernReportGenerator:
         # Convert to string and handle None values
         text = str(text)
         
+        # Truncate very long text to prevent rendering issues
+        if len(text) > 500:
+            text = text[:497] + "..."
+        
         # Replace problematic Unicode characters with ASCII equivalents
         replacements = {
             '\u2013': '-',  # en dash
@@ -1957,57 +2194,75 @@ class ModernReportGenerator:
 
     def _generate_pdf_report(self, report: Dict[str, Any], output_path: Path):
         """Generate PDF report using modern FPDF with Unicode handling"""
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font('Arial', 'B', 16)
-        
-        title = self._sanitize_text_for_pdf(f'Forensic Analysis Report - Case {self.case_id}')
-        pdf.cell(0, 10, title, 0, 1, 'C')
-        
-        pdf.set_font('Arial', '', 12)
-        pdf.ln(10)
-        
-        # Computer Identity
-        if report['computer_identity']:
-            pdf.set_font('Arial', 'B', 14)
-            pdf.cell(0, 10, 'Computer Identity', 0, 1)
+        try:
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_font('Arial', 'B', 16)
+            
+            title = self._sanitize_text_for_pdf(f'Forensic Analysis Report - Case {self.case_id}')
+            pdf.cell(0, 10, title, ln=1, align='C')
+            
             pdf.set_font('Arial', '', 12)
+            pdf.ln(10)
             
-            for key, value in report['computer_identity'].items():
-                if value:
-                    clean_key = self._sanitize_text_for_pdf(key.replace("_", " ").title())
-                    clean_value = self._sanitize_text_for_pdf(str(value))
-                    pdf.cell(0, 8, f'{clean_key}: {clean_value}', 0, 1)
-            pdf.ln(5)
-        
-        # User Accounts
-        if report['user_accounts']:
+            # Computer Identity
+            if report['computer_identity']:
+                pdf.set_font('Arial', 'B', 14)
+                pdf.cell(0, 10, 'Computer Identity', ln=1)
+                pdf.set_font('Arial', '', 12)
+                
+                for key, value in report['computer_identity'].items():
+                    if value:
+                        clean_key = self._sanitize_text_for_pdf(key.replace("_", " ").title())
+                        clean_value = self._sanitize_text_for_pdf(str(value))
+                        pdf.cell(0, 8, f'{clean_key}: {clean_value}', ln=1)
+                pdf.ln(5)
+            
+            # User Accounts
+            if report['user_accounts']:
+                pdf.set_font('Arial', 'B', 14)
+                pdf.cell(0, 10, 'User Accounts', ln=1)
+                pdf.set_font('Arial', '', 12)
+                
+                for account in report['user_accounts'][:5]:  # Top 5 accounts
+                    username = self._sanitize_text_for_pdf(account['username'])
+                    activity = self._sanitize_text_for_pdf(str(account['activity_count']))
+                    pdf.cell(0, 8, f"User: {username} (Activity: {activity})", ln=1)
+                pdf.ln(5)
+            
+            # Forensic Answers
             pdf.set_font('Arial', 'B', 14)
-            pdf.cell(0, 10, 'User Accounts', 0, 1)
-            pdf.set_font('Arial', '', 12)
-            
-            for account in report['user_accounts'][:5]:  # Top 5 accounts
-                username = self._sanitize_text_for_pdf(account['username'])
-                activity = self._sanitize_text_for_pdf(str(account['activity_count']))
-                pdf.cell(0, 8, f"User: {username} (Activity: {activity})", 0, 1)
-            pdf.ln(5)
-        
-        # Forensic Answers
-        pdf.set_font('Arial', 'B', 14)
-        pdf.cell(0, 10, 'Forensic Analysis', 0, 1)
-        pdf.set_font('Arial', '', 10)
-        
-        for question, answer in report['forensic_answers'].items():
-            pdf.set_font('Arial', 'B', 11)
-            clean_question = self._sanitize_text_for_pdf(question)
-            pdf.multi_cell(0, 6, f'Q: {clean_question}', 0, 1)
-            
+            pdf.cell(0, 10, 'Forensic Analysis', ln=1)
             pdf.set_font('Arial', '', 10)
-            clean_answer = self._sanitize_text_for_pdf(answer)
-            pdf.multi_cell(0, 5, f'A: {clean_answer}', 0, 1)
-            pdf.ln(3)
+            
+            for question, answer in report['forensic_answers'].items():
+                pdf.set_font('Arial', 'B', 11)
+                clean_question = self._sanitize_text_for_pdf(question)
+                pdf.multi_cell(0, 6, f'Q: {clean_question}')
+                
+                pdf.set_font('Arial', '', 10)
+                clean_answer = self._sanitize_text_for_pdf(answer)
+                pdf.multi_cell(0, 5, f'A: {clean_answer}')
+                pdf.ln(3)
         
-        pdf.output(str(output_path))
+            pdf.output(str(output_path))
+        except Exception as e:
+            # If PDF generation fails, create a simple text report instead
+            LOGGER.warning(f"PDF generation failed: {e}. Creating text report instead.")
+            with open(output_path.with_suffix('.txt'), 'w', encoding='utf-8') as f:
+                f.write(f"Forensic Analysis Report - Case {self.case_id}\n")
+                f.write("=" * 50 + "\n\n")
+                f.write("Computer Identity:\n")
+                for key, value in report.get('computer_identity', {}).items():
+                    if value:
+                        f.write(f"  {key.replace('_', ' ').title()}: {value}\n")
+                f.write("\nUser Accounts:\n")
+                for account in report.get('user_accounts', [])[:5]:
+                    f.write(f"  User: {account.get('username', 'Unknown')} (Activity: {account.get('activity_count', 0)})\n")
+                f.write("\nForensic Analysis:\n")
+                for question, answer in report.get('forensic_answers', {}).items():
+                    f.write(f"Q: {question}\n")
+                    f.write(f"A: {answer}\n\n")
 
 class FAS5SQLiteOutputModule:
     """Custom Plaso output module for direct FAS5 SQLite database integration."""
@@ -2178,6 +2433,94 @@ class FAS5SQLiteOutputModule:
             self._batch_events.clear()
 
 # END-TO-END FORENSIC WORKFLOW SYSTEM
+
+def check_external_dependencies(kape_path: Path = None, plaso_path: Path = None) -> Dict[str, bool]:
+    """Check availability of external forensic tools"""
+    
+    dependencies = {
+        'kape': False,
+        'plaso': False,
+        'python': True  # We're already running Python
+    }
+    
+    # Check KAPE
+    if kape_path:
+        if kape_path.exists() and kape_path.is_file():
+            dependencies['kape'] = True
+        else:
+            LOGGER.warning(f"KAPE not found at {kape_path}")
+    else:
+        # Try to find KAPE in common Windows locations
+        common_kape_paths = [
+            Path('D:/FORAI/tools/kape/kape.exe'),
+            Path('C:/FORAI/tools/kape/kape.exe'),
+            Path('kape.exe'),  # Current directory
+            Path('C:/Program Files/KAPE/kape.exe'),
+            Path('C:/Tools/KAPE/kape.exe')
+        ]
+        
+        for path in common_kape_paths:
+            if path.exists():
+                dependencies['kape'] = True
+                LOGGER.info(f"KAPE found at {path}")
+                break
+        
+        if not dependencies['kape']:
+            LOGGER.warning("KAPE not found in common locations")
+    
+    # Check Plaso
+    if plaso_path:
+        if plaso_path.exists() and plaso_path.is_dir():
+            # Check for key Plaso tools
+            plaso_tools = ['log2timeline.py', 'psort.py', 'psteal.py']
+            found_tools = []
+            
+            for tool in plaso_tools:
+                tool_path = plaso_path / tool
+                if tool_path.exists():
+                    found_tools.append(tool)
+            
+            if len(found_tools) >= 2:  # At least 2 tools found
+                dependencies['plaso'] = True
+                LOGGER.info(f"Plaso tools found: {found_tools}")
+            else:
+                LOGGER.warning(f"Plaso directory found but missing tools: {plaso_path}")
+        else:
+            LOGGER.warning(f"Plaso directory not found at {plaso_path}")
+    else:
+        # Try to find Plaso tools in PATH
+        try:
+            import shutil
+            if shutil.which('log2timeline.py') or shutil.which('log2timeline'):
+                dependencies['plaso'] = True
+                LOGGER.info("Plaso tools found in PATH")
+            else:
+                LOGGER.warning("Plaso tools not found in PATH")
+        except Exception as e:
+            LOGGER.warning(f"Error checking for Plaso in PATH: {e}")
+    
+    return dependencies
+
+def validate_workflow_requirements(kape_path: Path = None, plaso_path: Path = None, 
+                                 require_all: bool = False) -> bool:
+    """Validate that required tools are available for workflow execution"""
+    
+    deps = check_external_dependencies(kape_path, plaso_path)
+    
+    if require_all:
+        missing = [tool for tool, available in deps.items() if not available]
+        if missing:
+            LOGGER.error(f"Missing required tools: {missing}")
+            LOGGER.error("Please install missing tools or provide correct paths")
+            return False
+    else:
+        # At least warn about missing tools
+        missing = [tool for tool, available in deps.items() if not available and tool != 'python']
+        if missing:
+            LOGGER.warning(f"Optional tools not available: {missing}")
+            LOGGER.warning("Some workflow features may be limited")
+    
+    return True
 
 class ForensicWorkflowManager:
     """Complete end-to-end forensic analysis workflow manager"""
@@ -2787,6 +3130,14 @@ def main():
     
     if args.verbose:
         LOGGER.setLevel(logging.DEBUG)
+    
+    # Check external tool dependencies
+    if args.full_analysis or args.collect_artifacts or args.parse_artifacts:
+        require_tools = args.full_analysis  # Full analysis requires all tools
+        if not validate_workflow_requirements(args.kape_path, args.plaso_path, require_all=require_tools):
+            if require_tools:
+                LOGGER.error("Cannot proceed with full analysis due to missing required tools")
+                sys.exit(1)
     
     try:
         # END-TO-END FULL ANALYSIS WORKFLOW
