@@ -2887,7 +2887,7 @@ class ForensicWorkflowManager:
             log2timeline_cmd = [
                 log2timeline_cmd_path,  # Use the detected command path
                 "--storage-file", str(plaso_storage_path),
-                "--parsers", "chrome,firefox,safari,edge,mft,prefetch,winreg,lnk,jumplist,shellbags,winevtx,recycle_bin,usnjrnl,filestat",
+                "--parsers", "chrome,firefox,safari,edge,mft,prefetch,winreg,lnk,winjob,winevtx,winrecycler,usnjrnl,filestat",
                 "--hashers", "md5,sha256",
                 "--process-archives",
                 "--workers", "6",  # Increased workers for better performance
