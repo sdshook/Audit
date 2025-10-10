@@ -43,6 +43,13 @@ CLI USAGE EXAMPLES:
     
     # Parse artifacts only (with custom keywords for flagging)
     python New_FORAI.py --case-id CASE001 --parse-artifacts --keywords-file suspicious_terms.txt
+
+📂 USE EXISTING KAPE COLLECTION (SKIP RE-COLLECTION):
+    # Full analysis using existing artifacts directory
+    python New_FORAI.py --case-id CASE001 --full-analysis --artifacts-dir "D:\\FORAI\\artifacts\\CASE001_artifacts" --keywords-file keywords.txt --verbose
+    
+    # Analysis with custom question using existing collection
+    python New_FORAI.py --case-id CASE001 --full-analysis --artifacts-dir "C:\\YourExistingKapeOutput" --question "What USB devices were connected?" --verbose
     
     # Initialize database for a new case
     python New_FORAI.py --case-id CASE001 --init-db
@@ -3033,16 +3040,27 @@ class ForensicWorkflowManager:
             self.logger.warning(f"Database post-optimization failed: {e}")
             
     def run_full_analysis(self, target: str, kape_path: Path, plaso_path: Path, 
-                         questions: List[str] = None, date_from: str = None, date_to: str = None, days_back: int = None, keywords: List[str] = None) -> bool:
+                         questions: List[str] = None, date_from: str = None, date_to: str = None, days_back: int = None, keywords: List[str] = None, existing_artifacts_dir: Path = None) -> bool:
         """Execute complete end-to-end forensic analysis with performance monitoring"""
         start_time = time.time()
         try:
             self.logger.info(f"Starting full forensic analysis for case {self.case_id}")
             self.log_custody_event("ANALYSIS_START", f"Full forensic analysis initiated for {target}")
             
-            # Step 1: Collect artifacts
-            if not self.collect_artifacts_kape(target, kape_path):
-                return False
+            # Step 1: Collect artifacts or use existing
+            if existing_artifacts_dir:
+                if not existing_artifacts_dir.exists():
+                    self.logger.error(f"Existing artifacts directory not found: {existing_artifacts_dir}")
+                    return False
+                
+                # Set artifacts path to existing directory
+                self.artifacts_path = existing_artifacts_dir
+                artifact_count = len(list(existing_artifacts_dir.rglob("*")))
+                self.logger.info(f"Using existing artifacts: {artifact_count} files in {existing_artifacts_dir}")
+                self.log_custody_event("EXISTING_ARTIFACTS", f"Using existing artifacts: {artifact_count} files from {existing_artifacts_dir}")
+            else:
+                if not self.collect_artifacts_kape(target, kape_path):
+                    return False
                 
             # Step 2: Parse artifacts with Plaso
             if not self.parse_artifacts_plaso(plaso_path):
@@ -3248,6 +3266,7 @@ def main():
     # ARTIFACT COLLECTION & PARSING
     parser.add_argument('--collect-artifacts', action='store_true', help='Collect artifacts using KAPE')
     parser.add_argument('--parse-artifacts', action='store_true', help='Parse artifacts using Plaso timeline analysis')
+    parser.add_argument('--artifacts-dir', type=Path, help='Use existing artifacts directory (skips KAPE collection)')
     parser.add_argument('--kape-path', type=Path, default=Path('D:/FORAI/tools/kape/kape.exe'), help='Path to KAPE executable')
     parser.add_argument('--plaso-path', type=Path, default=Path('D:/FORAI/tools/plaso'), help='Path to Plaso tools directory')
     
@@ -3343,7 +3362,7 @@ def main():
             
             # Run complete analysis with time filtering
             success = workflow.run_full_analysis(target, args.kape_path, args.plaso_path, questions, 
-                                                args.date_from, args.date_to, args.days_back, keywords)
+                                                args.date_from, args.date_to, args.days_back, keywords, args.artifacts_dir)
             
             if success:
                 print(f"\n🎉 FULL FORENSIC ANALYSIS COMPLETED SUCCESSFULLY!")
