@@ -2889,7 +2889,6 @@ class ForensicWorkflowManager:
                 "--storage-file", str(plaso_storage_path),
                 "--parsers", "chrome,firefox,safari,edge,mft,prefetch,winreg,lnk,winjob,winevtx,winrecycler,usnjrnl,filestat",
                 "--hashers", "md5,sha256",
-                "--process-archives",
                 "--workers", "6",  # Increased workers for better performance
                 "--worker_memory_limit", "4096",  # 4GB memory limit
                 str(self.artifacts_path)
