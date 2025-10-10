@@ -2945,7 +2945,7 @@ class ForensicWorkflowManager:
             psort_cmd = [
                 psort_cmd_path,
                 "-o", "json",
-                "--output-file", str(json_output_path),
+                "-w", str(json_output_path),
                 str(plaso_storage_path)
             ]
             
