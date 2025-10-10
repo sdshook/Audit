@@ -5,10 +5,10 @@ New_FORAI.py (c) 2025 All Rights Reserved Shane D. Shook
 Forensic analysis tool utilizing KAPE and Plaso timeline analysis
 
 WORKFLOW:
-Target Drive → KAPE (VHDX) → log2timeline (.plaso) → psort (SQLite) → FAS5 Database
+Target Drive → KAPE (Artifacts) → log2timeline (.plaso) → psort (SQLite) → FAS5 Database
 
 FEATURES:
-- VHDX-only collection for forensic integrity
+- Native artifact collection for forensic integrity
 - Two-step Plaso workflow: log2timeline → psort
 - Custom Plaso output module for SQLite integration
 - SHA256 integrity validation
@@ -47,7 +47,7 @@ CLI USAGE EXAMPLES:
     # Initialize database for a new case
     python New_FORAI.py --case-id CASE001 --init-db
     
-    # OPTIMIZED: Direct VHDX processing only (no CSV intermediary files)
+    # OPTIMIZED: Direct artifact processing only (no CSV intermediary files)
     
     # Search for evidence
     python New_FORAI.py --case-id CASE001 --search "usb device activity"
@@ -1111,7 +1111,7 @@ FORENSIC_QUESTIONS = [
 ]
 
 DATABASE_SCHEMA = """
--- MAXIMUM EFFICIENCY SCHEMA FOR VHDX-ONLY WORKFLOW
+-- MAXIMUM EFFICIENCY SCHEMA FOR ARTIFACT-BASED WORKFLOW
 -- Core evidence table - streamlined for direct Plaso integration
 CREATE TABLE IF NOT EXISTS evidence (
     id          INTEGER PRIMARY KEY,
@@ -1127,7 +1127,7 @@ CREATE TABLE IF NOT EXISTS evidence (
     created     INTEGER DEFAULT (unixepoch())
 ) STRICT;
 
--- Source files tracking - minimal overhead for VHDX processing
+-- Source files tracking - minimal overhead for artifact processing
 CREATE TABLE IF NOT EXISTS sources (
     file_path   TEXT PRIMARY KEY,
     file_hash   TEXT,
@@ -1244,7 +1244,7 @@ def get_database_connection() -> sqlite3.Connection:
         try:
             conn = sqlite3.connect(
                 CONFIG.db_path,
-                timeout=60.0,  # Increased for large VHDX processing
+                timeout=60.0,  # Increased for large artifact processing
                 check_same_thread=False
             )
             
@@ -2119,9 +2119,9 @@ class ForensicProcessor:
             conn.commit()
         LOGGER.info("Database initialized with optimized schema")
     
-    # CSV processing removed - using direct VHDX → SQLite workflow only
+    # CSV processing removed - using direct artifact → SQLite workflow only
     
-    # Plaso chunk processing removed - using direct VHDX → SQLite via custom output module
+    # Plaso chunk processing removed - using direct artifact → SQLite via custom output module
     
     # Plaso timestamp parsing removed - handled directly by custom output module
     
@@ -2601,44 +2601,7 @@ class ForensicWorkflowManager:
         """Calculate SHA256 hash for forensic integrity verification"""
         return self._calculate_hash(str(file_path), 'sha256')
     
-    def _validate_vhdx_integrity(self, vhdx_path: Path) -> bool:
-        """Validate VHDX file integrity and forensic metadata"""
-        try:
-            # Check file exists and has reasonable size
-            if not vhdx_path.exists():
-                self.logger.error(f"VHDX file does not exist: {vhdx_path}")
-                return False
-                
-            file_size = vhdx_path.stat().st_size
-            if file_size < 1024:  # Minimum reasonable VHDX size
-                self.logger.error(f"VHDX file too small ({file_size} bytes): {vhdx_path}")
-                return False
-                
-            # Calculate and log hash for chain of custody
-            vhdx_hash = self._calculate_file_hash(vhdx_path)
-            self.logger.info(f"VHDX integrity validation:")
-            self.logger.info(f"  - Path: {vhdx_path}")
-            self.logger.info(f"  - Size: {file_size:,} bytes")
-            self.logger.info(f"  - SHA256: {vhdx_hash}")
-            
-            # Log to chain of custody
-            self.log_custody_event("VHDX_VALIDATION", 
-                                 f"VHDX integrity validated - Size: {file_size:,} bytes, Hash: {vhdx_hash}",
-                                 str(vhdx_path))
-            
-            # Basic VHDX header validation (check for VHDX signature)
-            with open(vhdx_path, 'rb') as f:
-                header = f.read(8)
-                if header != b'vhdxfile':
-                    self.logger.warning("VHDX file header signature not found - may be corrupted or not a valid VHDX")
-                    return False
-                    
-            return True
-            
-        except Exception as e:
-            self.logger.error(f"VHDX validation error: {e}")
-            self.log_custody_event("VHDX_VALIDATION_ERROR", f"VHDX validation failed: {str(e)}")
-            return False
+
     
     def _validate_database_integrity(self, db_path: Path) -> bool:
         """Validate FAS5 database integrity and content"""
@@ -2780,7 +2743,7 @@ class ForensicWorkflowManager:
             self.log_custody_event("ARCHIVE_START", f"Creating final case archive: {archive_name}")
             
             with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                # Add artifacts directory (VHDX files)
+                # Add artifacts directory (collected artifacts)
                 if self.artifacts_dir.exists():
                     for file_path in self.artifacts_dir.rglob('*'):
                         if file_path.is_file():
@@ -2953,7 +2916,7 @@ class ForensicWorkflowManager:
             end_memory = psutil.Process().memory_info().rss / 1024 / 1024
             processing_time = end_time - start_time
             memory_delta = end_memory - start_memory
-            throughput = vhdx_size / processing_time if processing_time > 0 else 0
+            throughput = artifacts_size / processing_time if processing_time > 0 else 0
             
             # Validate database integrity and content
             if not self._validate_database_integrity(database_path):
@@ -3248,7 +3211,7 @@ def main():
     parser.add_argument('--plaso-path', type=Path, default=Path('D:/FORAI/tools/plaso'), help='Path to Plaso tools directory')
     
     # EXISTING OPTIONS
-    # CSV arguments removed - using direct VHDX → SQLite workflow only
+    # CSV arguments removed - using direct artifact → SQLite workflow only
     parser.add_argument('--search', help='Search query for evidence')
     parser.add_argument('--question', help='Forensic question to answer')
     parser.add_argument('--report', choices=['json', 'pdf'], help='Generate comprehensive report')
@@ -3403,7 +3366,7 @@ def main():
         if keywords:
             inject_keywords(args.case_id, keywords)
         
-        # CSV processing removed - using direct VHDX → SQLite workflow only
+        # CSV processing removed - using direct artifact → SQLite workflow only
         
         # Search evidence
         if args.search:
