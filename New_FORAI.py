@@ -2898,8 +2898,13 @@ class ForensicWorkflowManager:
             log2timeline_result = subprocess.run(log2timeline_cmd, capture_output=True, text=True, timeout=7200)
             
             if log2timeline_result.returncode != 0:
-                self.logger.error(f"log2timeline failed: {log2timeline_result.stderr}")
-                self.log_custody_event("PARSING_ERROR", f"log2timeline failed: {log2timeline_result.stderr}")
+                error_msg = f"Return code: {log2timeline_result.returncode}"
+                if log2timeline_result.stderr:
+                    error_msg += f"\nSTDERR: {log2timeline_result.stderr}"
+                if log2timeline_result.stdout:
+                    error_msg += f"\nSTDOUT: {log2timeline_result.stdout}"
+                self.logger.error(f"log2timeline failed: {error_msg}")
+                self.log_custody_event("PARSING_ERROR", f"log2timeline failed: {error_msg}")
                 return False
                 
             if not plaso_storage_path.exists():
