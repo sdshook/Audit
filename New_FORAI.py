@@ -2564,6 +2564,7 @@ class ForensicWorkflowManager:
             
         self.chain_of_custody = []
         self.start_time = datetime.now(timezone.utc)
+        self.artifacts_path = None  # Will be set by KAPE collection
         
     def log_custody_event(self, event_type: str, description: str, file_path: str = None):
         """Log chain of custody event"""
@@ -2718,116 +2719,36 @@ class ForensicWorkflowManager:
             if not kape_path.exists():
                 raise FileNotFoundError(f"KAPE not found at {kape_path}")
                 
-            # KAPE command optimized for VHDX collection (maintains forensic integrity)
-            vhdx_path = self.artifacts_dir / f"{self.case_id}_artifacts.vhdx"
-            temp_dest = self.artifacts_dir / f"{self.case_id}_temp"
-            temp_dest.mkdir(exist_ok=True)
+            # KAPE command for native artifact collection (no VHDX)
+            artifacts_dest = self.artifacts_dir / f"{self.case_id}_artifacts"
+            artifacts_dest.mkdir(exist_ok=True)
             
             kape_cmd = [
                 str(kape_path),
                 "--tsource", target,
-                "--tdest", str(temp_dest),
-                "--target", "!SANS_Triage,Chrome,Firefox,Edge,InternetExplorer,BrowserArtifacts",  # Enhanced browser collection
-                "--vhdx", str(vhdx_path)
+                "--tdest", str(artifacts_dest),
+                "--target", "!SANS_Triage,Chrome,Firefox,Edge,InternetExplorer,BrowserArtifacts"
             ]
             
             self.logger.info(f"Executing KAPE: {' '.join(kape_cmd)}")
             result = subprocess.run(kape_cmd, capture_output=True, text=True, timeout=3600)
             
             if result.returncode == 0:
-                # Check for direct VHDX first, then look for timestamped zip files
-                actual_vhdx_path = None
-                
-                if vhdx_path.exists():
-                    # Direct VHDX file exists
-                    actual_vhdx_path = vhdx_path
-                    self.logger.info(f"Found direct VHDX file: {vhdx_path}")
-                else:
-                    # KAPE may have auto-zipped the VHDX with timestamp
-                    # Look for timestamped zip files containing the VHDX
-                    import glob
-                    import zipfile
-                    
-                    self.logger.info("Direct VHDX not found, searching for timestamped zip files...")
-                    
-                    # Search in both artifacts directory and temp directory
-                    search_dirs = [self.artifacts_dir, temp_dest]
-                    zip_files = []
-                    
-                    for search_dir in search_dirs:
-                        if search_dir.exists():
-                            self.logger.info(f"Searching in directory: {search_dir}")
-                            dir_files = list(search_dir.glob("*"))
-                            self.logger.info(f"Files in {search_dir.name}: {[f.name for f in dir_files]}")
-                            
-                            # Look for timestamped zip files containing VHDX
-                            # Pattern: YYYY-MM-DDTHHMMSS_*_CASE001_artifacts.vhdx.zip
-                            zip_pattern = str(search_dir / f"*{self.case_id}_artifacts.vhdx.zip")
-                            self.logger.info(f"Searching with pattern: {zip_pattern}")
-                            found_zips = glob.glob(zip_pattern)
-                            
-                            # Also try broader patterns
-                            if not found_zips:
-                                broader_pattern = str(search_dir / "*.zip")
-                                self.logger.info(f"Trying broader pattern: {broader_pattern}")
-                                all_zips = glob.glob(broader_pattern)
-                                self.logger.info(f"All zip files in {search_dir.name}: {all_zips}")
-                                # Filter for ones that might contain our VHDX
-                                found_zips = [z for z in all_zips if self.case_id in z and 'vhdx' in z.lower()]
-                            
-                            zip_files.extend(found_zips)
-                    
-                    self.logger.info(f"Found {len(zip_files)} total matching zip files: {zip_files}")
-                    
-                    for zip_file in zip_files:
-                        try:
-                            self.logger.info(f"Examining timestamped zip file: {zip_file}")
-                            with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-                                # List contents
-                                contents = zip_ref.namelist()
-                                self.logger.info(f"Zip contents: {contents}")
-                                
-                                # Find VHDX file in zip
-                                vhdx_files = [f for f in contents if f.endswith('.vhdx')]
-                                if vhdx_files:
-                                    self.logger.info(f"Found VHDX in zip: {vhdx_files[0]}")
-                                    # Extract VHDX to expected location
-                                    zip_ref.extract(vhdx_files[0], self.artifacts_dir)
-                                    extracted_vhdx = self.artifacts_dir / vhdx_files[0]
-                                    
-                                    # Move to expected location if needed
-                                    if extracted_vhdx != vhdx_path and extracted_vhdx.exists():
-                                        extracted_vhdx.rename(vhdx_path)
-                                        actual_vhdx_path = vhdx_path
-                                        self.logger.info(f"Extracted and moved VHDX: {vhdx_path}")
-                                    elif extracted_vhdx.exists():
-                                        actual_vhdx_path = extracted_vhdx
-                                        self.logger.info(f"Extracted VHDX: {actual_vhdx_path}")
-                                    break
-                        except Exception as extract_error:
-                            self.logger.warning(f"Failed to extract from {zip_file}: {extract_error}")
-                            continue
-                
-                if actual_vhdx_path and actual_vhdx_path.exists():
-                    vhdx_hash = self._calculate_file_hash(actual_vhdx_path)
+                # Verify artifacts were collected
+                if artifacts_dest.exists() and any(artifacts_dest.iterdir()):
+                    # Count collected artifacts
+                    artifact_count = sum(1 for _ in artifacts_dest.rglob("*") if _.is_file())
                     self.log_custody_event("COLLECTION_SUCCESS", 
-                                         f"KAPE VHDX collection completed successfully", 
-                                         str(actual_vhdx_path))
-                    self.logger.info(f"VHDX ready for processing: {actual_vhdx_path} (Hash: {vhdx_hash})")
+                                         f"KAPE artifact collection completed successfully - {artifact_count} files collected", 
+                                         str(artifacts_dest))
+                    self.logger.info(f"Artifacts collected: {artifact_count} files in {artifacts_dest}")
                     
-                    # Clean up temporary directory to save space
-                    try:
-                        import shutil
-                        if temp_dest.exists():
-                            shutil.rmtree(temp_dest)
-                            self.logger.debug(f"Cleaned up temporary directory: {temp_dest}")
-                    except Exception as cleanup_error:
-                        self.logger.warning(f"Failed to cleanup temp directory: {cleanup_error}")
-                    
+                    # Store artifacts path for Plaso processing
+                    self.artifacts_path = artifacts_dest
                     return True
                 else:
-                    self.logger.error("KAPE completed but no usable VHDX file was found or could be extracted")
-                    self.log_custody_event("COLLECTION_ERROR", "No usable VHDX file was found or could be extracted")
+                    self.logger.error("KAPE completed but no artifacts were collected")
+                    self.log_custody_event("COLLECTION_ERROR", "No artifacts were collected")
                     return False
             else:
                 self.logger.error(f"KAPE failed: {result.stderr}")
@@ -2918,21 +2839,21 @@ class ForensicWorkflowManager:
         return module
 
     def parse_artifacts_plaso(self, plaso_path: Path) -> bool:
-        """Parse VHDX using proper Plaso two-step workflow: log2timeline -> psort -> SQLite"""
+        """Parse collected artifacts using proper Plaso two-step workflow: log2timeline -> psort -> SQLite"""
         try:
             self.log_custody_event("PARSING_START", "Starting Plaso two-step processing: log2timeline -> psort -> SQLite")
             
             if not plaso_path.exists():
                 raise FileNotFoundError(f"Plaso not found at {plaso_path}")
                 
-            # Locate and validate VHDX file created by KAPE
-            vhdx_path = self.artifacts_dir / f"{self.case_id}_artifacts.vhdx"
-            if not vhdx_path.exists():
-                raise FileNotFoundError(f"VHDX file not found at {vhdx_path}")
+            # Use the artifacts directory created by KAPE
+            if not hasattr(self, 'artifacts_path') or not self.artifacts_path.exists():
+                raise FileNotFoundError(f"Artifacts directory not found. KAPE collection may have failed.")
                 
-            # Validate VHDX integrity before processing
-            if not self._validate_vhdx_integrity(vhdx_path):
-                raise ValueError("VHDX integrity validation failed")
+            # Validate artifacts directory has content
+            artifact_files = list(self.artifacts_path.rglob("*"))
+            if not artifact_files:
+                raise ValueError("Artifacts directory is empty")
                 
             # Create custom FAS5 SQLite output module
             custom_module = self.create_custom_plaso_output_module()
@@ -2947,22 +2868,20 @@ class ForensicWorkflowManager:
             # Track processing metrics
             start_time = time.time()
             start_memory = psutil.Process().memory_info().rss / 1024 / 1024
-            vhdx_size = vhdx_path.stat().st_size / 1024 / 1024  # MB
+            artifacts_size = sum(f.stat().st_size for f in self.artifacts_path.rglob("*") if f.is_file()) / 1024 / 1024  # MB
             
-            self.logger.info(f"Step 1: Creating timeline from VHDX (Size: {vhdx_size:.1f}MB): {vhdx_path} -> {plaso_storage_path}")
+            self.logger.info(f"Step 1: Creating timeline from artifacts (Size: {artifacts_size:.1f}MB): {self.artifacts_path} -> {plaso_storage_path}")
             
-            # Step 1: Create timeline from VHDX
+            # Step 1: Create timeline from collected artifacts
             log2timeline_cmd = [
                 "log2timeline",  # Use the command that works in user's PATH
                 "--storage-file", str(plaso_storage_path),
                 "--parsers", "chrome_history,firefox_history,safari_history,edge_history,mft,prefetch,registry,lnk,jumplist,recycle_bin,shellbags,usnjrnl,evtx,filestat",
                 "--hashers", "md5,sha256",
                 "--process-archives",
-                "--vss-stores", "all",
                 "--workers", "6",  # Increased workers for better performance
                 "--process-memory-limit", "4096",  # 4GB memory limit
-                "--partitions", "all",
-                str(vhdx_path)
+                str(self.artifacts_path)
             ]
             
             self.logger.info(f"Executing log2timeline: {' '.join(log2timeline_cmd)}")
