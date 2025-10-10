@@ -2806,8 +2806,49 @@ class ForensicWorkflowManager:
         try:
             self.log_custody_event("PARSING_START", "Starting Plaso two-step processing: log2timeline -> psort -> SQLite")
             
-            if not plaso_path.exists():
-                raise FileNotFoundError(f"Plaso not found at {plaso_path}")
+            # Check if log2timeline is available in PATH or at specified location
+            log2timeline_cmd_path = None
+            
+            # First try PATH
+            if shutil.which("log2timeline"):
+                log2timeline_cmd_path = "log2timeline"
+                self.logger.info("Found log2timeline in system PATH")
+            # Then try specified plaso directory
+            elif plaso_path.exists():
+                potential_path = plaso_path / "log2timeline.exe"
+                if potential_path.exists():
+                    log2timeline_cmd_path = str(potential_path)
+                    self.logger.info(f"Found log2timeline at: {potential_path}")
+                else:
+                    potential_path = plaso_path / "log2timeline"
+                    if potential_path.exists():
+                        log2timeline_cmd_path = str(potential_path)
+                        self.logger.info(f"Found log2timeline at: {potential_path}")
+            
+            if not log2timeline_cmd_path:
+                raise FileNotFoundError(f"log2timeline not found in PATH or at {plaso_path}")
+            
+            # Check for psort as well
+            psort_cmd_path = None
+            
+            # First try PATH
+            if shutil.which("psort"):
+                psort_cmd_path = "psort"
+                self.logger.info("Found psort in system PATH")
+            # Then try specified plaso directory
+            elif plaso_path.exists():
+                potential_path = plaso_path / "psort.exe"
+                if potential_path.exists():
+                    psort_cmd_path = str(potential_path)
+                    self.logger.info(f"Found psort at: {potential_path}")
+                else:
+                    potential_path = plaso_path / "psort"
+                    if potential_path.exists():
+                        psort_cmd_path = str(potential_path)
+                        self.logger.info(f"Found psort at: {potential_path}")
+            
+            if not psort_cmd_path:
+                raise FileNotFoundError(f"psort not found in PATH or at {plaso_path}")
                 
             # Use the artifacts directory created by KAPE
             if not hasattr(self, 'artifacts_path') or not self.artifacts_path.exists():
@@ -2837,7 +2878,7 @@ class ForensicWorkflowManager:
             
             # Step 1: Create timeline from collected artifacts
             log2timeline_cmd = [
-                "log2timeline",  # Use the command that works in user's PATH
+                log2timeline_cmd_path,  # Use the detected command path
                 "--storage-file", str(plaso_storage_path),
                 "--parsers", "chrome_history,firefox_history,safari_history,edge_history,mft,prefetch,registry,lnk,jumplist,recycle_bin,shellbags,usnjrnl,evtx,filestat",
                 "--hashers", "md5,sha256",
@@ -2869,7 +2910,7 @@ class ForensicWorkflowManager:
             # Use standard JSON output and process with our custom module
             json_output_path = self.parsed_dir / f"{self.case_id}_timeline.json"
             psort_cmd = [
-                "psort",
+                psort_cmd_path,
                 "-o", "json",
                 "--output-file", str(json_output_path),
                 str(plaso_storage_path)
