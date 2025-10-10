@@ -3330,10 +3330,10 @@ def main():
     try:
         # END-TO-END FULL ANALYSIS WORKFLOW
         if args.full_analysis:
-            if not args.target_drive:
-                LOGGER.error("Full analysis requires --target-drive")
+            if not args.target_drive and not args.artifacts_dir:
+                LOGGER.error("Full analysis requires --target-drive (for live collection) or --artifacts-dir (for existing collection)")
                 sys.exit(1)
-            target = args.target_drive
+            target = args.target_drive if args.target_drive else "existing_artifacts"
             
             # Initialize workflow manager
             workflow = ForensicWorkflowManager(args.case_id, args.output_dir, args.verbose)
