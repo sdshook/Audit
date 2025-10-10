@@ -2887,7 +2887,7 @@ class ForensicWorkflowManager:
             log2timeline_cmd = [
                 log2timeline_cmd_path,  # Use the detected command path
                 "--storage-file", str(plaso_storage_path),
-                "--parsers", "mft,prefetch,winreg,lnk,winjob,winevtx,usnjrnl,filestat",
+                "--parsers", "mft,prefetch,winreg,lnk,winjob,winevtx,usnjrnl,filestat,sqlite/chrome_27_history,sqlite/chrome_66_cookies,sqlite/firefox_history,sqlite/firefox_downloads,msiecf,binary_cookies,chrome_cache,firefox_cache",
                 "--hashers", "md5,sha256",
                 "--workers", "6",  # Increased workers for better performance
                 "--worker_memory_limit", "4096",  # 4GB memory limit
