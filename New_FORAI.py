@@ -2750,26 +2750,34 @@ class ForensicWorkflowManager:
                     
                     self.logger.info("Direct VHDX not found, searching for timestamped zip files...")
                     
-                    # First, list all files in artifacts directory for debugging
-                    all_files = list(self.artifacts_dir.glob("*"))
-                    self.logger.info(f"All files in artifacts directory: {[f.name for f in all_files]}")
+                    # Search in both artifacts directory and temp directory
+                    search_dirs = [self.artifacts_dir, temp_dest]
+                    zip_files = []
                     
-                    # Search for timestamped zip files in artifacts directory
-                    # Pattern: YYYY-MM-DDTHHMMSS_*_CASE001_artifacts.vhdx.zip
-                    zip_pattern = str(self.artifacts_dir / f"*{self.case_id}_artifacts.vhdx.zip")
-                    self.logger.info(f"Searching with pattern: {zip_pattern}")
-                    zip_files = glob.glob(zip_pattern)
+                    for search_dir in search_dirs:
+                        if search_dir.exists():
+                            self.logger.info(f"Searching in directory: {search_dir}")
+                            dir_files = list(search_dir.glob("*"))
+                            self.logger.info(f"Files in {search_dir.name}: {[f.name for f in dir_files]}")
+                            
+                            # Look for timestamped zip files containing VHDX
+                            # Pattern: YYYY-MM-DDTHHMMSS_*_CASE001_artifacts.vhdx.zip
+                            zip_pattern = str(search_dir / f"*{self.case_id}_artifacts.vhdx.zip")
+                            self.logger.info(f"Searching with pattern: {zip_pattern}")
+                            found_zips = glob.glob(zip_pattern)
+                            
+                            # Also try broader patterns
+                            if not found_zips:
+                                broader_pattern = str(search_dir / "*.zip")
+                                self.logger.info(f"Trying broader pattern: {broader_pattern}")
+                                all_zips = glob.glob(broader_pattern)
+                                self.logger.info(f"All zip files in {search_dir.name}: {all_zips}")
+                                # Filter for ones that might contain our VHDX
+                                found_zips = [z for z in all_zips if self.case_id in z and 'vhdx' in z.lower()]
+                            
+                            zip_files.extend(found_zips)
                     
-                    # Also try broader patterns in case naming is different
-                    if not zip_files:
-                        broader_pattern = str(self.artifacts_dir / "*.zip")
-                        self.logger.info(f"Trying broader pattern: {broader_pattern}")
-                        all_zips = glob.glob(broader_pattern)
-                        self.logger.info(f"All zip files found: {all_zips}")
-                        # Filter for ones that might contain our VHDX
-                        zip_files = [z for z in all_zips if self.case_id in z and 'vhdx' in z.lower()]
-                    
-                    self.logger.info(f"Found {len(zip_files)} matching zip files: {zip_files}")
+                    self.logger.info(f"Found {len(zip_files)} total matching zip files: {zip_files}")
                     
                     for zip_file in zip_files:
                         try:
