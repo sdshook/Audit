@@ -2895,7 +2895,29 @@ class ForensicWorkflowManager:
             ]
             
             self.logger.info(f"Executing log2timeline: {' '.join(log2timeline_cmd)}")
-            log2timeline_result = subprocess.run(log2timeline_cmd, capture_output=True, text=True, timeout=7200)
+            
+            # Add debug info about the command and environment
+            self.logger.debug(f"Working directory: {os.getcwd()}")
+            self.logger.debug(f"Artifacts path exists: {self.artifacts_path.exists()}")
+            self.logger.debug(f"Output directory exists: {plaso_storage_path.parent.exists()}")
+            
+            try:
+                log2timeline_result = subprocess.run(log2timeline_cmd, capture_output=True, text=True, timeout=7200)
+            except subprocess.TimeoutExpired:
+                self.logger.error("log2timeline timed out after 2 hours")
+                self.log_custody_event("PARSING_ERROR", "log2timeline timed out after 2 hours")
+                return False
+            except Exception as e:
+                self.logger.error(f"Exception running log2timeline: {e}")
+                self.log_custody_event("PARSING_ERROR", f"Exception running log2timeline: {e}")
+                return False
+            
+            # Always log the result details for debugging
+            self.logger.debug(f"log2timeline return code: {log2timeline_result.returncode}")
+            if log2timeline_result.stdout:
+                self.logger.debug(f"log2timeline stdout: {log2timeline_result.stdout}")
+            if log2timeline_result.stderr:
+                self.logger.debug(f"log2timeline stderr: {log2timeline_result.stderr}")
             
             if log2timeline_result.returncode != 0:
                 error_msg = f"Return code: {log2timeline_result.returncode}"
