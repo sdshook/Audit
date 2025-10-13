@@ -7,6 +7,15 @@ typosquatting domains related to xyz.com, including the *-xyz.com pattern
 like the malicious abc-xyz.com example.
 
 Author: Shane D. Shook (C) All Rights Reserved
+
+# Basic scan
+./wildcard_xyz_hunter.py
+
+# With custom output
+./wildcard_xyz_hunter.py --output results.json --format json
+
+# Slower, more respectful scanning  
+./wildcard_xyz_hunter.py --delay 3.0 --timeout 60
 """
 
 import argparse
