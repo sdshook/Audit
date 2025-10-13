@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 """
-Wildcard XYZ.com Typosquatter Hunter - Efficient wildcard-based search
+Wildcard Domain Typosquatter Hunter - Efficient wildcard-based search
 
 This tool uses crt.sh's wildcard support to efficiently find potential
-typosquatting domains related to xyz.com, including the *-xyz.com pattern
-like the malicious abc-xyz.com example.
+typosquatting domains related to any target domain, including the *-domain.com pattern
+like the malicious abc-aus.com example.
 
 Author: Shane D. Shook (C) All Rights Reserved
 
-# Basic scan
-./wildcard_xyz_hunter.py
+Usage Examples:
+# Basic scan for aus.com typosquatters
+./wildcard_xyz_hunter.py aus.com
 
-# With custom output
-./wildcard_xyz_hunter.py --output results.json --format json
+# Scan any domain with custom output
+./wildcard_xyz_hunter.py example.org --output results.json --format json
 
-# Slower, more respectful scanning  
-./wildcard_xyz_hunter.py --delay 3.0 --timeout 60
+# Slower, more respectful scanning
+./wildcard_xyz_hunter.py mycompany.com --delay 3.0 --timeout 60
 """
 
 import argparse
