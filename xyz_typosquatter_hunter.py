@@ -6,8 +6,7 @@ This tool specifically searches for typosquatting domains that follow the patter
 *-xyz.com where * is any 1-32 character alphanumeric combination, similar to
 the malicious abc-xyz.com example.
 
-Author: OpenHands
-License: MIT
+Author: Shane D. Shook (C) 2025 All Rights Reserved
 """
 
 import argparse
