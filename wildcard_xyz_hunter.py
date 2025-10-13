@@ -3,20 +3,19 @@
 Wildcard Domain Typosquatter Hunter - Efficient wildcard-based search
 
 This tool uses crt.sh's wildcard support to efficiently find potential
-typosquatting domains related to any target domain, including the *-domain.com pattern
-like the malicious abc-aus.com example.
+typosquatting domains related to any target domain, including *-domain.com patterns
 
 Author: Shane D. Shook (C) All Rights Reserved
 
 Usage Examples:
-# Basic scan for aus.com typosquatters
-./wildcard_xyz_hunter.py aus.com
+# Basic scan for xyz.com typosquatters
+./wildcard_xyz_hunter.py example.com
 
 # Scan any domain with custom output
 ./wildcard_xyz_hunter.py example.org --output results.json --format json
 
 # Slower, more respectful scanning
-./wildcard_xyz_hunter.py mycompany.com --delay 3.0 --timeout 60
+./wildcard_xyz_hunter.py example.com --delay 3.0 --timeout 60
 """
 
 import argparse
@@ -138,7 +137,7 @@ class WildcardXyzHunter:
             Dictionary categorizing different types of target domain-related domains
         """
         target_lower = self.target_domain.lower()
-        # Extract the main domain part (e.g., "aus" from "aus.com")
+        # Extract the main domain part (e.g., "xyz" from "xyz.com")
         domain_base = target_lower.split('.')[0] if '.' in target_lower else target_lower
         
         categorized = {
@@ -153,7 +152,7 @@ class WildcardXyzHunter:
             if domain.startswith('*'):
                 continue
                 
-            # Pattern: *-target_domain (like abc-aus.com)
+            # Pattern: *-target_domain (like abc-xyz.com)
             if re.match(rf'^[a-zA-Z0-9]+-{re.escape(target_lower)}$', domain):
                 categorized[f'hyphen_{domain_base}_com'].append(domain)
             
@@ -447,22 +446,21 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 This tool uses crt.sh's wildcard support to efficiently find potential
-typosquatting domains related to your target domain, including the *-domain.com pattern
-like the malicious abc-aus.com example.
+typosquatting domains related to your target domain, including *-domain.com patterns
 
 The tool searches for:
 - *.domain.com (subdomains)
-- *-domain.com patterns (like abc-aus.com)
+- *-domain.com patterns (like abc-xyz.com)
 - Other domain-related variations
 
 Examples:
-  %(prog)s aus.com
+  %(prog)s example.com
   %(prog)s example.org --output results.json --format json
-  %(prog)s mycompany.com --delay 3.0 --timeout 60
+  %(prog)s example.com --delay 3.0 --timeout 60
         """
     )
     
-    parser.add_argument('domain', help='Target domain to search for typosquatters (e.g., aus.com)')
+    parser.add_argument('domain', help='Target domain to search for typosquatters (e.g., xyz.com)')
     parser.add_argument('--delay', type=float, default=2.0,
                        help='Delay between API requests in seconds (default: 2.0)')
     parser.add_argument('--timeout', type=int, default=30,
