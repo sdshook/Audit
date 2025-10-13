@@ -6,8 +6,7 @@ This tool uses crt.sh's wildcard support to efficiently find potential
 typosquatting domains related to xyz.com, including the *-xyz.com pattern
 like the malicious abc-xyz.com example.
 
-Author: OpenHands
-License: MIT
+Author: Shane D. Shook (C) All Rights Reserved
 """
 
 import argparse
