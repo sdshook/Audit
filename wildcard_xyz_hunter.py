@@ -32,16 +32,18 @@ from urllib.error import HTTPError, URLError
 
 
 class WildcardXyzHunter:
-    """Efficient wildcard-based hunter for XYZ.com typosquatters"""
+    """Efficient wildcard-based hunter for domain typosquatters"""
     
-    def __init__(self, delay: float = 2.0, timeout: int = 30):
+    def __init__(self, target_domain: str = "xyz.com", delay: float = 2.0, timeout: int = 30):
         """
-        Initialize the wildcard XYZ hunter
+        Initialize the wildcard domain hunter
         
         Args:
+            target_domain: The legitimate domain to search for typosquatters of
             delay: Delay between API requests to be respectful
             timeout: Request timeout in seconds
         """
+        self.target_domain = target_domain
         self.delay = delay
         self.timeout = timeout
         self.session_results = []
@@ -126,19 +128,23 @@ class WildcardXyzHunter:
 
     def filter_xyz_related_domains(self, domains: Set[str]) -> Dict[str, List[str]]:
         """
-        Filter and categorize XYZ-related domains
+        Filter and categorize target domain-related domains
         
         Args:
             domains: Set of domain names to filter
             
         Returns:
-            Dictionary categorizing different types of XYZ-related domains
+            Dictionary categorizing different types of target domain-related domains
         """
+        target_lower = self.target_domain.lower()
+        # Extract the main domain part (e.g., "aus" from "aus.com")
+        domain_base = target_lower.split('.')[0] if '.' in target_lower else target_lower
+        
         categorized = {
-            'hyphen_xyz_com': [],      # *-xyz.com pattern
-            'subdomain_xyz_com': [],   # *.xyz.com pattern  
-            'xyz_variations': [],      # variations of xyz.com
-            'suspicious_patterns': []  # other suspicious patterns
+            f'hyphen_{domain_base}_com': [],      # *-target_domain pattern
+            f'subdomain_{domain_base}_com': [],   # *.target_domain pattern  
+            f'{domain_base}_variations': [],      # variations of target_domain
+            'suspicious_patterns': []             # other suspicious patterns
         }
         
         for domain in domains:
@@ -146,23 +152,22 @@ class WildcardXyzHunter:
             if domain.startswith('*'):
                 continue
                 
-            # Pattern: *-xyz.com (like abc-xyz.com)
-            if re.match(r'^[a-zA-Z0-9]+-xyz\.com$', domain):
-                categorized['hyphen_xyz_com'].append(domain)
+            # Pattern: *-target_domain (like abc-aus.com)
+            if re.match(rf'^[a-zA-Z0-9]+-{re.escape(target_lower)}$', domain):
+                categorized[f'hyphen_{domain_base}_com'].append(domain)
             
-            # Pattern: *.xyz.com (subdomains of xyz.com)
-            elif domain.endswith('.xyz.com') and domain != 'xyz.com':
-                categorized['subdomain_xyz_com'].append(domain)
+            # Pattern: *.target_domain (subdomains of target_domain)
+            elif domain.endswith(f'.{target_lower}') and domain != target_lower:
+                categorized[f'subdomain_{domain_base}_com'].append(domain)
             
-            # Variations of xyz.com (typos, similar domains)
-            elif 'xyz' in domain and domain.endswith('.com'):
+            # Variations of target_domain (typos, similar domains)
+            elif domain_base in domain and domain.endswith('.com'):
                 # Check for common typosquatting patterns
-                if any(pattern in domain for pattern in ['xyz', 'xzy', 'yxz', 'zyx', 'xyc']):
-                    if domain not in ['xyz.com']:  # Exclude the legitimate domain
-                        categorized['xyz_variations'].append(domain)
+                if domain not in [target_lower]:  # Exclude the legitimate domain
+                    categorized[f'{domain_base}_variations'].append(domain)
             
-            # Other suspicious patterns containing 'xyz'
-            elif 'xyz' in domain:
+            # Other suspicious patterns containing domain base
+            elif domain_base in domain:
                 categorized['suspicious_patterns'].append(domain)
         
         # Sort each category
@@ -250,15 +255,15 @@ class WildcardXyzHunter:
 
     def hunt_wildcard_xyz_typosquatters(self) -> Dict:
         """
-        Hunt for XYZ.com typosquatters using wildcard searches
+        Hunt for domain typosquatters using wildcard searches
         
         Returns:
             Dictionary containing categorized results
         """
         print("=" * 80)
-        print("WILDCARD XYZ.COM TYPOSQUATTER HUNTER")
+        print(f"WILDCARD {self.target_domain.upper()} TYPOSQUATTER HUNTER")
         print("=" * 80)
-        print("Using efficient wildcard searches to find XYZ-related domains...")
+        print(f"Using efficient wildcard searches to find {self.target_domain}-related domains...")
         print()
         
         all_certificates = []
@@ -266,11 +271,11 @@ class WildcardXyzHunter:
         
         # Search patterns to use
         search_patterns = [
-            "%.xyz.com",      # All subdomains of xyz.com
-            # Note: %-xyz.com doesn't work, so we'll search for common prefixes manually
+            f"%.{self.target_domain}",      # All subdomains of target domain
+            # Note: %-domain.com doesn't work, so we'll search for common prefixes manually
         ]
         
-        # Add common prefix patterns for *-xyz.com
+        # Add common prefix patterns for *-domain.com
         common_prefixes = [
             'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
             'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
@@ -278,9 +283,9 @@ class WildcardXyzHunter:
             'customer', 'support', 'help', 'service', 'portal', 'account'
         ]
         
-        # Add specific *-xyz.com patterns
+        # Add specific *-domain.com patterns
         for prefix in common_prefixes:
-            search_patterns.append(f"{prefix}-xyz.com")
+            search_patterns.append(f"{prefix}-{self.target_domain}")
         
         print(f"Searching {len(search_patterns)} patterns...")
         
@@ -437,25 +442,26 @@ class WildcardXyzHunter:
 def main():
     """Main CLI interface"""
     parser = argparse.ArgumentParser(
-        description="Hunt for XYZ.com typosquatters using efficient wildcard searches",
+        description="Hunt for domain typosquatters using efficient wildcard searches",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 This tool uses crt.sh's wildcard support to efficiently find potential
-typosquatting domains related to xyz.com, including the *-xyz.com pattern
-like the malicious abc-xyz.com example.
+typosquatting domains related to your target domain, including the *-domain.com pattern
+like the malicious abc-aus.com example.
 
 The tool searches for:
-- *.xyz.com (subdomains)
-- *-xyz.com patterns (like abc-xyz.com)
-- Other XYZ-related variations
+- *.domain.com (subdomains)
+- *-domain.com patterns (like abc-aus.com)
+- Other domain-related variations
 
 Examples:
-  %(prog)s
-  %(prog)s --output xyz_results.json --format json
-  %(prog)s --delay 3.0 --timeout 60
+  %(prog)s aus.com
+  %(prog)s example.org --output results.json --format json
+  %(prog)s mycompany.com --delay 3.0 --timeout 60
         """
     )
     
+    parser.add_argument('domain', help='Target domain to search for typosquatters (e.g., aus.com)')
     parser.add_argument('--delay', type=float, default=2.0,
                        help='Delay between API requests in seconds (default: 2.0)')
     parser.add_argument('--timeout', type=int, default=30,
@@ -467,7 +473,7 @@ Examples:
     args = parser.parse_args()
     
     # Initialize hunter
-    hunter = WildcardXyzHunter(delay=args.delay, timeout=args.timeout)
+    hunter = WildcardXyzHunter(target_domain=args.domain, delay=args.delay, timeout=args.timeout)
     
     try:
         # Hunt for typosquatters
