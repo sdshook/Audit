@@ -326,8 +326,8 @@ class CognitiveMesh(nn.Module):
         
         meta_in = torch.cat([
             out_logits.view(-1),
-            confs,
-            values
+            confs.view(-1),
+            values.view(-1)
         ], dim=0).unsqueeze(0)
         
         meta_logits = self.meta(meta_in).squeeze(0)
@@ -463,7 +463,7 @@ class EpisodeMemory:
         if not self.episodes:
             return {"total": 0}
         
-                    rewards = [e["reward"] for e in self.episodes]
+        rewards = [e["reward"] for e in self.episodes]
         return {
             "total": len(self.episodes),
             "avg_reward": np.mean(rewards),
@@ -649,8 +649,7 @@ def simulation_step(alert: Dict, verbose: bool = False) -> Dict:
     node_embs_t = torch.tensor(np.stack(node_embs), dtype=torch.float32)
     
     # 3. PREDICT - Use CMNN for collective reasoning
-    with torch.no_grad():
-        out = mesh(node_embs_t)
+    out = mesh(node_embs_t)
     
     probs = out["probs"]
     node_confs = out["node_confs"]
@@ -658,15 +657,16 @@ def simulation_step(alert: Dict, verbose: bool = False) -> Dict:
     
     # Sample action from distribution
     m = torch.distributions.Categorical(probs)
-    action = m.sample().item()
-    logp = m.log_prob(torch.tensor(action))
+    action_tensor = m.sample()
+    action = action_tensor.item()
+    logp = m.log_prob(action_tensor)
     
     # Self-awareness check
     node_states = out["node_states"].detach().numpy()
     flat_state = np.concatenate([
         node_states.flatten(),
-        node_confs.detach().numpy(),
-        node_values.detach().numpy()
+        node_confs.detach().numpy().flatten(),
+        node_values.detach().numpy().flatten()
     ])
     
     with torch.no_grad():
@@ -706,7 +706,7 @@ def simulation_step(alert: Dict, verbose: bool = False) -> Dict:
         bdh_empathic.reward_gated_update(tid, node_states.mean(axis=0), regulated_reward)
     
     # Backpropagate through mesh
-    loss = -logp * regulated_reward
+    loss = -logp * torch.tensor(regulated_reward, dtype=torch.float32)
     mesh_optimizer.zero_grad()
     loss.backward()
     mesh_optimizer.step()
