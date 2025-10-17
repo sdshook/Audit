@@ -24,6 +24,8 @@ SRCA (Self-Regulated Cognitive Architecture) is a sophisticated proof-of-concept
 - Message passing for collective intelligence
 - Individual nodes with policy, confidence, and value heads
 - Meta-reasoning over distributed outputs
+- **Integrated Learning Tests**: Progressive test data generation with phase-based analysis
+- **Weight Tracking**: Neural network adaptation monitoring and convergence analysis
 
 ### 🛡️ **Self-Awareness & Safety**
 - Real-time monitoring of coherence, confidence, and arrogance levels
@@ -36,6 +38,12 @@ SRCA (Self-Regulated Cognitive Architecture) is a sophisticated proof-of-concept
 - Real-time learning progress tracking
 - Action distribution analysis
 - Memory system statistics
+
+### 🔧 **Unified CLI Interface**
+- **Consolidated Architecture**: All functionality accessible through single SRCA.py file
+- **Flexible Operation Modes**: Standard simulation and advanced CMNN learning tests
+- **Comprehensive Options**: Episode control, visualization management, and analysis features
+- **Batch Processing**: Headless operation for automated testing and research
 
 ## Technical Architecture
 
@@ -240,28 +248,152 @@ pip install torch numpy matplotlib
 - **Memory**: 4GB+ RAM for large-scale simulations
 - **GPU**: Optional, CUDA-compatible for accelerated training
 
-## Usage
+## How To Run
 
-### Basic Simulation
-```python
+SRCA provides a comprehensive command-line interface with multiple operation modes and configuration options.
+
+### Basic Usage
+
+#### Standard Simulation Mode
+```bash
+# Run with default settings (100 episodes, verbose output)
 python SRCA.py
+
+# Run with custom episode count
+python SRCA.py -e 200
+
+# Run quietly (minimal output)
+python SRCA.py --quiet
+
+# Run with visualization saved to file
+python SRCA.py --save-viz
+
+# Run with custom visualization filename
+python SRCA.py --save-viz my_results.png
+
+# Run without displaying visualization (useful for batch processing)
+python SRCA.py --no-viz
 ```
 
-### Custom Configuration
-```python
-# Modify configuration constants
-EMBED_DIM = 64        # Embedding dimensions
-N_NODES = 5           # Number of mesh nodes
-ACTION_DIM = 4        # Number of possible actions
-LR = 1e-3            # Learning rate
+#### CMNN Learning Test Mode
+The system includes advanced CMNN (Cognitive Mesh Neural Network) learning test capabilities that were consolidated from separate test modules:
 
-# Run simulation
-episodes = run_simulation(n_episodes=200, verbose=True)
+```bash
+# Basic test mode with progressive learning phases
+python SRCA.py --test-mode
+
+# Test mode with custom episode count
+python SRCA.py --test-mode -e 150
+
+# Full learning analysis with weight tracking
+python SRCA.py --test-mode --track-weights --learning-analysis
+
+# Use custom test data from JSON file
+python SRCA.py --test-data custom_alerts.json
+
+# Test mode with visualization saved but not displayed
+python SRCA.py --test-mode --save-viz --no-viz
 ```
 
-### Advanced Usage
+### CLI Options Reference
+
+#### Core Options
+- `-e, --episodes EPISODES`: Number of episodes to run (default: 100)
+- `-v, --verbose`: Enable verbose output (default: True)
+- `-q, --quiet`: Disable verbose output (overrides --verbose)
+- `-h, --help`: Show help message and exit
+
+#### Visualization Options
+- `--save-viz [FILENAME]`: Save visualization to file
+  - Use without argument for auto-timestamped filename
+  - Specify custom filename: `--save-viz results.png`
+- `--no-viz`: Skip visualization display (useful for batch processing)
+
+#### CMNN Test Mode Options
+- `--test-mode`: Enable CMNN learning test mode with progressive test data
+- `--test-data FILE`: Path to custom test data file (JSON format with alert patterns)
+- `--track-weights`: Enable neural network weight tracking and analysis
+- `--learning-analysis`: Enable detailed learning progression analysis
+
+### Test Data Format
+
+When using `--test-data`, provide a JSON file with the following structure:
+
+```json
+[
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.8
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.2
+    }
+]
+```
+
+### Example Usage Scenarios
+
+#### Development & Testing
+```bash
+# Quick test run
+python SRCA.py -e 50 --quiet
+
+# Full analysis with all features
+python SRCA.py --test-mode -e 200 --track-weights --learning-analysis --save-viz
+
+# Batch processing (no display)
+python SRCA.py -e 500 --save-viz batch_results.png --no-viz
+```
+
+#### Research & Analysis
+```bash
+# Progressive learning analysis
+python SRCA.py --test-mode --learning-analysis
+
+# Weight evolution tracking
+python SRCA.py --test-mode --track-weights -e 300
+
+# Custom scenario testing
+python SRCA.py --test-data research_scenarios.json --learning-analysis
+```
+
+### CMNN Learning Test Features
+
+The consolidated test mode provides comprehensive learning analysis capabilities:
+
+#### Progressive Test Data Generation
+- **Phase 1 (Early)**: Clear, unambiguous patterns for initial learning
+- **Phase 2 (Mid)**: Moderate complexity with some ambiguous cases
+- **Phase 3 (Late)**: Mixed complexity with edge cases and challenging scenarios
+
+#### Neural Network Weight Tracking
+- Extracts and monitors weight changes across CMNN nodes
+- Calculates average weight change magnitude and trends
+- Provides insights into learning dynamics and convergence
+
+#### Learning Progression Analysis
+- Phase-based performance metrics (reward, success rate)
+- Improvement tracking across learning phases
+- Confidence calibration analysis
+- Overall accuracy assessment
+
+#### Advanced Metrics
+- **Reward Improvement**: Change from early to late phase performance
+- **Confidence Evolution**: How system confidence changes with learning
+- **Weight Evolution**: Neural network adaptation patterns
+- **Learning Classification**: Automatic assessment of learning strength
+
+### Advanced Programmatic Usage
+
+For researchers and developers who need programmatic access:
+
 ```python
-# Access individual components
+# Import and use components directly
 from SRCA import *
 
 # Initialize custom PSI with domain knowledge
@@ -272,6 +404,10 @@ psi.add_doc("custom_rule", "Custom security policy",
 # Run single decision cycle
 alert = alert_gen.generate()
 episode = simulation_step(alert, verbose=True)
+
+# Access learning components
+cmnn_weights = extract_cmnn_weights(cmnn)
+weight_changes = calculate_weight_changes(weights_history)
 ```
 
 ## Configuration Parameters
@@ -333,6 +469,15 @@ The architecture closely mirrors biological memory systems:
 - **Biological Plausibility**: Hebbian mechanisms with modern RL techniques
 - **Safety-by-Design**: Embedded ethical constraints and self-regulation
 - **Emergent Properties**: Self-improving confidence calibration and wisdom accumulation
+
+### Recent Consolidation Improvements (2025)
+- **Unified Architecture**: Consolidated all CMNN learning test functionality into single SRCA.py module
+- **Enhanced CLI Interface**: Comprehensive command-line options for all operation modes
+- **Progressive Learning Tests**: Integrated phase-based learning analysis with automatic difficulty progression
+- **Weight Tracking System**: Neural network adaptation monitoring with convergence analysis
+- **Batch Processing Support**: Headless operation capabilities for automated research workflows
+- **Modular Test Data**: JSON-based custom test scenario support for specialized research
+- **Visualization Integration**: Unified plotting system supporting both standard and test modes
 
 ## Research Inspirations & References
 
