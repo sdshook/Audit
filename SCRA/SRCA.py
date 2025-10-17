@@ -150,16 +150,16 @@ class BDHMemory:
     """
     Reward-gated Hebbian memory with dual stores.
     
-    CONCEPTUAL ADVANCE: Novel dual-store architecture extending Dragon Hatchling's 
-    single-network approach to implement human-like dual-process cognition.
+    IMPLEMENTATION: Dual-store architecture extending Dragon Hatchling's 
+    single-network approach to implement dual-process cognition.
     
     Mathematical Foundation:
     - W[i] = W[i] + η_pot * r * (x_i ⊗ x_i + E_pos[i] ⊗ E_pos[i])  [if r > 0]
     - W[i] = W[i] - η_dep * |r| * (x_i ⊗ x_i + E_neg[i] ⊗ E_neg[i]) [if r < 0, not protected]
     - E_pos[i](t+1) = γ_E * E_pos[i](t) + max(0, x_i ⊗ y_t).mean(axis=1)
     
-    AGI Relevance: Enables simultaneous analytical (reflective) and intuitive (empathic)
-    processing, mirroring human System 1/System 2 cognitive architecture.
+    Application: Enables simultaneous analytical (reflective) and intuitive (empathic)
+    processing for cybersecurity decision-making tasks.
     """
     
     def __init__(self, store_type: str = "general"):
@@ -361,8 +361,8 @@ class SelfModelNode(nn.Module):
     - confidence = σ(W_conf * cognitive_state)  
     - arrogance = σ(W_arr * cognitive_state)
     
-    AGI Relevance: Self-awareness and metacognition are fundamental requirements
-    for general intelligence and safe autonomous systems.
+    Application: Self-monitoring and metacognition for reliable autonomous 
+    cybersecurity decision-making systems.
     """
     
     def __init__(self, input_dim):
@@ -541,16 +541,16 @@ class ValenceController:
     """
     Self-regulation through empathic and reflective balancing.
     
-    CONCEPTUAL ADVANCE: Novel self-regulation system with empathic adjustment
-    and arrogance detection. No equivalent exists in source papers.
+    IMPLEMENTATION: Self-regulation system with empathic adjustment
+    and arrogance detection for cybersecurity applications.
     
     Mathematical Framework:
     - empathy(t+1) = 0.7 * empathy(t) + 0.3 * human_feedback
     - arrogance_penalty = f(prediction_error, confidence_threshold)
     - regulated_reward = base_reward * (1 + empathy - arrogance_penalty)
     
-    AGI Relevance: Emotional regulation and behavioral adaptation are crucial
-    for safe, beneficial AGI that can work effectively with humans.
+    Application: Emotional regulation and behavioral adaptation for
+    safe autonomous cybersecurity systems that work effectively with human operators.
     """
     
     def __init__(self):
@@ -606,10 +606,10 @@ def simulation_step(alert: Dict, verbose: bool = False) -> Dict:
     """
     Execute one complete cognitive cycle.
     
-    CONCEPTUAL ADVANCE: Integrates all novel components into a unified cognitive
-    architecture that demonstrates AGI-relevant capabilities:
+    IMPLEMENTATION: Integrates components into a unified cognitive
+    architecture for cybersecurity decision-making:
     - Dual-store memory processing (reflective + empathic)
-    - Self-awareness monitoring and regulation
+    - Self-monitoring and regulation
     - Protected ethical memory with guardrails
     - Multi-objective reasoning under constraints
     """

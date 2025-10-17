@@ -513,7 +513,7 @@ The PSI (Persistent Semantic Index) component is inspired by Anthropic's context
 
 ### Technical Synthesis
 
-SRCA combines these inspirations into a novel architecture:
+SRCA combines these inspirations into a specialized architecture:
 
 1. **BDH from Baby Dragon Hatchling**: Implements biologically-plausible neural networks with reward-gated learning
 2. **PSI from Anthropic**: Creates persistent semantic memory with protected guardrail entries
@@ -675,7 +675,7 @@ This development path transforms SRCA from a proof-of-concept into a **specializ
 If you use this work in research, please cite:
 ```
 Shook, S.D. (2025). Self-Regulated Cognitive Architecture (SRCA): 
-A Novel AI System for Autonomous Cybersecurity Decision-Making.
+A Domain-Specific Reinforcement Learning System for Cybersecurity Decision-Making.
 ```
 
 ## Contact & Support
