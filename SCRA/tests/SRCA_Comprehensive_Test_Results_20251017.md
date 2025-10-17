@@ -19,11 +19,11 @@
 - **Learning Analysis:** Disabled
 
 ### Key Observations
-1. **Learning Progression:** System showed clear adaptation over 1000 episodes
+1. **Learning Progression:** System showed adaptation patterns over 1000 episodes
 2. **Confidence Evolution:** Started at 0.517, gradually decreased to near 0.000 by episode 1000
 3. **Action Distribution:** Predominantly DEPLOY_DECOY and ESCALATE actions in later episodes
-4. **Guardrail Activation:** Multiple overconfidence detections with negative reward limiting
-5. **Reward Patterns:** Mix of positive and negative rewards showing realistic cybersecurity decision outcomes
+4. **Guardrail Activation:** Multiple overconfidence detections with reward regulation
+5. **Reward Patterns:** Mix of positive and negative rewards from cybersecurity decision scenarios
 
 ### Performance Highlights
 - **Episode 0:** impact + benign → DEPLOY_DECOY (Reward: -0.10, Conf: 0.517)
