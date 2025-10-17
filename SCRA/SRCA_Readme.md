@@ -15,7 +15,7 @@ SRCA (Self-Regulated Cognitive Architecture) is a proof-of-concept implementatio
 ## Key Features
 
 ### 🧠 **Memory Architecture**
-- **Bidirectional Hebbian Memory (BDH)**: Dual-store system implementing Hebbian learning principles
+- **Baby Dragon Hatchling (BDH)**: Dual-store memory system inspired by Pathway's BDH architecture
 - **Persistent Semantic Index (PSI)**: Long-term memory storage with protected policy entries
 - **Episode Memory**: Decision episode storage for experience-based learning
 
@@ -49,10 +49,10 @@ SRCA (Self-Regulated Cognitive Architecture) is a proof-of-concept implementatio
 
 ### Memory Systems
 
-#### Bidirectional Hebbian Memory (BDH) - Dual-Store Architecture
-**Implementation**: Adaptation of Hebbian learning principles for reinforcement learning applications.
+#### Baby Dragon Hatchling (BDH) - Dual-Store Architecture
+**Implementation**: Memory system inspired by Pathway's Baby Dragon Hatchling architecture for reinforcement learning applications.
 
-SRCA implements a dual-store BDH system inspired by biological memory mechanisms:
+SRCA implements a dual-store BDH system inspired by Pathway's biologically-plausible neural network research:
 
 **Mathematical Formulation:**
 ```
@@ -483,12 +483,11 @@ The architecture closely mirrors biological memory systems:
 
 ### Core Architecture Inspirations
 
-#### Dragon Hatchling (BDH) - Pathway.com Research
-The BDH (Bidirectional Hebbian Memory) component draws inspiration from Pathway's groundbreaking research:
+#### Baby Dragon Hatchling (BDH) - Pathway.com Research
+The BDH component draws inspiration from Pathway's groundbreaking research:
 
 **"The Dragon Hatchling: The Missing Link between the Transformer and Models of the Brain"**
 - **Paper**: https://arxiv.org/pdf/2509.26507
-- **Technical Blog**: https://pathway.com/research/bdh
 - **Code Repository**: https://github.com/pathwaycom/bdh
 
 **Key Inspirations:**
@@ -497,7 +496,7 @@ The BDH (Bidirectional Hebbian Memory) component draws inspiration from Pathway'
 - **Sparse Positive Activations**: Monosemantic neuron representations for interpretability
 - **Graph-Based Distributed Computing**: Local edge-reweighting processes as "equations of reasoning"
 
-The Dragon Hatchling research demonstrates how attention mechanisms in state-of-the-art language models correspond to attention mechanisms observed in the brain, formally converging as closed-form local graph dynamics at neurons and synapses.
+The Baby Dragon Hatchling research demonstrates how attention mechanisms in state-of-the-art language models correspond to attention mechanisms observed in the brain, formally converging as closed-form local graph dynamics at neurons and synapses.
 
 #### Anthropic's Context Management
 The PSI (Persistent Semantic Index) component is inspired by Anthropic's context management research:
@@ -516,9 +515,9 @@ The PSI (Persistent Semantic Index) component is inspired by Anthropic's context
 
 SRCA combines these inspirations into a novel architecture:
 
-1. **BDH from Dragon Hatchling**: Implements true synaptic plasticity with reward-gated Hebbian learning
+1. **BDH from Baby Dragon Hatchling**: Implements biologically-plausible neural networks with reward-gated learning
 2. **PSI from Anthropic**: Creates persistent semantic memory with protected guardrail entries
-3. **Original Contributions**: Adds self-awareness, valence control, and cybersecurity-specific applications
+3. **Original Contributions**: Adds self-monitoring, valence control, and cybersecurity-specific applications
 
 This synthesis creates a system that maintains biological plausibility while achieving practical performance in autonomous decision-making scenarios.
 
