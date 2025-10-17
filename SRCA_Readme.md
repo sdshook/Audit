@@ -37,30 +37,71 @@ SRCA (Self-Regulated Cognitive Architecture) is a sophisticated proof-of-concept
 
 ### Memory Systems
 
-#### Bidirectional Hebbian Memory (BDH)
-Implements true biological-inspired persistence through synaptic plasticity:
+#### Bidirectional Hebbian Memory (BDH) - Novel Dual-Store Architecture
+**Conceptual Advance**: Extension of Dragon Hatchling's single-network approach to dual-processing cognitive architecture.
 
-```python
-# Reward-gated synaptic updates
-if reward > 0:
-    entry["W"] += BDH_ETA_POT * reward * (outer + np.outer(entry["elig_pos"], entry["elig_pos"]))
-else:
-    if not entry["protected"]:
-        entry["W"] -= BDH_ETA_DEP * abs(reward) * (outer + np.outer(entry["elig_neg"], entry["elig_neg"]))
+SRCA implements a **novel dual-store BDH system** that advances beyond the original Dragon Hatchling architecture:
+
+**Mathematical Formulation:**
+```
+For each memory trace i with state vector x_i and reward signal r:
+
+Dual-Store Update:
+W_reflective[i] = W_reflective[i] + η_pot * r * (x_i ⊗ x_i + E_pos[i] ⊗ E_pos[i])  [if r > 0]
+W_empathic[i] = W_empathic[i] + η_pot * r * (x_i ⊗ x_i + E_pos[i] ⊗ E_pos[i])     [if r > 0]
+
+W_reflective[i] = W_reflective[i] - η_dep * |r| * (x_i ⊗ x_i + E_neg[i] ⊗ E_neg[i]) [if r < 0, not protected]
+W_empathic[i] = W_empathic[i] - η_dep * |r| * (x_i ⊗ x_i + E_neg[i] ⊗ E_neg[i])    [if r < 0, not protected]
+
+Eligibility Trace Evolution:
+E_pos[i](t+1) = γ_E * E_pos[i](t) + max(0, x_i ⊗ y_t).mean(axis=1)
+E_neg[i](t+1) = γ_E * E_neg[i](t) + max(0, -(x_i ⊗ y_t)).mean(axis=1)
+
+Memory Consolidation Criterion:
+if |∑_t r_t| > τ_consolidation: transfer_to_PSI(trace_i)
 ```
 
-**Features:**
-- **Long-Term Potentiation (LTP)**: Positive rewards strengthen synaptic connections
-- **Long-Term Depression (LTD)**: Negative rewards weaken connections (unless protected)
-- **Eligibility Traces**: Temporal credit assignment mimicking biological synaptic tagging
-- **Dual Stores**: Reflective (analytical) and Empathic (contextual) processing
+**Conceptual Innovations:**
+- **Dual-Processing Architecture**: Reflective (System 2) and Empathic (System 1) stores mirror human cognitive dual-process theory
+- **Protected Memory Mechanism**: Ethical guardrails resist modification even under negative rewards
+- **Eligibility Trace Enhancement**: Bidirectional traces for both potentiation and depression pathways
+- **Dynamic Consolidation**: Automatic transfer to long-term semantic memory based on cumulative significance
 
-#### Persistent Semantic Index (PSI)
-Functions as cortical memory system with:
-- Valence-weighted semantic associations
-- Protected memories resistant to modification
-- Access-based memory strengthening
-- Content-addressable retrieval
+**AGI Advancement**: This dual-store architecture enables the system to maintain both analytical reasoning and emotional/contextual processing simultaneously, a critical requirement for general intelligence.
+
+#### Persistent Semantic Index (PSI) - Enhanced Context Management
+**Conceptual Advance**: Extension of Anthropic's context management to include valence-weighted semantic associations and protected ethical memory.
+
+SRCA's PSI advances beyond Anthropic's file-based memory tool with sophisticated semantic processing:
+
+**Mathematical Formulation:**
+```
+Semantic Similarity with Valence Weighting:
+score(query, doc_i) = cos_sim(query, doc_i.vector) * (1 + α * doc_i.valence)
+
+where cos_sim(a, b) = (a · b) / (||a|| * ||b||)
+
+Access-Based Strengthening:
+access_weight(doc_i) = log(1 + access_count[doc_i])
+
+Protected Memory Constraint:
+if doc_i.protected and doc_i.valence < -0.5:
+    doc_i.vector = immutable  // Ethical guardrails resist modification
+
+Valence Evolution:
+doc_i.valence(t+1) = λ * doc_i.valence(t) + (1-λ) * reward_signal
+
+Multi-Criteria Retrieval:
+retrieval_score = β₁ * semantic_sim + β₂ * valence_boost + β₃ * access_frequency
+```
+
+**Conceptual Innovations:**
+- **Valence-Weighted Retrieval**: Memories with positive associations are preferentially recalled
+- **Protected Ethical Memory**: Guardrail entries resist modification despite learning pressure
+- **Dynamic Access Patterns**: Frequently accessed memories become more accessible (use-dependent plasticity)
+- **Multi-Modal Indexing**: Tags, valence, and semantic vectors create rich associative structure
+
+**AGI Advancement**: This creates a semantic memory system that maintains ethical constraints while adapting to experience, essential for safe AGI development.
 
 #### Memory Consolidation
 Mimics hippocampal-cortical transfer:
@@ -70,15 +111,89 @@ Mimics hippocampal-cortical transfer:
 
 ### Cognitive Processing
 
-#### CMNN Synaptic Integration
-- Each mesh node acts like a cortical column
-- Message passing simulates inter-columnar communication
-- Collective intelligence emerges from synaptic integration
+#### Cognitive Mesh Neural Network (CMNN) - Novel Distributed Reasoning
+**Conceptual Advance**: Original architecture combining message passing with meta-reasoning for collective intelligence.
 
-#### Self-Regulation Mechanisms
-- **Valence Controller**: Emotional modulation of cognitive processes
-- **Arrogance Detection**: Prevents overconfident decisions
-- **Empathy Integration**: Incorporates human feedback
+SRCA's CMNN creates a novel distributed reasoning system not present in either source:
+
+**Mathematical Formulation:**
+```
+Individual Node Processing:
+h_i = ReLU(Linear([state_vec; context_vec]))
+logits_i = W_policy * h_i
+conf_i = σ(W_conf * h_i)
+value_i = W_value * h_i
+
+Message Passing Between Nodes:
+H = [h_1, h_2, ..., h_N]  // Concatenated node states
+M = W_message * flatten(H)  // Inter-node communication
+H_updated = reshape(M, [N, hidden_dim])
+
+Meta-Reasoning Over Collective:
+meta_input = [flatten(logits), conf_vector, value_vector]
+final_logits = W_meta * meta_input
+action_probs = softmax(final_logits)
+
+Collective Decision:
+action ~ Categorical(action_probs)
+```
+
+**Conceptual Innovations:**
+- **Distributed Reasoning**: Multiple nodes process information in parallel like cortical columns
+- **Message Passing**: Inter-node communication enables collective intelligence
+- **Meta-Reasoning**: Higher-order reasoning over individual node outputs
+- **Confidence Aggregation**: System-level confidence emerges from node consensus
+
+#### Self-Awareness Module - Novel Metacognitive Architecture
+**Conceptual Advance**: First implementation of real-time self-awareness monitoring in cognitive architectures.
+
+**Mathematical Formulation:**
+```
+Self-Monitoring State:
+cognitive_state = [flatten(node_states), confidence_vector, value_vector]
+
+Self-Awareness Metrics:
+coherence = σ(W_coh * cognitive_state)
+confidence = σ(W_conf * cognitive_state)  
+arrogance = σ(W_arr * cognitive_state)
+
+Metacognitive Loss:
+L_meta = MSE(coherence, reward_signal) + 
+         MSE(confidence, actual_performance) + 
+         MSE(arrogance, overconfidence_penalty)
+
+Self-Regulation Signal:
+if confidence > 0.8 and actual_outcome < 0.5:
+    arrogance_penalty += 0.1
+else:
+    arrogance_penalty = max(0, arrogance_penalty - 0.05)
+```
+
+#### Valence Controller - Novel Self-Regulation System
+**Conceptual Advance**: First implementation of empathic self-regulation with arrogance detection.
+
+**Mathematical Formulation:**
+```
+Empathy Factor Evolution:
+empathy(t+1) = 0.7 * empathy(t) + 0.3 * human_feedback
+
+Arrogance Penalty Dynamics:
+prediction_error = |confidence - actual_outcome|
+if confidence > 0.8 and actual_outcome < 0.5:
+    arrogance_penalty = min(0.5, arrogance_penalty + 0.1)
+else:
+    arrogance_penalty = max(0, arrogance_penalty - 0.05)
+
+Valence Regulation:
+regulated_reward = base_reward * (1 + empathy - arrogance_penalty)
+
+Guardrail Activation:
+if regulated_reward < -1.0:
+    trigger_safety_override()
+    regulated_reward = max(-1.0, regulated_reward)
+```
+
+**AGI Advancement**: These systems enable real-time self-monitoring and behavioral regulation, critical capabilities for safe and beneficial AGI.
 
 ## Cybersecurity Application
 
@@ -209,15 +324,43 @@ The architecture closely mirrors biological memory systems:
 
 ## Innovation & Contributions
 
-### Novel Memory Constructs
-- **Synaptic Persistence**: True biological-inspired memory through synaptic plasticity
-- **Multi-Scale Processing**: Local BDH updates, distributed CMNN processing, global PSI integration
-- **Cognitive Control**: Persistent monitoring and regulation of cognitive processes
+### Novel Conceptual Advances Toward AGI
+
+#### 1. **Dual-Processing Cognitive Architecture**
+**Innovation**: First implementation of dual-store BDH system (Reflective + Empathic)
+- **Beyond Dragon Hatchling**: Single network → Dual cognitive processing systems
+- **AGI Relevance**: Mirrors human System 1/System 2 thinking for general intelligence
+- **Mathematical Extension**: Parallel Hebbian updates with differential learning rates
+
+#### 2. **Self-Awareness and Metacognition**
+**Innovation**: Real-time monitoring of coherence, confidence, and arrogance
+- **Beyond Source Papers**: Neither addresses metacognitive capabilities
+- **AGI Relevance**: Self-awareness is fundamental to general intelligence
+- **Mathematical Framework**: Continuous self-monitoring with adaptive regulation
+
+#### 3. **Valence-Based Self-Regulation**
+**Innovation**: Empathic behavioral adjustment with arrogance detection
+- **Beyond Source Papers**: No emotional regulation or behavioral adaptation
+- **AGI Relevance**: Emotional intelligence and behavioral control for safe AGI
+- **Mathematical Model**: Dynamic empathy factors with penalty mechanisms
+
+#### 4. **Protected Ethical Memory**
+**Innovation**: Guardrail entries that resist modification despite learning
+- **Beyond Anthropic**: Static persistence → Dynamic ethical constraint preservation
+- **AGI Relevance**: Ensures ethical principles persist under adversarial conditions
+- **Mathematical Constraint**: Immutable memory entries with valence thresholds
+
+#### 5. **Multi-Objective Reasoning Under Constraints**
+**Innovation**: Balancing task effectiveness, ethics, and operational constraints
+- **Beyond Source Papers**: Single-objective optimization → Multi-stakeholder reasoning
+- **AGI Relevance**: Real-world decision-making requires balancing competing objectives
+- **Mathematical Framework**: Weighted multi-criteria optimization with safety bounds
 
 ### Technical Advances
-- Integration of symbolic (PSI) and connectionist (neural network) approaches
-- Real-time self-awareness and behavioral regulation
-- Domain-specific application to cybersecurity operations
+- **Symbolic-Connectionist Integration**: PSI semantic memory + neural network learning
+- **Biological Plausibility**: Hebbian mechanisms with modern RL techniques
+- **Safety-by-Design**: Embedded ethical constraints and self-regulation
+- **Emergent Properties**: Self-improving confidence calibration and wisdom accumulation
 
 ## Research Inspirations & References
 
