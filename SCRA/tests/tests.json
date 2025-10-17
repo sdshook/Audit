@@ -1,0 +1,6002 @@
+[
+    {
+        "alert_type": "impact",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.103
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.645
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.235
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.218
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.119
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.312
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.844
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.762
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.74
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.831
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.119
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.869
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.761
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.907
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.155
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.958
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.109
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.797
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.276
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.733
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.734
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.222
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.433
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.898
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.837
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.764
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.927
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.643
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.977
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.957
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.549
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.749
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.872
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.909
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.131
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.96
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.919
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.894
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.236
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.754
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.159
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.9
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.894
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.187
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.631
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.16
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.222
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.848
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.217
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.396
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.526
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.653
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.993
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.643
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.788
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.824
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.268
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.518
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.242
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.613
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.414
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.734
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.645
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.849
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.838
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.871
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.973
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.112
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.86
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.538
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.828
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.893
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.962
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.11
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.294
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.581
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.773
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.676
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.885
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.785
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.831
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.794
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.35
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.217
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.511
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.27
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.168
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.824
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.516
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.184
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.787
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.648
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.634
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.932
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.146
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.215
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.626
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.276
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.832
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.722
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.167
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.786
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.553
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.554
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.544
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.701
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.109
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.709
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.727
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.748
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.912
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.195
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.609
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.686
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.473
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.442
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.271
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.995
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.685
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.695
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.902
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.856
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.553
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.177
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.744
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.761
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.505
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.866
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.77
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.936
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.788
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.736
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.111
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.846
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.961
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.177
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.451
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.8
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.573
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.825
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.172
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.833
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.97
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.538
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.984
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.881
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.457
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.793
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.702
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.632
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.719
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.645
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.505
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.922
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.883
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.844
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.88
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.189
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.844
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.81
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.291
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.89
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.966
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.979
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.89
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.753
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.925
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.908
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.654
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.128
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.939
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.513
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.809
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.121
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.981
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.371
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.895
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.951
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.598
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.949
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.834
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.668
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.191
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.217
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.673
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.126
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.691
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.928
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.867
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.35
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.445
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.175
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.668
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.448
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.313
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.94
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.721
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.256
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.822
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.515
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.988
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.318
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.72
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.18
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.269
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.714
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.901
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.821
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.971
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.647
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.962
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.893
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.764
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.256
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.75
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.867
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.736
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.76
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.976
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.811
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.517
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.898
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.929
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.959
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.744
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.561
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.695
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.685
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.77
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.761
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.344
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.249
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.538
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.855
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.796
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.645
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.803
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.555
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.539
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.91
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.494
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.737
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.588
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.364
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.815
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.115
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.617
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.312
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.655
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.982
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.931
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.322
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.29
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.553
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.548
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.131
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.938
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.707
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.841
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.337
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.685
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.63
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.614
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.919
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.688
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.84
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.944
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.378
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.821
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.146
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.2
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.958
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.952
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.736
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.927
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.294
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.764
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.566
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.858
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.145
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.865
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.166
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.883
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.725
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.952
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.71
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.988
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.206
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.842
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.155
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.698
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.989
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.8
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.802
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.983
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.691
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.919
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.573
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.934
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.764
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.867
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.973
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.869
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.891
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.796
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.847
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.132
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.877
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.799
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.7
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.774
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.305
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.344
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.515
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.825
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.185
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.998
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.994
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.147
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 1.0
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.187
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.144
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.881
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.559
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.775
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.506
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.434
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.924
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.983
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.492
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.926
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.88
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.715
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.928
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.791
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.8
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.247
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.715
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.704
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.964
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.382
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.967
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.721
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.727
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.736
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.626
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.131
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.316
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.518
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.849
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.426
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.706
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.651
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.849
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.194
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.651
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.993
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.618
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.126
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.874
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.817
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.911
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.805
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.783
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.327
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.83
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.509
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.599
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.123
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.578
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.959
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.677
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.183
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.988
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.169
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.889
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.62
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.954
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.906
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.794
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.333
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.105
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.798
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.414
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.617
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.755
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.255
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.508
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.166
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.603
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.603
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.113
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.175
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.956
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.19
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.345
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.946
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.3
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.937
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.815
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.822
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.555
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.938
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.691
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.82
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.271
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.786
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.868
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.883
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.785
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.937
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.907
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.143
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.862
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.217
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.734
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.875
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.197
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.67
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.431
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.769
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.823
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.761
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.222
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.903
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.884
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.136
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.907
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.118
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.575
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.731
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.855
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.377
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.551
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.154
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.974
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.855
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.169
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.836
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.905
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.122
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.202
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.753
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.766
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.849
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.476
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.6
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.907
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.187
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.372
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.915
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.858
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.197
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.983
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.187
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.587
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.14
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.744
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.151
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.681
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.945
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.747
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.839
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.552
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.118
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.973
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.936
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.773
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.915
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.888
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.818
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.162
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.211
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.164
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.893
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.19
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.464
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.792
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.362
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.201
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.125
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.905
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.473
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.941
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.258
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.907
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.857
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.567
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.583
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.913
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.162
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.863
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.165
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.704
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.79
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.919
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.415
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.166
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.519
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.436
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.644
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.773
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.694
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.75
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.707
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.99
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.736
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.892
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.95
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.663
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.575
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.875
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.242
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.157
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.89
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.666
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.663
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.183
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.747
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.745
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.268
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.979
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.129
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.752
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.923
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.126
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.911
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.66
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.684
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.813
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.326
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.544
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.9
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.714
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.152
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.291
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.178
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.327
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.949
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.169
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.254
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.727
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.963
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.998
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.762
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.807
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.358
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.587
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.998
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.851
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.757
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.455
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.989
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.979
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.895
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.873
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.76
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.816
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.509
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.116
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.931
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.833
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.789
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.823
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.828
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.234
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.803
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.691
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.903
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.656
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.877
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.321
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.997
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.976
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.506
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.83
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.205
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.952
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.152
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.921
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.739
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.625
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.835
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.999
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.967
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.21
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.87
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.659
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.524
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.547
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.272
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.693
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.622
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.131
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.905
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.113
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.19
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.913
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.654
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.95
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.204
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.632
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.569
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.769
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.727
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.625
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.15
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.434
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.769
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.365
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.109
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.965
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.924
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.878
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.728
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.924
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.965
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.116
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.893
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.663
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.847
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.913
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.164
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.253
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.519
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.986
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.693
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.987
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.738
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 1.0
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.976
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.218
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.993
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.61
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.96
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.964
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.186
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.853
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.18
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.473
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.139
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.865
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.226
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.875
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.951
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.9
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.127
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.952
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.466
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.633
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.719
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.942
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.982
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.935
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.859
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.219
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.744
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.834
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.957
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.706
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.138
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.784
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.582
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.975
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.241
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.612
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.976
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.692
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.709
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.961
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.556
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.788
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.841
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.863
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.858
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.979
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.891
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.808
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.169
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.849
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.666
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.727
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.448
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.828
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.183
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.82
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.196
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.965
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.93
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.757
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.23
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.383
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.988
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.2
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.837
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.875
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.514
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.757
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.994
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.927
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.732
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.844
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.558
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.435
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.991
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.617
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.118
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.932
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.252
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.951
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.916
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.252
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.612
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.861
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.838
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.937
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.691
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.691
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.683
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.951
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.852
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.153
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.616
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.212
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.615
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.466
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.823
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.818
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.962
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.703
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.312
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.972
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.863
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.616
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.769
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.193
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.806
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.654
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.969
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.974
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.816
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.831
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.136
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.906
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.667
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.493
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.906
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.592
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.838
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.106
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.981
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.641
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.145
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.124
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.788
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.651
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.701
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.763
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.815
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.924
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.483
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.156
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.525
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.809
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.979
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.941
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.918
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.848
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.772
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.991
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.994
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.578
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.666
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.969
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.51
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.187
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.596
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.991
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.787
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.249
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.739
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.579
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.755
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.907
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.852
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.893
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.952
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.674
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.156
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.503
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.859
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.646
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.5
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.926
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.892
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.734
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.837
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.205
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.176
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.669
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.341
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.701
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.224
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.983
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.206
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.102
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.807
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.15
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.961
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.192
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.548
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.763
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.908
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.913
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.56
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.109
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.911
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.241
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.969
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.957
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.123
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.854
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.88
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.236
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.292
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.55
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.986
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.713
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.935
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.677
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.658
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.2
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.12
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.268
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.994
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.227
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.846
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.886
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.954
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.76
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.116
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.971
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.848
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.821
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.489
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.113
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.945
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.821
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.811
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.773
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.483
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.614
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.917
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.754
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.117
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.93
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.75
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.919
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.821
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.195
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.98
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.933
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.76
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.496
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.997
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.997
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.675
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.723
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.518
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.636
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.291
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.688
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.182
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.828
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.651
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.979
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.998
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.907
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.909
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.122
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.633
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.313
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.998
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.911
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.744
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.589
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.954
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.469
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.721
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.112
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.57
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.978
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.87
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.944
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.713
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.105
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.235
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.503
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.566
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.846
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.537
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.97
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.59
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.801
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.556
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.215
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.573
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.823
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.976
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.96
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.917
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.969
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.563
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.884
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.334
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.148
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.575
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.942
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.942
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.711
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.728
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.962
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.197
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.993
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.882
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.942
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.833
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.359
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.607
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.634
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.91
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.127
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.708
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.809
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.174
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.76
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.753
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.973
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.542
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.872
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.833
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.563
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.506
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.465
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.758
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.114
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.199
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.84
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.429
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.752
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.974
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "malicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.726
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.815
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.903
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.791
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.816
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.246
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.87
+    },
+    {
+        "alert_type": "execution",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.844
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.599
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.868
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.513
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.879
+    },
+    {
+        "alert_type": "reconnaissance",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.12
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.225
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.946
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.699
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.832
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.165
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.137
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.71
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.973
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.931
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.1
+    },
+    {
+        "alert_type": "initial_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.227
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.802
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.863
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.596
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.818
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.131
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.677
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "suspicious",
+        "expected_action": "ESCALATE",
+        "reward": 0.414
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.322
+    },
+    {
+        "alert_type": "exfiltration",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.935
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.684
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.972
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.114
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.87
+    },
+    {
+        "alert_type": "defense_evasion",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.858
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.729
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.756
+    },
+    {
+        "alert_type": "credential_access",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.27
+    },
+    {
+        "alert_type": "impact",
+        "threat_level": "malicious",
+        "expected_action": "ISOLATE",
+        "reward": 0.921
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.55
+    },
+    {
+        "alert_type": "privilege_escalation",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.178
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.877
+    },
+    {
+        "alert_type": "persistence",
+        "threat_level": "critical",
+        "expected_action": "ESCALATE",
+        "reward": 0.928
+    },
+    {
+        "alert_type": "lateral_movement",
+        "threat_level": "benign",
+        "expected_action": "NO_OP",
+        "reward": 0.199
+    },
+    {
+        "alert_type": "command_control",
+        "threat_level": "suspicious",
+        "expected_action": "DEPLOY_DECOY",
+        "reward": 0.677
+    },
+    {
+        "alert_type": "collection",
+        "threat_level": "critical",
+        "expected_action": "ISOLATE",
+        "reward": 0.873
+    }
+]
