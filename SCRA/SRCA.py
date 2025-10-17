@@ -29,6 +29,8 @@ from collections import Counter, deque
 from typing import Dict, List, Tuple, Optional, Any
 import json
 import hashlib
+import argparse
+from datetime import datetime
 
 # --- Configuration ---
 SEED = 42
@@ -933,5 +935,118 @@ def run_simulation(n_episodes: int = 100, verbose: bool = True):
     return episodes
 
 # --- Run the simulation ---
+def main():
+    """Main function with CLI argument parsing."""
+    parser = argparse.ArgumentParser(
+        description="Self-Regulated Cognitive Architecture (SRCA) Simulation",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python SRCA.py                           # Run with defaults (100 episodes, verbose)
+  python SRCA.py -e 50 --quiet             # Run 50 episodes quietly
+  python SRCA.py --save-viz                # Save visualization to timestamped file
+  python SRCA.py --save-viz results.png    # Save visualization to specific file
+  python SRCA.py -e 200 --save-viz --quiet # Run 200 episodes, save viz, minimal output
+        """
+    )
+    
+    parser.add_argument(
+        "-e", "--episodes", 
+        type=int, 
+        default=100,
+        help="Number of episodes to run (default: 100)"
+    )
+    
+    parser.add_argument(
+        "-v", "--verbose", 
+        action="store_true", 
+        default=True,
+        help="Enable verbose output (default: True)"
+    )
+    
+    parser.add_argument(
+        "-q", "--quiet", 
+        action="store_true",
+        help="Disable verbose output (overrides --verbose)"
+    )
+    
+    parser.add_argument(
+        "--save-viz", 
+        nargs="?", 
+        const="auto",
+        help="Save visualization to file. Use 'auto' for timestamped filename or specify custom filename"
+    )
+    
+    parser.add_argument(
+        "--no-viz", 
+        action="store_true",
+        help="Skip visualization display (useful for batch processing)"
+    )
+    
+    args = parser.parse_args()
+    
+    # Handle quiet flag
+    verbose = args.verbose and not args.quiet
+    
+    # Determine save path for visualization
+    save_path = None
+    if args.save_viz:
+        if args.save_viz == "auto":
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            save_path = f"srca_results_{timestamp}.png"
+        else:
+            save_path = args.save_viz
+    
+    print("=" * 70)
+    print("Self-Regulated Cognitive Architecture (SRCA)")
+    print("=" * 70)
+    print(f"Episodes: {args.episodes}")
+    print(f"Verbose: {verbose}")
+    if save_path:
+        print(f"Saving visualization to: {save_path}")
+    if args.no_viz:
+        print("Visualization display: Disabled")
+    print("=" * 70)
+    
+    # Run simulation
+    episodes = run_simulation(n_episodes=args.episodes, verbose=verbose)
+    
+    # Handle visualization
+    if not args.no_viz:
+        plot_results(episodes, save_path=save_path)
+        if save_path:
+            print(f"\n✅ Visualization saved to: {save_path}")
+    elif save_path:
+        # Save without displaying
+        plot_results(episodes, save_path=save_path)
+        plt.close()  # Close the figure to prevent display
+        print(f"\n✅ Visualization saved to: {save_path}")
+    
+    # Print summary statistics (similar to the demo files)
+    print(f"\n" + "=" * 70)
+    print("SIMULATION SUMMARY")
+    print("=" * 70)
+    
+    rewards = [ep['reward'] for ep in episodes]
+    confidences = [ep['confidence'] for ep in episodes]
+    
+    print(f"📊 Performance Metrics:")
+    print(f"   Episodes Completed: {len(episodes)}")
+    print(f"   Average Reward: {sum(rewards)/len(rewards):.3f}")
+    print(f"   Success Rate: {sum(1 for r in rewards if r > 0)/len(rewards):.1%}")
+    print(f"   Confidence Range: {min(confidences):.3f} - {max(confidences):.3f}")
+    
+    # Learning analysis
+    if len(episodes) >= 30:
+        early_rewards = rewards[:len(rewards)//3]
+        late_rewards = rewards[2*len(rewards)//3:]
+        improvement = sum(late_rewards)/len(late_rewards) - sum(early_rewards)/len(early_rewards)
+        
+        print(f"\n🧠 Learning Analysis:")
+        print(f"   Performance Improvement: {improvement:+.3f}")
+        print(f"   Learning Status: {'ACTIVE' if abs(improvement) > 0.1 else 'STABLE'}")
+    
+    return episodes
+
 if __name__ == "__main__":
-    episodes = run_simulation(n_episodes=100, verbose=True)
+    episodes = main()
