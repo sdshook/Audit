@@ -7,6 +7,14 @@ Demonstrates:
 - Self-awareness and guardrail enforcement
 - Reinforcement learning with visualization
 
+Inspired by:
+- Dragon Hatchling (BDH) architecture from Pathway.com research
+  "The Dragon Hatchling: The Missing Link between the Transformer and Models of the Brain"
+  https://arxiv.org/pdf/2509.26507 - Biologically-inspired neural networks with Hebbian learning
+  https://pathway.com/research/bdh - Technical implementation and research
+- Anthropic's Context Management for persistent semantic indexing
+  https://www.anthropic.com/news/context-management - Memory tool and context editing
+
 (c) 2025 - Shane D. Shook, All Rights Reserved
 """
 

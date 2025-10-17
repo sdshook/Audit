@@ -219,6 +219,49 @@ The architecture closely mirrors biological memory systems:
 - Real-time self-awareness and behavioral regulation
 - Domain-specific application to cybersecurity operations
 
+## Research Inspirations & References
+
+### Core Architecture Inspirations
+
+#### Dragon Hatchling (BDH) - Pathway.com Research
+The BDH (Bidirectional Hebbian Memory) component draws inspiration from Pathway's groundbreaking research:
+
+**"The Dragon Hatchling: The Missing Link between the Transformer and Models of the Brain"**
+- **Paper**: https://arxiv.org/pdf/2509.26507
+- **Technical Blog**: https://pathway.com/research/bdh
+- **Code Repository**: https://github.com/pathwaycom/bdh
+
+**Key Inspirations:**
+- **Biologically-Plausible Neural Networks**: Scale-free networks of locally-interacting neuron particles
+- **Hebbian Learning Mechanisms**: Synaptic plasticity with integrate-and-fire thresholding
+- **Sparse Positive Activations**: Monosemantic neuron representations for interpretability
+- **Graph-Based Distributed Computing**: Local edge-reweighting processes as "equations of reasoning"
+
+The Dragon Hatchling research demonstrates how attention mechanisms in state-of-the-art language models correspond to attention mechanisms observed in the brain, formally converging as closed-form local graph dynamics at neurons and synapses.
+
+#### Anthropic's Context Management
+The PSI (Persistent Semantic Index) component is inspired by Anthropic's context management research:
+
+**"Managing context on the Claude Developer Platform"**
+- **Article**: https://www.anthropic.com/news/context-management
+- **Documentation**: https://docs.claude.com/en/docs/agents-and-tools/tool-use/memory-tool
+
+**Key Inspirations:**
+- **Memory Tool Architecture**: File-based system for storing information outside context windows
+- **Context Editing**: Automatic clearing of stale information while preserving conversation flow
+- **Persistent Knowledge**: Building knowledge bases that improve performance over time
+- **Cross-Session Learning**: Maintaining insights across successive agentic sessions
+
+### Technical Synthesis
+
+SRCA combines these inspirations into a novel architecture:
+
+1. **BDH from Dragon Hatchling**: Implements true synaptic plasticity with reward-gated Hebbian learning
+2. **PSI from Anthropic**: Creates persistent semantic memory with protected guardrail entries
+3. **Original Contributions**: Adds self-awareness, valence control, and cybersecurity-specific applications
+
+This synthesis creates a system that maintains biological plausibility while achieving practical performance in autonomous decision-making scenarios.
+
 ## Future Development
 
 ### Potential Enhancements
