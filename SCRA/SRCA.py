@@ -934,6 +934,264 @@ def run_simulation(n_episodes: int = 100, verbose: bool = True):
     
     return episodes
 
+# --- CMNN Learning Test Functions ---
+def create_progressive_test_data(n_episodes=150):
+    """Create progressive test data for CMNN learning analysis."""
+    episodes = []
+    
+    # Phase 1: Clear patterns (first third)
+    phase1_episodes = n_episodes // 3
+    clear_patterns = [
+        ("lateral_movement", "malicious"),    # Should learn ISOLATE
+        ("reconnaissance", "suspicious"),     # Should learn DEPLOY_DECOY
+        ("exfiltration", "malicious"),       # Should learn ESCALATE
+        ("persistence", "benign"),           # Should learn NO_OP
+    ]
+    
+    for _ in range(phase1_episodes // len(clear_patterns) + 1):
+        episodes.extend(clear_patterns)
+    episodes = episodes[:phase1_episodes]
+    
+    # Phase 2: Ambiguous patterns (second third)
+    phase2_episodes = n_episodes // 3
+    ambiguous_patterns = [
+        ("lateral_movement", "suspicious"),   # Ambiguous
+        ("reconnaissance", "benign"),         # Ambiguous
+        ("exfiltration", "suspicious"),       # Ambiguous
+        ("persistence", "malicious"),         # Clear
+    ]
+    
+    phase2_start = len(episodes)
+    for _ in range(phase2_episodes // len(ambiguous_patterns) + 1):
+        episodes.extend(ambiguous_patterns)
+    episodes = episodes[:phase2_start + phase2_episodes]
+    
+    # Phase 3: Mixed complexity (remaining)
+    remaining = n_episodes - len(episodes)
+    mixed_patterns = clear_patterns + ambiguous_patterns
+    for _ in range(remaining // len(mixed_patterns) + 1):
+        episodes.extend(mixed_patterns)
+    episodes = episodes[:n_episodes]
+    
+    return episodes
+
+def load_test_data_from_file(filepath):
+    """Load test data from JSON file."""
+    try:
+        with open(filepath, 'r') as f:
+            data = json.load(f)
+        
+        episodes = []
+        for item in data:
+            if 'alert_type' in item and 'threat_level' in item:
+                episodes.append((item['alert_type'], item['threat_level']))
+            elif 'pattern_type' in item and 'label' in item:
+                episodes.append((item['pattern_type'], item['label']))
+        
+        return episodes
+    except Exception as e:
+        print(f"Error loading test data from {filepath}: {e}")
+        print("Using default progressive test data instead.")
+        return create_progressive_test_data()
+
+def extract_cmnn_weights():
+    """Extract current CMNN network weights for analysis."""
+    weights_info = {}
+    
+    try:
+        # Extract weights from each node network
+        for i, node in enumerate(mesh.nodes):
+            node_weights = []
+            for param in node.parameters():
+                node_weights.append(param.data.clone().flatten())
+            if node_weights:
+                weights_info[f'node_{i}'] = torch.cat(node_weights).numpy()
+        
+        # Extract meta-reasoning network weights
+        meta_weights = []
+        for param in mesh.meta.parameters():
+            meta_weights.append(param.data.clone().flatten())
+        if meta_weights:
+            weights_info['meta'] = torch.cat(meta_weights).numpy()
+        
+        # Extract message passing weights
+        msg_weights = []
+        for param in mesh.message_passing.parameters():
+            msg_weights.append(param.data.clone().flatten())
+        if msg_weights:
+            weights_info['message_passing'] = torch.cat(msg_weights).numpy()
+    
+    except Exception as e:
+        print(f"Warning: Could not extract CMNN weights: {e}")
+    
+    return weights_info
+
+def calculate_weight_changes(weights_before, weights_after):
+    """Calculate the magnitude of weight changes."""
+    changes = {}
+    for key in weights_before:
+        if key in weights_after:
+            diff = weights_after[key] - weights_before[key]
+            changes[key] = {
+                'l2_norm': np.linalg.norm(diff),
+                'mean_abs_change': np.mean(np.abs(diff)),
+                'max_change': np.max(np.abs(diff))
+            }
+    return changes
+
+def analyze_learning_progression(episodes_data, weights_history=None):
+    """Analyze learning progression from episode data."""
+    if not episodes_data:
+        return {}
+    
+    # Extract data
+    rewards = [ep['reward'] for ep in episodes_data]
+    confidences = [ep['confidence'] for ep in episodes_data]
+    actions = [ep['action'] for ep in episodes_data]
+    
+    # Phase analysis
+    n_episodes = len(episodes_data)
+    phase1_end = n_episodes // 3
+    phase2_end = 2 * n_episodes // 3
+    
+    phase_rewards = {
+        "early": rewards[:phase1_end],
+        "mid": rewards[phase1_end:phase2_end],
+        "late": rewards[phase2_end:]
+    }
+    
+    phase_confidences = {
+        "early": confidences[:phase1_end],
+        "mid": confidences[phase1_end:phase2_end],
+        "late": confidences[phase2_end:]
+    }
+    
+    # Calculate improvements
+    early_reward = np.mean(phase_rewards["early"]) if phase_rewards["early"] else 0
+    late_reward = np.mean(phase_rewards["late"]) if phase_rewards["late"] else 0
+    reward_improvement = late_reward - early_reward
+    
+    early_conf = np.mean(phase_confidences["early"]) if phase_confidences["early"] else 0
+    late_conf = np.mean(phase_confidences["late"]) if phase_confidences["late"] else 0
+    confidence_change = late_conf - early_conf
+    
+    # Weight analysis
+    weight_analysis = {}
+    if weights_history and len(weights_history) > 1:
+        total_changes = []
+        for i in range(1, len(weights_history)):
+            changes = calculate_weight_changes(weights_history[i-1], weights_history[i])
+            total_change = sum(change['l2_norm'] for change in changes.values())
+            total_changes.append(total_change)
+        
+        weight_analysis = {
+            'total_changes': total_changes,
+            'avg_change': np.mean(total_changes) if total_changes else 0,
+            'change_trend': 'decreasing' if len(total_changes) > 1 and total_changes[-1] < total_changes[0] else 'stable'
+        }
+    
+    return {
+        'phase_rewards': phase_rewards,
+        'phase_confidences': phase_confidences,
+        'reward_improvement': reward_improvement,
+        'confidence_change': confidence_change,
+        'overall_accuracy': sum(1 for r in rewards if r > 0) / len(rewards),
+        'weight_analysis': weight_analysis
+    }
+
+def run_test_mode_simulation(test_episodes, track_weights=False, learning_analysis=False, verbose=True):
+    """Run simulation in test mode with optional weight tracking and analysis."""
+    
+    print("=" * 70)
+    print("CMNN LEARNING TEST MODE")
+    print("=" * 70)
+    print(f"Test Episodes: {len(test_episodes)}")
+    print(f"Weight Tracking: {'Enabled' if track_weights else 'Disabled'}")
+    print(f"Learning Analysis: {'Enabled' if learning_analysis else 'Disabled'}")
+    print("=" * 70)
+    
+    episodes_data = []
+    weights_history = []
+    
+    # Get initial weights if tracking enabled
+    if track_weights:
+        initial_weights = extract_cmnn_weights()
+        weights_history.append(initial_weights)
+    
+    # Run test episodes
+    for i, (alert_type, threat_level) in enumerate(test_episodes):
+        # Create alert
+        alert = {
+            "id": f"test_alert_{i}",
+            "type": alert_type,
+            "severity": threat_level,
+            "label": threat_level,
+            "pattern_type": alert_type,
+            "timestamp": i,
+            "source": f"test_node_{i % 3}",
+            "text": f"{alert_type} detected with {threat_level} severity"
+        }
+        
+        # Run simulation step
+        result = simulation_step(alert, verbose=(verbose and i < 10))
+        result['episode'] = i
+        result['alert_type'] = alert_type
+        result['threat_level'] = threat_level
+        episodes_data.append(result)
+        
+        # Track weights periodically
+        if track_weights and i % 10 == 0 and i > 0:
+            current_weights = extract_cmnn_weights()
+            weights_history.append(current_weights)
+        
+        # Progress reporting
+        if verbose and (i < 10 or i % 25 == 0):
+            print(f"Episode {i:3d}: {alert_type:15s} + {threat_level:10s} → {result['action']:12s} "
+                  f"(Reward: {result['reward']:+.2f}, Conf: {result['confidence']:.3f})")
+    
+    # Final weight capture
+    if track_weights:
+        final_weights = extract_cmnn_weights()
+        weights_history.append(final_weights)
+    
+    # Learning analysis
+    analysis = {}
+    if learning_analysis:
+        analysis = analyze_learning_progression(episodes_data, weights_history if track_weights else None)
+        
+        print("\n" + "=" * 70)
+        print("LEARNING PROGRESSION ANALYSIS")
+        print("=" * 70)
+        
+        # Phase performance
+        print("\nPhase Performance:")
+        for phase, rewards in analysis['phase_rewards'].items():
+            avg_reward = np.mean(rewards) if rewards else 0
+            success_rate = sum(1 for r in rewards if r > 0) / len(rewards) if rewards else 0
+            print(f"  {phase.capitalize():5s}: {avg_reward:+.3f} avg reward, {success_rate:.1%} success")
+        
+        # Improvement metrics
+        print(f"\nImprovement Metrics:")
+        print(f"  Reward Improvement: {analysis['reward_improvement']:+.3f}")
+        print(f"  Confidence Change:  {analysis['confidence_change']:+.3f}")
+        print(f"  Overall Accuracy:   {analysis['overall_accuracy']:.1%}")
+        
+        # Weight analysis
+        if analysis['weight_analysis']:
+            wa = analysis['weight_analysis']
+            print(f"\nWeight Evolution:")
+            print(f"  Average Change: {wa['avg_change']:.6f}")
+            print(f"  Trend: {wa['change_trend'].capitalize()}")
+            
+            if analysis['reward_improvement'] > 0.1:
+                print("✅ STRONG LEARNING: Significant performance improvement detected")
+            elif analysis['reward_improvement'] > 0.05:
+                print("✅ MODERATE LEARNING: Performance improvement detected")
+            else:
+                print("→ STABLE PERFORMANCE: Consistent performance across phases")
+    
+    return episodes_data, weights_history, analysis
+
 # --- Run the simulation ---
 def main():
     """Main function with CLI argument parsing."""
@@ -947,6 +1205,13 @@ Examples:
   python SRCA.py --save-viz                # Save visualization to timestamped file
   python SRCA.py --save-viz results.png    # Save visualization to specific file
   python SRCA.py -e 200 --save-viz --quiet # Run 200 episodes, save viz, minimal output
+  
+  # CMNN Learning Test Mode:
+  python SRCA.py --test-mode               # Run progressive test with 100 episodes
+  python SRCA.py --test-mode -e 150        # Run progressive test with 150 episodes
+  python SRCA.py --test-mode --track-weights --learning-analysis  # Full learning analysis
+  python SRCA.py --test-data alerts.json  # Use custom test data from JSON file
+  python SRCA.py --test-mode --save-viz --no-viz  # Test mode, save viz, no display
         """
     )
     
@@ -983,6 +1248,30 @@ Examples:
         help="Skip visualization display (useful for batch processing)"
     )
     
+    parser.add_argument(
+        "--test-mode", 
+        action="store_true",
+        help="Enable CMNN learning test mode with progressive test data"
+    )
+    
+    parser.add_argument(
+        "--test-data", 
+        type=str,
+        help="Path to custom test data file (JSON format with alert patterns)"
+    )
+    
+    parser.add_argument(
+        "--track-weights", 
+        action="store_true",
+        help="Enable neural network weight tracking and analysis"
+    )
+    
+    parser.add_argument(
+        "--learning-analysis", 
+        action="store_true",
+        help="Enable detailed learning progression analysis"
+    )
+    
     args = parser.parse_args()
     
     # Handle quiet flag
@@ -993,58 +1282,104 @@ Examples:
     if args.save_viz:
         if args.save_viz == "auto":
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            save_path = f"srca_results_{timestamp}.png"
+            mode_prefix = "test" if (args.test_mode or args.test_data) else "results"
+            save_path = f"srca_{mode_prefix}_{timestamp}.png"
         else:
             save_path = args.save_viz
     
-    print("=" * 70)
-    print("Self-Regulated Cognitive Architecture (SRCA)")
-    print("=" * 70)
-    print(f"Episodes: {args.episodes}")
-    print(f"Verbose: {verbose}")
-    if save_path:
-        print(f"Saving visualization to: {save_path}")
-    if args.no_viz:
-        print("Visualization display: Disabled")
-    print("=" * 70)
-    
-    # Run simulation
-    episodes = run_simulation(n_episodes=args.episodes, verbose=verbose)
-    
-    # Handle visualization
-    if not args.no_viz:
-        plot_results(episodes, save_path=save_path)
-        if save_path:
-            print(f"\n✅ Visualization saved to: {save_path}")
-    elif save_path:
-        # Save without displaying
-        plot_results(episodes, save_path=save_path)
-        plt.close()  # Close the figure to prevent display
-        print(f"\n✅ Visualization saved to: {save_path}")
-    
-    # Print summary statistics (similar to the demo files)
-    print(f"\n" + "=" * 70)
-    print("SIMULATION SUMMARY")
-    print("=" * 70)
-    
-    rewards = [ep['reward'] for ep in episodes]
-    confidences = [ep['confidence'] for ep in episodes]
-    
-    print(f"📊 Performance Metrics:")
-    print(f"   Episodes Completed: {len(episodes)}")
-    print(f"   Average Reward: {sum(rewards)/len(rewards):.3f}")
-    print(f"   Success Rate: {sum(1 for r in rewards if r > 0)/len(rewards):.1%}")
-    print(f"   Confidence Range: {min(confidences):.3f} - {max(confidences):.3f}")
-    
-    # Learning analysis
-    if len(episodes) >= 30:
-        early_rewards = rewards[:len(rewards)//3]
-        late_rewards = rewards[2*len(rewards)//3:]
-        improvement = sum(late_rewards)/len(late_rewards) - sum(early_rewards)/len(early_rewards)
+    # Check for test mode
+    if args.test_mode or args.test_data:
+        # Test mode execution
+        if args.test_data:
+            test_episodes = load_test_data_from_file(args.test_data)
+        else:
+            test_episodes = create_progressive_test_data(args.episodes)
         
-        print(f"\n🧠 Learning Analysis:")
-        print(f"   Performance Improvement: {improvement:+.3f}")
-        print(f"   Learning Status: {'ACTIVE' if abs(improvement) > 0.1 else 'STABLE'}")
+        episodes_data, weights_history, analysis = run_test_mode_simulation(
+            test_episodes, 
+            track_weights=args.track_weights,
+            learning_analysis=args.learning_analysis,
+            verbose=verbose
+        )
+        
+        # Convert test mode data to standard format for plotting
+        episodes = []
+        for ep_data in episodes_data:
+            episodes.append({
+                'reward': ep_data['reward'],
+                'confidence': ep_data['confidence'],
+                'action': ep_data['action'],
+                'action_idx': ep_data.get('action_idx', 0),
+                'coherence': ep_data.get('coherence', 0.5),
+                'arrogance': ep_data.get('arrogance', 0.0),
+                'guardrail_triggered': ep_data.get('guardrail_triggered', False),
+                'alert': {
+                    'label': ep_data.get('threat_level', 'unknown'),
+                    'type': ep_data.get('alert_type', 'unknown')
+                }
+            })
+        
+        # Handle visualization for test mode
+        if not args.no_viz:
+            plot_results(episodes, save_path=save_path)
+            if save_path:
+                print(f"\n✅ Test mode visualization saved to: {save_path}")
+        elif save_path:
+            # Save without displaying
+            plot_results(episodes, save_path=save_path)
+            plt.close()  # Close the figure to prevent display
+            print(f"\n✅ Test mode visualization saved to: {save_path}")
+    
+    else:
+        # Standard mode execution
+        print("=" * 70)
+        print("Self-Regulated Cognitive Architecture (SRCA)")
+        print("=" * 70)
+        print(f"Episodes: {args.episodes}")
+        print(f"Verbose: {verbose}")
+        if save_path:
+            print(f"Saving visualization to: {save_path}")
+        if args.no_viz:
+            print("Visualization display: Disabled")
+        print("=" * 70)
+        
+        # Run simulation
+        episodes = run_simulation(n_episodes=args.episodes, verbose=verbose)
+        
+        # Handle visualization
+        if not args.no_viz:
+            plot_results(episodes, save_path=save_path)
+            if save_path:
+                print(f"\n✅ Visualization saved to: {save_path}")
+        elif save_path:
+            # Save without displaying
+            plot_results(episodes, save_path=save_path)
+            plt.close()  # Close the figure to prevent display
+            print(f"\n✅ Visualization saved to: {save_path}")
+        
+        # Print summary statistics (similar to the demo files)
+        print(f"\n" + "=" * 70)
+        print("SIMULATION SUMMARY")
+        print("=" * 70)
+        
+        rewards = [ep['reward'] for ep in episodes]
+        confidences = [ep['confidence'] for ep in episodes]
+        
+        print(f"📊 Performance Metrics:")
+        print(f"   Episodes Completed: {len(episodes)}")
+        print(f"   Average Reward: {sum(rewards)/len(rewards):.3f}")
+        print(f"   Success Rate: {sum(1 for r in rewards if r > 0)/len(rewards):.1%}")
+        print(f"   Confidence Range: {min(confidences):.3f} - {max(confidences):.3f}")
+        
+        # Learning analysis
+        if len(episodes) >= 30:
+            early_rewards = rewards[:len(rewards)//3]
+            late_rewards = rewards[2*len(rewards)//3:]
+            improvement = sum(late_rewards)/len(late_rewards) - sum(early_rewards)/len(early_rewards)
+            
+            print(f"\n🧠 Learning Analysis:")
+            print(f"   Performance Improvement: {improvement:+.3f}")
+            print(f"   Learning Status: {'ACTIVE' if abs(improvement) > 0.1 else 'STABLE'}")
     
     return episodes
 
