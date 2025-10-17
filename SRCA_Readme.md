@@ -324,38 +324,6 @@ The architecture closely mirrors biological memory systems:
 
 ## Innovation & Contributions
 
-### Novel Conceptual Advances Toward AGI
-
-#### 1. **Dual-Processing Cognitive Architecture**
-**Innovation**: First implementation of dual-store BDH system (Reflective + Empathic)
-- **Beyond Dragon Hatchling**: Single network → Dual cognitive processing systems
-- **AGI Relevance**: Mirrors human System 1/System 2 thinking for general intelligence
-- **Mathematical Extension**: Parallel Hebbian updates with differential learning rates
-
-#### 2. **Self-Awareness and Metacognition**
-**Innovation**: Real-time monitoring of coherence, confidence, and arrogance
-- **Beyond Source Papers**: Neither addresses metacognitive capabilities
-- **AGI Relevance**: Self-awareness is fundamental to general intelligence
-- **Mathematical Framework**: Continuous self-monitoring with adaptive regulation
-
-#### 3. **Valence-Based Self-Regulation**
-**Innovation**: Empathic behavioral adjustment with arrogance detection
-- **Beyond Source Papers**: No emotional regulation or behavioral adaptation
-- **AGI Relevance**: Emotional intelligence and behavioral control for safe AGI
-- **Mathematical Model**: Dynamic empathy factors with penalty mechanisms
-
-#### 4. **Protected Ethical Memory**
-**Innovation**: Guardrail entries that resist modification despite learning
-- **Beyond Anthropic**: Static persistence → Dynamic ethical constraint preservation
-- **AGI Relevance**: Ensures ethical principles persist under adversarial conditions
-- **Mathematical Constraint**: Immutable memory entries with valence thresholds
-
-#### 5. **Multi-Objective Reasoning Under Constraints**
-**Innovation**: Balancing task effectiveness, ethics, and operational constraints
-- **Beyond Source Papers**: Single-objective optimization → Multi-stakeholder reasoning
-- **AGI Relevance**: Real-world decision-making requires balancing competing objectives
-- **Mathematical Framework**: Weighted multi-criteria optimization with safety bounds
-
 ### Technical Advances
 - **Symbolic-Connectionist Integration**: PSI semantic memory + neural network learning
 - **Biological Plausibility**: Hebbian mechanisms with modern RL techniques
